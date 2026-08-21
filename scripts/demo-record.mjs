@@ -26,7 +26,7 @@ import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
-import { readdirSync, rmSync, statSync, existsSync } from "node:fs";
+import { readdirSync, rmSync, statSync, existsSync, mkdirSync, renameSync } from "node:fs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SITE = "http://localhost:8403";
@@ -39,6 +39,7 @@ const arg = (name, fallback) => {
 const SEED = !process.argv.includes("--no-seed");
 const RECORD = process.argv.includes("--record");
 const NATIVE = process.argv.includes("--native");
+const NOCAPS = process.argv.includes("--no-captions");
 // macOS menu-bar height in device pixels on a 2x display; cropped off the top
 // so the film starts at the browser chrome, the way the original did.
 const CROP_TOP = Number(arg("crop-top", 0));
@@ -52,6 +53,11 @@ const OUT = arg("out", `${ROOT}demo-out.mp4`);
 // normal Mac window — while the compositor renders 3456x1944, which is what a
 // Retina screen recording produces and why the original film looked sharp.
 const LAYOUT = { width: 1728, height: 972 };
+// Full display height in points. The first cut used a short window, which
+// cropped the hero's lower chips ("BLOCKED · ancestor cap", "scraper ·
+// auto-frozen") out of frame and gave a 1.89 aspect against the reference
+// film's 1.735. Filling the screen height restores both.
+const SCREEN_H = Number(arg("screen-h", 1117));
 const CAPTURE = { width: 3456, height: 1944 };
 // Delivered at 1080p: downscaling 2x supersampled frames beats capturing at
 // 1080p directly, and keeps the file small enough to ship on the site.
@@ -95,41 +101,141 @@ function call(tool, extraArgs = []) {
 
 const pause = (ms) => sleep(ms);
 
-async function tour1min(page) {
+async function tour1min(page, mark = () => {}) {
   const step = (n, what) => console.log(`  [${n}] ${what}`);
 
   step(1, "marketing tour");
   await page.goto(`${SITE}/`);
+  mark("The spend-governance layer for AI agents.");
   await pause(3500);
+  const CAPTIONS = {
+    "use-cases": "Every one of these is an agent spending money you can't watch.",
+    docs: "CLI, SDK, MCP — governance the model can't opt out of.",
+    security: "Enforced server-side, not promised.",
+    pricing: "Self-host free forever. The hosted platform is the business.",
+  };
   for (const [p, ms] of [["use-cases", 2200], ["docs", 2200], ["security", 2200], ["pricing", 2200]]) {
     await page.goto(`${SITE}/${p}.html`);
+    mark(CAPTIONS[p]);
     await pause(ms);
   }
 
   step(2, "playground — cap, budget, runaway burst, auto-freeze, unfreeze");
   await page.goto(`${SITE}/playground.html`);
+  mark("Set a per-call cap and an hourly budget.");
   await pause(3500);
   await page.fill("#percall", "5");
   await pause(500);
   await page.fill("#hourly", "50");
   await pause(1200);
   await page.click("#burst");
+  mark("Then fire a runaway burst at it.");
   await pause(6000);
+  mark("Frozen mid-loop. Nothing spends until a human unfreezes.");
   await pause(2500);
   await page.click("#unfreeze");
   await pause(2500);
 
   step(3, "console — all ten tabs");
   await page.goto(`${APP}/`);
+  mark("The console: ten surfaces over one governed ledger.");
   await pause(2500);
+  const TAB_CAPTIONS = {
+    approvals: "Above the line, a human decides. Timeouts fail closed.",
+    budgets: "IAM for money — capped, scoped, time-boxed grants.",
+    ledger: "Every attempt is hash-chained and tamper-evident.",
+    chains: "Chain-aware, not just multi-chain.",
+    trust: "Counterparty reputation, earned from governed history.",
+    report: "267 end-to-end assertions. If a claim isn't a test, it doesn't ship.",
+  };
   for (const tab of ["overview", "approvals", "budgets", "ledger", "chains", "analytics", "trust", "policy", "agents", "report"]) {
     await page.click(`[data-nav="${tab}"]`);
+    if (TAB_CAPTIONS[tab]) mark(TAB_CAPTIONS[tab]);
     await pause(2800);
   }
 
   step(4, "close on the pitch page");
   await page.goto(`${SITE}/pitch.html`);
+  mark("Your agents can spend. SpendVeto decides.");
   await pause(6000);
+}
+
+
+// Captions are rendered as transparent PNGs and composited, because this
+// ffmpeg build has neither libass nor freetype — drawtext, subtitles and ass
+// are all unavailable. Rendering them in a browser is no worse: it means the
+// captions use the same typeface as the site.
+async function burnCaptions(videoPath, marks, offset) {
+  const dir = `${ROOT}.demo-caps`;
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+
+  const W = 1920;
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({ viewport: { width: W, height: 220 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+
+  const files = [];
+  for (let i = 0; i < marks.length; i++) {
+    await page.setContent(`
+      <style>
+        @font-face { font-family: "SG"; src: url("file://${ROOT}site/fonts/space-grotesk.woff2") format("woff2"); font-weight: 500 700; }
+        html, body { margin: 0; background: transparent; }
+        .cap {
+          width: ${W}px; min-height: 220px; display: flex; align-items: center; justify-content: center;
+          font-family: "SG", -apple-system, sans-serif; font-size: 42px; font-weight: 500;
+          color: #ffffff; text-align: center; padding: 0 180px; box-sizing: border-box;
+          line-height: 1.25; letter-spacing: 0.005em;
+          text-shadow: 0 2px 18px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.9);
+        }
+      </style>
+      <div class="cap">${marks[i].text.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</div>`);
+    await page.evaluate(() => document.fonts.ready);
+    const f = `${dir}/cap${String(i).padStart(2, "0")}.png`;
+    await page.screenshot({ path: f, omitBackground: true });
+    files.push(f);
+  }
+  await browser.close();
+
+  // Each caption holds until the next one, capped so a long pause doesn't
+  // leave stale text sitting over unrelated footage.
+  const dur = await videoDuration(videoPath);
+  const spans = marks.map((m, i) => {
+    const start = Math.max(0, m.t + offset);
+    const next = i + 1 < marks.length ? marks[i + 1].t + offset : dur;
+    return { start, end: Math.min(next - 0.15, start + 4.6, dur) };
+  }).filter((s) => s.end > s.start + 0.4);
+
+  const inputs = [];
+  files.forEach((f) => inputs.push("-i", f));
+  let filter = "";
+  let last = "0:v";
+  spans.forEach((sp, i) => {
+    const out = i === spans.length - 1 ? "vout" : `v${i}`;
+    filter += `[${last}][${i + 1}:v]overlay=(W-w)/2:H-h-46:enable='between(t,${sp.start.toFixed(2)},${sp.end.toFixed(2)})'[${out}];`;
+    last = out;
+  });
+  filter = filter.replace(/;$/, "");
+
+  const tmp = `${ROOT}.demo-captioned.mp4`;
+  await new Promise((resolve, reject) => {
+    const ff = spawn("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-i", videoPath, ...inputs,
+      "-filter_complex", filter, "-map", "[vout]",
+      "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+      "-pix_fmt", "yuv420p", "-movflags", "+faststart", tmp], { stdio: "inherit" });
+    ff.on("close", (c) => (c === 0 ? resolve() : reject(new Error(`caption pass exited ${c}`))));
+  });
+  renameSync(tmp, videoPath);
+  rmSync(dir, { recursive: true, force: true });
+}
+
+function videoDuration(path) {
+  return new Promise((resolve) => {
+    const pr = spawn("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path]);
+    let out = "";
+    pr.stdout.on("data", (d) => (out += d));
+    pr.on("close", () => resolve(Number(out.trim()) || 0));
+  });
 }
 
 async function main() {
@@ -187,7 +293,7 @@ async function main() {
       // grab then catches the desktop behind it), so instead the window
       // stays ordinary and only its *content* rect is recorded — no tab
       // strip, no address bar, no menu bar, no dock, no wallpaper.
-      args: ["--window-position=0,0", `--window-size=${LAYOUT.width},${LAYOUT.height + 120}`, "--hide-scrollbars", "--disable-infobars"],
+      args: ["--window-position=0,0", `--window-size=${LAYOUT.width},${SCREEN_H}`, "--hide-scrollbars", "--disable-infobars"],
     });
     const page = await browser.newPage({ viewport: null });
     await page.goto(`${SITE}/`);
@@ -217,8 +323,9 @@ async function main() {
     const capDone = new Promise((r) => cap.on("close", r));
     await sleep(2000); // let the capture actually engage before the tour moves
 
+    const marks = [];
     const tourStart = Date.now();
-    await tour1min(page);
+    await tour1min(page, (text) => marks.push({ t: (Date.now() - tourStart) / 1000, text }));
     const tourEnd = Date.now();
     const elapsed = ((tourEnd - tourStart) / 1000).toFixed(1);
 
@@ -246,6 +353,11 @@ async function main() {
       ff.on("close", (c) => (c === 0 ? resolve() : reject(new Error(`ffmpeg exited ${c}`))));
     });
     rmSync(raw, { force: true });
+
+    if (!NOCAPS && marks.length) {
+      console.log(`  burning ${marks.length} captions…`);
+      await burnCaptions(OUT, marks, Number(ss) < 0 ? 0 : 0.4);
+    }
 
     const mb = (statSync(OUT).size / 1e6).toFixed(1);
     console.log(`\n${"─".repeat(56)}`);
