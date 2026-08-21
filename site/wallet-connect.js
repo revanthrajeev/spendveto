@@ -11,6 +11,9 @@ export const BASE_SEPOLIA = {
   blockExplorerUrls: ["https://sepolia.basescan.org"],
 };
 
+// See the note in index.html: never probe localhost from a public page.
+const IS_LOCAL = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname);
+
 const providers = [];
 
 export function discoverWallets(onUpdate) {
@@ -86,6 +89,7 @@ export const FALLBACK_CHAINS = [
 ];
 
 export async function loadChains() {
+  if (!IS_LOCAL) return FALLBACK_CHAINS;
   try {
     const { chains } = await fetch("http://localhost:8402/api/chains", { signal: AbortSignal.timeout(4000) }).then((r) => r.json());
     return chains;
@@ -95,6 +99,7 @@ export async function loadChains() {
 }
 
 export async function joinWaitlist({ email, wallet, chains, notes }) {
+  if (!IS_LOCAL) throw new Error("hosted waitlist not live yet");
   const res = await fetch("http://localhost:8402/api/waitlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
