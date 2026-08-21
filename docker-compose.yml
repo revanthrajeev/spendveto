@@ -1,0 +1,40 @@
+# SpendVeto — the governed API + dashboard (:8402) and the enforcement proxy
+# (:8404) as two services sharing one data volume, so keyless agents can POST
+# intents to the proxy and the console shows the same ledger.
+#
+#   docker compose up          # simulate mode, zero setup
+#   open http://localhost:8402 # the console
+#
+# For real x402 on Base Sepolia: set SPENDVETO_MODE=testnet and provide
+# SERVER_PAYOUT_ADDRESS / CLIENT_PRIVATE_KEY via an .env file (see .env.example).
+services:
+  server:
+    build: .
+    command: ["node", "server/index.js"]
+    ports:
+      - "8402:8402"
+    environment:
+      SPENDVETO_MODE: ${SPENDVETO_MODE:-simulate}
+    env_file:
+      - path: .env.local
+        required: false
+    volumes:
+      - spendveto-data:/app/data
+
+  proxy:
+    build: .
+    command: ["node", "proxy/server.js"]
+    ports:
+      - "8404:8404"
+    environment:
+      SPENDVETO_MODE: ${SPENDVETO_MODE:-simulate}
+    env_file:
+      - path: .env.local
+        required: false
+    volumes:
+      - spendveto-data:/app/data
+    depends_on:
+      - server
+
+volumes:
+  spendveto-data:

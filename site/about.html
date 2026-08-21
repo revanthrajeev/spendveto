@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — About</title>
+<meta name="description" content="Why SpendVeto exists: rails move an agent's money, SpendVeto decides whether it should be allowed to move it. Open source, built in public." />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .doc-wrap { max-width: 780px; margin: 0 auto; padding: 8.5rem clamp(1.2rem, 4vw, 3rem) 6rem; }
+  .doc-wrap h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.025em; margin-bottom: 0.8rem; }
+  .doc-wrap .lede { color: var(--dim); line-height: 1.7; max-width: 62ch; font-size: 1.02rem; }
+  .doc-wrap h2 { font-size: 1.4rem; letter-spacing: -0.015em; margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  .doc-wrap p { color: var(--dim); line-height: 1.75; margin: 0.9rem 0; max-width: 68ch; }
+  .doc-wrap p b { color: var(--ink); }
+  .doc-wrap ul { margin: 0.9rem 0 0.9rem 1.2rem; color: var(--dim); line-height: 1.85; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2.2rem 0; }
+  @media (max-width: 700px) { .facts { grid-template-columns: 1fr; } }
+  .fact { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem; background: var(--panel); }
+  .fact b { display: block; font-family: "Space Grotesk", sans-serif; font-size: 1.4rem; color: var(--green); margin-bottom: 0.3rem; }
+  .fact span { font-size: 0.8rem; color: var(--faint); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./security.html">Security</a>
+    <a href="./pitch.html">Pitch</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="doc-wrap">
+  <h1>About SpendVeto</h1>
+  <p class="lede">AI agents can now hold wallets and pay for things autonomously — tools, APIs, and each other, at machine speed. Every rail (Coinbase, Stripe, Visa, x402) answers <b>how</b> an agent pays. Almost nobody answers the question every team asks first: <b>how do I stop it from overspending?</b> SpendVeto is the buyer-side policy layer that sits above any rail and decides — before a single dollar moves.</p>
+
+  <div class="facts">
+    <div class="fact"><b>237/237</b><span>end-to-end checks, real signatures, run before every claim ships</span></div>
+    <div class="fact"><b>Apache-2.0</b><span>fully open source, self-hostable, no vendor lock-in</span></div>
+    <div class="fact"><b>7 chains</b><span>chain-scoped budgets, Base Sepolia live on-chain</span></div>
+  </div>
+
+  <h2>Why it exists</h2>
+  <p>An agent with a wallet is a corporate card with no limit, issued to software. Runaway loops don't get tired — they get invoiced. As agent-to-agent and agent-to-service payments become normal, someone has to sit between the agent and its money and ask: is this call within policy, within budget, within scope, and did a human sign off if it needed one? That's the layer every payment rail assumes already exists. It mostly doesn't. SpendVeto builds it.</p>
+
+  <h2>How we work</h2>
+  <p>SpendVeto is built in public and verified in public. Every feature on the site is backed by an assertion in <span class="mono">npm run verify</span> — if a control isn't exercised by a real, running test, it doesn't ship as a claim. We'd rather under-promise on the marketing page than ship a control that only works in a demo.</p>
+
+  <h2>Who's behind it</h2>
+  <p>SpendVeto is built by a solo founder currently building in the open, prototyping fast, and shipping governance primitives (policy engine, nested budgets, kill switches, MCP middleware) ahead of most of the market's payment rails. Reach out via the <a href="./contact.html" style="color:var(--green)">contact page</a> — happy to talk to early design partners, security reviewers, or anyone thinking about the buyer side of agentic commerce.</p>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a>
+    <a href="./about.html">About</a>
+    <a href="./security.html">Security</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="./terms.html">Terms</a>
+  </div>
+</footer>
+
+</div><!-- /canvas-frame -->
+</body>
+</html>

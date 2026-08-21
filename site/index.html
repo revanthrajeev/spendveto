@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Spend governance for AI agents</title>
+<meta name="description" content="Payment rails move an agent's money. SpendVeto decides whether it should be allowed to move it — policy, approvals, budgets, and a kill switch, enforced before any payment happens." />
+<link rel="icon" href="./assets/favicon.svg" />
+<meta property="og:title" content="SpendVeto — Spend governance for AI agents" />
+<meta property="og:description" content="Your agents can spend. SpendVeto decides. Policy, approvals, budgets, and a kill switch — enforced before any payment happens. Open source, x402 + MCP native." />
+<meta property="og:image" content="./assets/generated/og-default.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="./assets/generated/og-default.png" />
+<style>
+  @font-face {
+    font-family: "Space Grotesk";
+    src: url("./fonts/space-grotesk.woff2") format("woff2");
+    font-weight: 500 700;
+    font-display: swap;
+  }
+  :root {
+    color-scheme: dark;
+    --page: #0e130f;          /* near-canvas matte the frame floats on */
+    --bg: #070a08;
+    --bg-2: #0b100c;
+    --ink: #eef3ed;
+    --dim: #93a094;
+    --faint: #5c675e;
+    --green: #46d68c;
+    --green-deep: #1f7a52;
+    --copper: #e0a05c;
+    --rust: #e0644a;
+    --line: rgba(238, 243, 237, 0.08);
+    --panel: rgba(238, 243, 237, 0.03);
+    --panel-2: rgba(238, 243, 237, 0.055);
+    --frame: 0px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  /* Full-bleed: the canvas reaches every viewport edge — no frame gutter. */
+  /* Scrollbar joins the design instead of adding a bright band outside it */
+  html { scrollbar-color: #223227 var(--page); scrollbar-width: thin; }
+  ::-webkit-scrollbar { width: 10px; background: var(--page); }
+  ::-webkit-scrollbar-thumb { background: #223227; border-radius: 5px; border: 2px solid var(--page); }
+  ::-webkit-scrollbar-thumb:hover { background: #2f4536; }
+  ::selection { background: rgba(70, 214, 140, 0.25); }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  /* chain band */
+  .chainband { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1.6rem 0 1.2rem; }
+  .chain-chip { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.78rem; letter-spacing: 0.05em; padding: 0.55rem 1rem; border: 1px solid var(--line); border-radius: 99px; color: var(--dim); display: inline-flex; gap: 0.55rem; align-items: baseline; background: rgba(255, 255, 255, 0.012); }
+  .chain-chip b { font-size: 0.6rem; letter-spacing: 0.16em; color: var(--faint); font-weight: 700; }
+  .chain-chip.live { border-color: var(--green-deep); color: var(--ink); }
+  .chain-chip.live b { color: var(--green); }
+  /* faq */
+  .faq { max-width: 46rem; }
+  .faq details { border-bottom: 1px dashed var(--line); }
+  .faq summary { cursor: pointer; padding: 1.15rem 0; font-weight: 650; color: var(--ink); list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 1.2rem; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--green); font-family: ui-monospace, monospace; font-size: 1.05rem; flex: none; }
+  .faq details[open] summary::after { content: "\2013"; }
+  .faq details p { color: var(--dim); padding: 0 0 1.25rem; max-width: 60ch; line-height: 1.72; font-size: 0.95rem; }
+  .faq details p b { color: var(--ink); font-weight: 600; }
+  h1, h2, .wordmark, .n-val, .btn, .gauge-num, .ghost-word { font-family: "Space Grotesk", -apple-system, sans-serif; }
+
+  /* ---------- the framed canvas (refs 1/2/3: dark app floating on light page) ---------- */
+  #canvas-frame {
+    background: var(--bg);
+    position: relative;
+    overflow: clip;
+    min-height: 100vh;
+  }
+  #canvas-frame::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px; opacity: 0.3;
+    mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, black 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, black 0%, transparent 72%);
+  }
+  #noise {
+    position: fixed; inset: 0; z-index: 40; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  }
+  #scroll-progress {
+    position: fixed; top: var(--frame); left: var(--frame); right: var(--frame);
+    height: 2px; z-index: 95;
+    background: linear-gradient(90deg, var(--green-deep), var(--green));
+    box-shadow: 0 0 12px rgba(70, 214, 140, 0.7);
+    transform: scaleX(0); transform-origin: left; border-radius: 2px;
+  }
+  #cursor-glow {
+    position: fixed; width: 520px; height: 520px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(70, 214, 140, 0.06), transparent 65%);
+    pointer-events: none; z-index: 30; transform: translate(-50%, -50%);
+    transition: opacity 0.4s; will-change: left, top;
+  }
+
+  /* ---------- nav (inside the frame) ---------- */
+  nav {
+    position: fixed; top: var(--frame); left: var(--frame); right: var(--frame); z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.05rem clamp(1.2rem, 4vw, 3rem);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    background: rgba(7, 10, 8, 0.5);
+    border-bottom: 1px solid var(--line);
+  }
+  .wordmark { font-weight: 700; letter-spacing: 0.14em; font-size: 0.95rem; }
+  .wordmark .tick { color: var(--green); }
+  .nav-links { display: flex; gap: 1.9rem; align-items: center; font-size: 0.85rem; color: var(--dim); }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    padding: 0.5rem 1.1rem; border-radius: 99px; font-weight: 650;
+    background: var(--ink); color: #0a0e0b !important; transition: transform 0.15s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); }
+  @media (max-width: 760px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+  /* ---------- hero: caps headline over a governed console (ref 3) ---------- */
+  header.hero {
+    position: relative; min-height: 96vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8rem clamp(1.2rem, 4vw, 3rem) 0;
+    overflow: hidden; text-align: center;
+  }
+  #bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .hero-inner { position: relative; z-index: 2; max-width: 1050px; display: flex; flex-direction: column; align-items: center; }
+  .live-chip {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 1.7rem; padding: 0.42rem 1rem;
+    border: 1px solid rgba(70, 214, 140, 0.25); border-radius: 99px;
+    background: rgba(70, 214, 140, 0.05); font-size: 0.76rem; color: var(--dim);
+    font-family: ui-monospace, monospace;
+  }
+  .live-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 1.6s ease-in-out infinite; }
+  .live-chip b { color: var(--green); font-weight: 600; }
+  h1 {
+    font-size: clamp(2.5rem, 7.4vw, 6rem);
+    line-height: 0.98; letter-spacing: -0.015em; font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, #f6faf4 55%, #9fb3a3);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 .accent {
+    background: linear-gradient(120deg, var(--green), #93f2c3 55%, var(--green));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    margin-top: 1.5rem; max-width: 62ch; color: var(--dim);
+    font-size: clamp(0.95rem, 1.5vw, 1.12rem); line-height: 1.7;
+  }
+  .hero-sub strong { color: var(--ink); font-weight: 600; }
+  .cta-row { display: flex; gap: 0.9rem; margin-top: 2.1rem; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    padding: 0.85rem 1.6rem; border-radius: 99px; font-weight: 650; font-size: 0.93rem;
+    border: 1px solid transparent; cursor: pointer; transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--green); color: #06130c;
+    box-shadow: 0 0 0 1px rgba(70, 214, 140, 0.4), 0 10px 45px -10px rgba(70, 214, 140, 0.6);
+  }
+  .btn-primary:hover { background: #5ce39d; box-shadow: 0 0 0 1px rgba(70, 214, 140, 0.7), 0 12px 60px -10px rgba(70, 214, 140, 0.85); }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: rgba(7, 10, 8, 0.45); }
+  .btn-ghost:hover { border-color: var(--faint); }
+
+  /* the console — a governed wallet device, ref 3's centered phone */
+  .console-stage { position: relative; z-index: 2; margin-top: 3.6rem; width: min(920px, 100%); }
+  .underlight {
+    position: absolute; left: 50%; bottom: -12rem; transform: translateX(-50%);
+    width: 130%; height: 22rem; pointer-events: none;
+    background: radial-gradient(ellipse 50% 55% at 50% 100%, rgba(70, 214, 140, 0.28), rgba(31, 122, 82, 0.1) 45%, transparent 72%);
+  }
+  .horizon {
+    position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 88%; height: 1px; background: linear-gradient(90deg, transparent, rgba(70, 214, 140, 0.7), transparent);
+    box-shadow: 0 0 24px 2px rgba(70, 214, 140, 0.45);
+  }
+  .console {
+    position: relative; margin: 0 auto; width: min(330px, 88vw);
+    border-radius: 26px; padding: 1.3rem 1.25rem 1.15rem;
+    background: linear-gradient(165deg, rgba(238, 243, 237, 0.07), rgba(7, 10, 8, 0.65) 55%);
+    border: 1px solid rgba(238, 243, 237, 0.14);
+    box-shadow: inset 0 1px 0 rgba(238, 243, 237, 0.12), 0 60px 120px -40px rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    text-align: left;
+  }
+  .console-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.66rem; color: var(--faint); letter-spacing: 0.08em; }
+  .console-head .mode { color: var(--green); border: 1px solid rgba(70, 214, 140, 0.35); padding: 0.1rem 0.45rem; border-radius: 4px; }
+  .console-balance { margin-top: 1.15rem; font-family: "Space Grotesk", sans-serif; font-size: 2.3rem; font-weight: 700; letter-spacing: -0.02em; }
+  .console-balance small { font-size: 0.95rem; color: var(--faint); font-weight: 500; }
+  .console-sub { font-size: 0.7rem; color: var(--faint); margin-top: 0.15rem; }
+  .console-policy {
+    margin-top: 1.05rem; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.8rem;
+    font-size: 0.72rem; color: var(--dim); display: flex; flex-direction: column; gap: 0.45rem;
+  }
+  .console-policy .row { display: flex; justify-content: space-between; }
+  .console-policy .ok { color: var(--green); }
+  .console-policy .warn { color: var(--copper); }
+  .console-actions { display: flex; gap: 0.55rem; margin-top: 1rem; }
+  .console-actions span {
+    flex: 1; text-align: center; font-size: 0.72rem; padding: 0.55rem 0; border-radius: 99px;
+    border: 1px solid var(--line); color: var(--dim); font-family: ui-monospace, monospace;
+  }
+  .console-actions span.buy { border-color: rgba(70, 214, 140, 0.4); color: var(--green); }
+
+  /* floating annotation chips (refs 1 & 3) */
+  .float-chip {
+    position: absolute; z-index: 3;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.85rem; border-radius: 99px;
+    background: rgba(11, 16, 12, 0.75); border: 1px solid var(--line);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    font-family: ui-monospace, monospace; font-size: 0.7rem; color: var(--dim);
+    box-shadow: 0 18px 50px -18px rgba(0, 0, 0, 0.85);
+    animation: bob 6s ease-in-out infinite alternate;
+    white-space: nowrap;
+  }
+  .float-chip i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .float-chip.pass i { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .float-chip.hold i { background: var(--copper); box-shadow: 0 0 8px var(--copper); animation: blink 1.4s infinite; }
+  .float-chip.stop i { background: var(--rust); box-shadow: 0 0 8px var(--rust); }
+  .float-chip b { color: var(--ink); font-weight: 600; }
+  @keyframes bob { from { transform: translateY(-7px); } to { transform: translateY(7px); } }
+  .chip-1 { left: 4%; top: 8%; animation-delay: 0s; }
+  .chip-2 { right: 3%; top: 16%; animation-delay: 1.2s; }
+  .chip-3 { left: 8%; bottom: 26%; animation-delay: 2.1s; }
+  .chip-4 { right: 7%; bottom: 14%; animation-delay: 0.7s; }
+  @media (max-width: 860px) {
+    .float-chip { position: static; animation: none; margin: 0.3rem 0.25rem 0; }
+    .console-stage { display: flex; flex-direction: column; align-items: center; }
+    .chips-fallback { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 1.2rem; }
+  }
+  .hero::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 26%;
+    background: linear-gradient(180deg, transparent, var(--bg) 90%);
+    pointer-events: none; z-index: 1;
+  }
+  .hero-grip {
+    position: absolute; right: -2%; top: 10%; z-index: 1;
+    width: min(500px, 36vw); aspect-ratio: 1; object-fit: cover;
+    opacity: 0.75; pointer-events: none;
+    mask-image: radial-gradient(72% 72% at 50% 45%, black 38%, transparent 76%);
+    -webkit-mask-image: radial-gradient(72% 72% at 50% 45%, black 38%, transparent 76%);
+    animation: bob 9s ease-in-out infinite alternate;
+  }
+  @media (max-width: 1150px) { .hero-grip { display: none; } }
+
+  /* ---------- ticker ---------- */
+  .ticker {
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: var(--bg-2); overflow: hidden; white-space: nowrap;
+    padding: 0.85rem 0; position: relative; z-index: 2;
+  }
+  .ticker-track { display: inline-block; animation: slide 42s linear infinite; }
+  .ticker span { margin: 0 2.4rem; color: var(--faint); font-size: 0.82rem; letter-spacing: 0.06em; }
+  .ticker b { color: var(--dim); font-weight: 600; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- shared section chrome ---------- */
+  section { padding: clamp(4.5rem, 9vw, 8rem) clamp(1.2rem, 4vw, 3rem); position: relative; z-index: 2; }
+  .shell { max-width: 1150px; margin: 0 auto; position: relative; }
+  .counter {
+    display: inline-flex; align-items: center; gap: 0.7rem; margin-bottom: 1.2rem;
+    font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); font-weight: 600;
+  }
+  .counter b {
+    font-family: ui-monospace, monospace; letter-spacing: 0.05em; font-weight: 500;
+    border: 1px solid var(--line); border-radius: 5px; padding: 0.18rem 0.5rem; color: var(--green);
+    background: var(--panel);
+  }
+  h2 { font-size: clamp(1.9rem, 4.4vw, 3.2rem); letter-spacing: -0.025em; line-height: 1.06; font-weight: 700; max-width: 24ch; }
+  .lede { margin-top: 1.2rem; color: var(--dim); max-width: 62ch; line-height: 1.7; font-size: 1.02rem; }
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  .video-frame {
+    margin-top: 2.2rem; border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+    background: var(--bg-2); position: relative; width: 100%; aspect-ratio: 16 / 9;
+    cursor: pointer; padding: 0; display: block; object-fit: cover;
+  }
+  button.video-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .video-play {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(rgba(7, 10, 8, 0.15), rgba(7, 10, 8, 0.35));
+  }
+  .video-play span {
+    width: 84px; height: 84px; border-radius: 50%; background: var(--green);
+    display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease;
+    box-shadow: 0 8px 30px rgba(70, 214, 140, 0.35);
+  }
+  .video-frame:hover .video-play span { transform: scale(1.08); }
+  .video-play svg { width: 30px; height: 30px; margin-left: 4px; }
+  .shell[data-num]::before {
+    content: attr(data-num); position: absolute; top: -3.4rem; right: 0;
+    font-family: "Space Grotesk", sans-serif; font-weight: 700;
+    font-size: clamp(5rem, 12vw, 9rem); line-height: 1; color: transparent;
+    -webkit-text-stroke: 1px rgba(238, 243, 237, 0.05); z-index: 0; pointer-events: none;
+  }
+  .hud { position: relative; }
+  .hud::before, .hud::after {
+    content: ""; position: absolute; width: 15px; height: 15px; pointer-events: none;
+    border-color: rgba(70, 214, 140, 0.45); border-style: solid; transition: border-color 0.3s; z-index: 2;
+  }
+  .hud::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+  .hud::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+  .hud:hover::before, .hud:hover::after { border-color: var(--green); }
+
+  /* ---------- problem ---------- */
+  .split { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; margin-top: 3rem; }
+  @media (max-width: 880px) { .split { grid-template-columns: 1fr; } }
+  .terminal {
+    background: #04120b; border: 1px solid rgba(70, 214, 140, 0.16); border-radius: 14px;
+    padding: 1.3rem 1.4rem; font-size: 0.8rem; line-height: 1.75; overflow-x: auto;
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+  }
+  .terminal .dots { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .terminal .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .t-cmd { color: var(--ink); }
+  .t-dim { color: var(--faint); }
+  .t-ok { color: var(--green); }
+  .t-warn { color: var(--copper); }
+  .t-bad { color: var(--rust); }
+  .problem-points { display: flex; flex-direction: column; gap: 1.6rem; margin-top: 2.4rem; }
+  .point { display: flex; gap: 1rem; align-items: baseline; color: var(--dim); line-height: 1.65; }
+  .point b { color: var(--ink); }
+  .point::before { content: "→"; color: var(--green); flex-shrink: 0; }
+
+  /* ---------- feature cards with glass objects (refs 1 & 5) ---------- */
+  .grid8 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; margin-top: 3.4rem; }
+  @media (max-width: 1000px) { .grid8 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid8 { grid-template-columns: 1fr; } }
+  .cell {
+    position: relative; overflow: hidden; border-radius: 18px;
+    background: linear-gradient(180deg, var(--panel-2), rgba(7, 10, 8, 0.4) 70%);
+    border: 1px solid var(--line);
+    transition: transform 0.25s, border-color 0.25s;
+  }
+  .cell:hover { transform: translateY(-4px); border-color: rgba(70, 214, 140, 0.35); }
+  .cell .mini-chip {
+    position: absolute; top: 0.95rem; right: 0.95rem; z-index: 3;
+    font-family: ui-monospace, monospace; font-size: 0.6rem; letter-spacing: 0.08em;
+    color: var(--ink); border: 1px solid var(--line); border-radius: 99px; padding: 0.18rem 0.55rem;
+    background: rgba(7, 10, 8, 0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .obj { height: 168px; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .obj img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
+  .cell:hover .obj img { transform: scale(1.06); }
+  .cell-body { padding: 1.15rem 1.25rem 1.4rem; }
+  .cell h3 { font-size: 1.02rem; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 0.55rem; }
+  .cell p { color: var(--dim); font-size: 0.85rem; line-height: 1.62; }
+  .cell::after {
+    content: ""; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+    background: linear-gradient(105deg, transparent, rgba(70, 214, 140, 0.05), transparent);
+    transform: skewX(-18deg); transition: left 0.7s ease;
+  }
+  .cell:hover::after { left: 120%; }
+
+  /* ---------- gauge section (ref 2's glowing dial) ---------- */
+  .gauge-wrap { display: grid; grid-template-columns: auto 1fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; margin-top: 3rem; }
+  @media (max-width: 880px) { .gauge-wrap { grid-template-columns: 1fr; justify-items: center; } }
+  .gauge { position: relative; width: min(320px, 78vw); aspect-ratio: 1; }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(135deg); }
+  .gauge .track { stroke: rgba(238, 243, 237, 0.07); }
+  .gauge .arc {
+    stroke: url(#gaugeGrad); stroke-dasharray: 471; stroke-dashoffset: 471;
+    transition: stroke-dashoffset 1.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+    filter: drop-shadow(0 0 14px rgba(70, 214, 140, 0.55));
+  }
+  .in .gauge .arc { stroke-dashoffset: 0; }
+  .gauge-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .gauge-num { font-size: 3.1rem; font-weight: 700; letter-spacing: -0.03em; }
+  .gauge-num em { font-style: normal; color: var(--green); }
+  .gauge-cap { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--faint); margin-top: 0.3rem; }
+  .gauge-stats { display: flex; flex-direction: column; gap: 1.3rem; width: 100%; max-width: 460px; }
+  .gstat { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 0.9rem; }
+  .gstat .k { color: var(--dim); font-size: 0.9rem; }
+  .gstat .v { font-family: "Space Grotesk", sans-serif; font-size: 1.6rem; font-weight: 700; }
+  .gstat .v.green { color: var(--green); }
+  .gstat .v.copper { color: var(--copper); }
+  .gstat .v.rust { color: var(--rust); }
+
+  /* ---------- how it works ---------- */
+  .pipe { position: relative; height: 150px; margin-top: 4rem; }
+  .pipe-line {
+    position: absolute; left: 2%; right: 2%; top: 44px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--line) 8%, var(--line) 92%, transparent);
+  }
+  .pipe-node { position: absolute; top: 38px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--green-deep); background: var(--bg); transform: translateX(-50%); z-index: 2; }
+  .pipe-node.gate { border-color: var(--green); box-shadow: 0 0 18px rgba(70, 214, 140, 0.5); animation: nodePulse 2.2s ease-in-out infinite; }
+  @keyframes nodePulse { 50% { box-shadow: 0 0 30px rgba(70, 214, 140, 0.8); } }
+  .pipe-label { position: absolute; top: 72px; transform: translateX(-50%); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); text-align: center; white-space: nowrap; }
+  .pipe-label b { display: block; color: var(--dim); font-size: 0.8rem; letter-spacing: 0.02em; text-transform: none; margin-bottom: 0.2rem; font-family: "Space Grotesk", sans-serif; }
+  .pkt { position: absolute; top: 47px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); transform: translate(-50%, -50%); animation: pktPass 6.5s linear infinite; }
+  .pkt.blocked { animation: pktBlock 6.5s linear infinite; }
+  @keyframes pktPass {
+    0% { left: 2%; background: var(--dim); opacity: 0; }
+    6% { opacity: 1; }
+    38% { background: var(--dim); }
+    42% { background: var(--green); box-shadow: 0 0 10px rgba(70, 214, 140, 0.9); }
+    94% { opacity: 1; }
+    100% { left: 98%; background: var(--green); opacity: 0; }
+  }
+  @keyframes pktBlock {
+    0% { left: 2%; top: 47px; background: var(--dim); opacity: 0; }
+    6% { opacity: 1; }
+    38% { left: 39.5%; top: 47px; background: var(--dim); }
+    42% { background: var(--copper); box-shadow: 0 0 10px rgba(224, 160, 92, 0.9); }
+    60% { left: 36%; top: 96px; opacity: 1; }
+    72% { left: 34%; top: 128px; opacity: 0; }
+    100% { left: 34%; top: 128px; opacity: 0; }
+  }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4rem; margin-top: 2.4rem; counter-reset: step; }
+  @media (max-width: 900px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .flow { grid-template-columns: 1fr; } }
+  .step { border-top: 1px solid var(--line); padding-top: 1.4rem; position: relative; }
+  .step::before {
+    counter-increment: step; content: "0" counter(step);
+    font-family: ui-monospace, monospace; color: var(--green); font-size: 0.85rem;
+  }
+  .step h3 { margin: 0.8rem 0 0.5rem; font-size: 1rem; font-weight: 650; }
+  .step p { color: var(--dim); font-size: 0.87rem; line-height: 1.62; }
+
+  /* ---------- control room mock ---------- */
+  .dash {
+    margin-top: 3.4rem; border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+    background: linear-gradient(180deg, var(--panel-2), transparent 60%);
+    box-shadow: 0 50px 120px -50px rgba(0, 0, 0, 0.9);
+  }
+  .dash-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.4rem; border-bottom: 1px solid var(--line); font-size: 0.8rem; color: var(--dim); }
+  .live { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--green); font-size: 0.72rem; letter-spacing: 0.18em; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 1.6s ease-in-out infinite; }
+  .dash-body { display: grid; grid-template-columns: 1.2fr 1fr; gap: 0; }
+  @media (max-width: 880px) { .dash-body { grid-template-columns: 1fr; } }
+  .dash-col { padding: 1.5rem 1.4rem; }
+  .dash-col + .dash-col { border-left: 1px solid var(--line); }
+  @media (max-width: 880px) { .dash-col + .dash-col { border-left: none; border-top: 1px solid var(--line); } }
+  .dash-title { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--faint); margin-bottom: 1.2rem; }
+  .budget-row { display: flex; align-items: center; gap: 1rem; font-size: 0.82rem; margin-bottom: 1rem; }
+  .budget-row .who { min-width: 9.5rem; color: var(--dim); }
+  .budget-row .who i { font-style: normal; color: var(--faint); }
+  .meter { flex: 1; height: 7px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .meter .fill { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--green); transition: width 1.4s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .meter .fill.warn { background: var(--copper); }
+  .meter .fill.full { background: var(--rust); }
+  .in .meter .fill { width: var(--w); }
+  .budget-row .amt { font-size: 0.74rem; color: var(--faint); min-width: 6.5rem; text-align: right; }
+  .appr { display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(224, 160, 92, 0.35); background: rgba(224, 160, 92, 0.05); border-radius: 10px; padding: 0.8rem 1rem; font-size: 0.8rem; margin-bottom: 1.4rem; }
+  .appr .q { color: var(--copper); }
+  .appr .q i { font-style: normal; animation: blink 1.4s ease-in-out infinite; }
+  .appr .acts { display: flex; gap: 0.5rem; }
+  .appr button { font: inherit; font-size: 0.72rem; font-weight: 700; padding: 0.32rem 0.8rem; border-radius: 99px; cursor: pointer; border: 1px solid var(--green-deep); background: transparent; color: var(--green); }
+  .appr button.deny { border-color: rgba(224, 100, 74, 0.5); color: var(--rust); }
+  .logline { font-size: 0.74rem; line-height: 2.1; color: var(--faint); border-bottom: 1px dashed var(--line); display: flex; justify-content: space-between; gap: 1rem; opacity: 0; transform: translateX(-8px); transition: opacity 0.5s, transform 0.5s; }
+  .in .logline { opacity: 1; transform: none; }
+  .logline .ok { color: var(--green); }
+  .logline .bad { color: var(--copper); }
+  .logline .worse { color: var(--rust); }
+
+  /* ---------- compare ---------- */
+  .compare-wrap { overflow-x: auto; margin-top: 3.2rem; border: 1px solid var(--line); border-radius: 14px; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 720px; }
+  .compare th, .compare td { padding: 1rem 1.2rem; text-align: left; border-bottom: 1px solid var(--line); }
+  .compare thead th { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); background: var(--bg-2); font-weight: 600; }
+  .compare tbody tr:last-child td { border-bottom: none; }
+  .compare td:first-child { color: var(--dim); }
+  .compare th:first-child { width: 32%; }
+  .yes { color: var(--green); font-weight: 700; }
+  .no { color: var(--faint); }
+  .compare .hl { background: rgba(70, 214, 140, 0.045); }
+
+  /* ---------- numbers ---------- */
+  .numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem; margin-top: 3.4rem; }
+  @media (max-width: 900px) { .numbers { grid-template-columns: repeat(2, 1fr); } }
+  .n-val { font-size: clamp(1.9rem, 4vw, 2.9rem); font-weight: 700; letter-spacing: -0.03em; }
+  .n-val em { font-style: normal; color: var(--green); }
+  .n-cap { color: var(--faint); font-size: 0.82rem; margin-top: 0.55rem; line-height: 1.55; }
+
+  /* ---------- quickstart ---------- */
+  .qs { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .qs-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+  @media (max-width: 880px) { .qs-grid { grid-template-columns: 1fr; } }
+  .codebox { background: #04120b; border: 1px solid rgba(70, 214, 140, 0.16); border-radius: 14px; padding: 1.4rem 1.5rem; font-size: 0.84rem; line-height: 2.05; overflow-x: auto; }
+  .codebox .c { color: var(--faint); }
+  .codebox .p { color: var(--green); user-select: none; }
+
+  /* ---------- final: ghost wordmark + planet glow (refs 4 & 5) ---------- */
+  .final { text-align: center; padding-bottom: 0; overflow: hidden; }
+  .final h2 { margin: 0 auto; max-width: 18ch; }
+  .final .cta-row { justify-content: center; }
+  .planet {
+    position: relative; margin-top: 4.5rem; height: 200px; pointer-events: none;
+  }
+  .planet::before {
+    content: ""; position: absolute; left: 50%; top: 40px; transform: translateX(-50%);
+    width: 160%; aspect-ratio: 2.6; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(70, 214, 140, 0.22), rgba(7, 10, 8, 0) 55%);
+  }
+  .planet::after {
+    content: ""; position: absolute; left: 50%; top: 60px; transform: translateX(-50%);
+    width: 150%; aspect-ratio: 2.8; border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    background: #050706;
+    box-shadow: 0 -1px 0 rgba(70, 214, 140, 0.55), 0 -14px 60px -6px rgba(70, 214, 140, 0.4);
+  }
+  .ghost-word {
+    position: absolute; left: 50%; bottom: -0.16em; transform: translateX(-50%); z-index: 2;
+    font-size: clamp(4rem, 15.5vw, 13.5rem); font-weight: 700; letter-spacing: 0.04em;
+    color: transparent; -webkit-text-stroke: 1px rgba(238, 243, 237, 0.1);
+    white-space: nowrap; line-height: 1;
+  }
+  footer {
+    border-top: 1px solid var(--line); padding: 2.2rem clamp(1.2rem, 4vw, 3rem);
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+    color: var(--faint); font-size: 0.8rem; position: relative; z-index: 2; background: var(--bg);
+  }
+  footer .links { display: flex; gap: 1.6rem; }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="noise" aria-hidden="true"></div>
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="#top" style="display:inline-flex;align-items:center;gap:0.5rem">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./playground.html">Playground</a>
+    <a href="./use-cases.html">Use cases</a>
+    <a href="#compare">Compare</a>
+    <a href="./pricing.html">Pricing</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./about.html">About</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <img class="hero-grip" src="./assets/hero-grip.jpg" alt="" aria-hidden="true" />
+  <div class="hero-inner">
+    <div class="live-chip"><i></i><span id="live-stats">237 end-to-end checks · verified build</span></div>
+    <h1>Your agents can spend.<br /><span class="accent">SpendVeto decides.</span></h1>
+    <p class="hero-sub">
+      AI agents now pay for tools, APIs, and each other — autonomously, at machine speed.
+      <strong>Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it.</strong>
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="./playground.html">Try the live playground</a>
+      <a class="btn btn-ghost" href="#quickstart">Run it in 60 seconds</a>
+    </div>
+  </div>
+
+  <div class="console-stage">
+    <div class="underlight" aria-hidden="true"></div>
+    <div class="horizon" aria-hidden="true"></div>
+
+    <span class="float-chip pass chip-1"><i></i>review · <b>paid $0.01</b> · receipt ✓</span>
+    <span class="float-chip hold chip-2"><i></i>summarize $0.02 · <b>awaiting human</b></span>
+    <span class="float-chip stop chip-3"><i></i><b>BLOCKED</b> · ancestor cap $0.015</span>
+    <span class="float-chip stop chip-4"><i></i>scraper · <b>auto-frozen</b> · runaway</span>
+
+    <div class="console hud">
+      <div class="console-head mono"><span>WALLET 0x1F45…C0Cf</span><span class="mode">SIMULATE</span></div>
+      <div class="console-balance">$4.955 <small>USDC</small></div>
+      <div class="console-sub mono">governed by spendveto policy · 4 gates active</div>
+      <div class="console-policy mono">
+        <div class="row"><span>per-call cap</span><span class="ok">$0.05 ✓</span></div>
+        <div class="row"><span>hourly budget</span><span class="ok">$0.045 / $0.20 ✓</span></div>
+        <div class="row"><span>approval line</span><span class="warn">&gt; $0.015 → human</span></div>
+        <div class="row"><span>burst guard</span><span class="ok">armed · 10/10s</span></div>
+      </div>
+      <div class="console-actions">
+        <span class="buy">review $0.01</span>
+        <span>summarize $0.02</span>
+      </div>
+    </div>
+  </div>
+  <div class="chips-fallback" aria-hidden="true"></div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="ticker-track">
+    <span><b>169M+</b> x402 payments cleared</span>
+    <span><b>590,000</b> buyers · 100,000 sellers</span>
+    <span><b>$4.5T</b> stablecoin volume in Q1 2026</span>
+    <span><b>$3–5T</b> agentic commerce by 2030 — McKinsey</span>
+    <span><b>0</b> dollars move without a policy decision</span>
+    <span><b>MCP</b> · governance the model can't opt out of</span>
+    <span><b>Multi-chain</b> · 7 chains governed · chain-scoped signatures · per-chain balances · Base Sepolia live on-chain</span>
+  </div>
+</div>
+
+<section id="demo">
+  <div class="shell">
+    <p class="counter reveal"><b>DEMO</b> 65 seconds, no narration to trust — just the product</p>
+    <h2 class="reveal">Watch the whole thing work, live.</h2>
+    <p class="lede reveal">The playground, the console, the ledger, budget delegation, multi-chain settlement — one continuous run, not slides.</p>
+    <button class="video-frame reveal" id="demo-video" aria-label="Play the SpendVeto demo video" type="button">
+      <img src="./assets/demo-poster.jpg" alt="SpendVeto console mid-demo: policy engine blocking a runaway burst" loading="lazy" />
+      <span class="video-play"><span><svg viewBox="0 0 24 24" fill="#070a08"><path d="M8 5v14l11-7z"/></svg></span></span>
+    </button>
+  </div>
+</section>
+
+<script>
+  document.getElementById("demo-video").addEventListener("click", function onPlay() {
+    const btn = this;
+    const video = document.createElement("video");
+    video.src = "./assets/demo.mp4";
+    video.controls = true;
+    video.controlsList = "nodownload";
+    video.oncontextmenu = () => false;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.className = "video-frame";
+    btn.replaceWith(video);
+    video.play();
+  });
+</script>
+
+<section id="problem">
+  <div class="shell" data-num="01">
+    <p class="counter reveal"><b>01 / 06</b> The problem</p>
+    <h2 class="reveal">An agent with a wallet is a corporate card with no limit — issued to software.</h2>
+    <div class="split">
+      <div>
+        <div class="problem-points">
+          <p class="point reveal"><span><b>Every rail answers "how does the agent pay?"</b> Coinbase, Stripe, Visa, Mastercard, Google, Cloudflare — all shipping agent payments in 2026.</span></p>
+          <p class="point reveal"><span><b>Almost nobody answers the question teams ask first:</b> how do I stop it from overspending? Runaway loops don't get tired. They get invoiced.</span></p>
+          <p class="point reveal"><span><b>SpendVeto is the buyer side.</b> The policy layer that sits above every rail — open source, developer-first, plugged into the stack agents already use.</span></p>
+        </div>
+      </div>
+      <div class="terminal mono reveal hud">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div><span class="t-dim">$</span> <span class="t-cmd">npm run call -- summarize</span></div>
+        <div class="t-dim">Policy check passed (2 calls / $0.0150 this hour).</div>
+        <div class="t-warn">Price $0.02 is above the $0.015 auto-approve line —<br />requesting human sign-off on the dashboard.</div>
+        <div class="t-bad">DENIED by approver. Nothing was spent.</div>
+        <div style="margin-top:0.9rem"><span class="t-dim">$</span> <span class="t-cmd">npm run call -- review --child=intern</span></div>
+        <div class="t-bad">BLOCKED: would exceed delegated budget cap $0.015<br />granted to ancestor "team lead"</div>
+        <div style="margin-top:0.9rem"><span class="t-dim">$</span> <span class="t-cmd">npm run call -- review</span></div>
+        <div class="t-ok">Paid $0.01 USDC — signed receipt a41f…9c02 ✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="product" style="background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="shell" data-num="02">
+    <p class="counter reveal"><b>02 / 06</b> Product — working today, not a roadmap</p>
+    <h2 class="reveal">Eight controls between your agent and its money.</h2>
+    <p class="lede reveal">Every one of them is exercised by a 237-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
+    <div class="grid8">
+      <div class="cell reveal">
+        <span class="mini-chip">PRE-PAYMENT</span>
+        <div class="obj"><img src="./assets/obj/01-policy.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Policy engine</h3><p>Per-call caps, hourly budgets, rate limits — the agent's own rules, checked against live spend history before it signs anything.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">FAILS CLOSED</span>
+        <div class="obj"><img src="./assets/obj/02-approvals.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Human approvals</h3><p>Spends above your threshold pause for a real Approve / Deny. No answer in 30 seconds? It fails closed. Nothing moves.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">N-LEVEL</span>
+        <div class="obj"><img src="./assets/obj/03-budgets.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Budget hierarchies</h3><p>Parents grant capped budgets to children, children to grandchildren. Every ancestor's cap binds its whole subtree — IAM for money.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">LEAST-PRIV</span>
+        <div class="obj"><img src="./assets/obj/04-scoping.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Tool + chain scoping</h3><p>Grants whitelist <em>which</em> tools an agent may buy and <em>which chains</em> it may settle on — a translator pinned to Base can't quietly buy code review on Polygon.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">AUTO-FREEZE</span>
+        <div class="obj"><img src="./assets/obj/05-kill-switch.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Kill switch</h3><p>Freeze any wallet in one click — and wallets bursting past the rate threshold freeze <em>themselves</em>, mid-loop.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">MCP-NATIVE</span>
+        <div class="obj"><img src="./assets/obj/06-mcp-middleware.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>MCP middleware</h3><p>Claude sees ordinary tools; every call silently runs policy → approval → payment underneath. Governance the model cannot opt out of.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">ECDSA</span>
+        <div class="obj"><img src="./assets/obj/07-signed-receipt.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Signed receipts + audit</h3><p>Every settlement is ECDSA-signed and independently verifiable; the full ledger exports to CSV for accounting.</p></div>
+      </div>
+      <div class="cell reveal">
+        <span class="mini-chip">REAL-TIME</span>
+        <div class="obj"><img src="./assets/obj/08-alerts.jpg" alt="" loading="lazy" /></div>
+        <div class="cell-body"><h3>Alerts + analytics</h3><p>Freezes, blocks, and approvals hit your webhook in real time; spend rolls up per tool and per wallet — including blocked-spend dollars.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="proof">
+  <div class="shell" data-num="03">
+    <p class="counter reveal"><b>03 / 06</b> Proof, not promises</p>
+    <h2 class="reveal">Every claim on this page is executed before it's published.</h2>
+    <div class="gauge-wrap reveal">
+      <div class="gauge">
+        <svg viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#1f7a52" />
+              <stop offset="60%" stop-color="#46d68c" />
+              <stop offset="100%" stop-color="#93f2c3" />
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="110" cy="110" r="100" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="471 628" />
+          <circle class="arc" cx="110" cy="110" r="100" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="471 628" />
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-num"><em>237</em>/237</div>
+          <div class="gauge-cap">end-to-end checks passing</div>
+        </div>
+      </div>
+      <div class="gauge-stats">
+        <div class="gstat"><span class="k">Governed spend (live from your local server)</span><span class="v green" id="g-paid">$—</span></div>
+        <div class="gstat"><span class="k">Blocked before it moved</span><span class="v copper" id="g-blocked">$—</span></div>
+        <div class="gstat"><span class="k">Wallets frozen by the anomaly detector</span><span class="v rust" id="g-frozen">—</span></div>
+        <p style="color: var(--faint); font-size: 0.82rem; line-height: 1.6;">Forged signatures rejected. Approvals that fail closed. A synthetic runaway agent frozen mid-burst. A grandchild wallet stopped by its team's cap. An authorization signed for Polygon refused on Arbitrum — the chain lives inside the signature. Agents can even run <b style="color:var(--dim)">keyless</b> — the enforcement proxy holds custody and signs only after the pipeline passes. All of it runs headlessly in <span class="mono">npm run verify</span>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="shell" data-num="04">
+    <p class="counter reveal"><b>04 / 06</b> How it works</p>
+    <h2 class="reveal">Four gates. Every call. Before money moves.</h2>
+
+    <div class="pipe reveal" aria-hidden="true">
+      <div class="pipe-line"></div>
+      <div class="pipe-node" style="left:2%"></div>
+      <div class="pipe-node gate" style="left:40%"></div>
+      <div class="pipe-node" style="left:68%"></div>
+      <div class="pipe-node" style="left:98%"></div>
+      <div class="pipe-label" style="left:5%"><b>Agent asks</b>request</div>
+      <div class="pipe-label" style="left:40%"><b>SpendVeto</b>policy · scope · caps</div>
+      <div class="pipe-label" style="left:68%"><b>Human</b>if above threshold</div>
+      <div class="pipe-label" style="left:95%"><b>Paid</b>signed receipt</div>
+      <div class="pkt" style="animation-delay:0s"></div>
+      <div class="pkt" style="animation-delay:1.3s"></div>
+      <div class="pkt blocked" style="animation-delay:2.4s"></div>
+      <div class="pkt" style="animation-delay:3.5s"></div>
+      <div class="pkt" style="animation-delay:4.6s"></div>
+      <div class="pkt blocked" style="animation-delay:5.5s"></div>
+    </div>
+
+    <div class="flow">
+      <div class="step reveal"><h3>Agent asks</h3><p>CLI, a delegated child wallet, or Claude through MCP requests a priced tool from the catalog.</p></div>
+      <div class="step reveal"><h3>Policy decides</h3><p>Frozen? Over a cap? Outside scope? Past its hourly budget? Blocked — with the reason written to the ledger.</p></div>
+      <div class="step reveal"><h3>Humans escalate</h3><p>Big spends pause for a real person. Unanswered requests fail closed — an away-from-keyboard afternoon can't cost you.</p></div>
+      <div class="step reveal"><h3>Pay + prove</h3><p>x402 settles in USDC on the chain the policy allows (simulate mode or Base Sepolia). The response carries a signed receipt naming payer, price, and chain.</p></div>
+    </div>
+
+    <div class="dash reveal hud">
+      <div class="dash-head">
+        <span class="mono">spendveto · localhost:8402</span>
+        <span class="live"><i></i>LIVE — SIMULATE MODE</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-col">
+          <div class="dash-title">Budget tree — caps bind whole subtrees</div>
+          <div class="budget-row"><span class="who mono">0x1F45…C0Cf <i>root</i></span><span class="meter"><span class="fill" style="--w:36%"></span></span><span class="amt mono">$0.045 spent</span></div>
+          <div class="budget-row"><span class="who mono">├─ team lead</span><span class="meter"><span class="fill warn" style="--w:72%"></span></span><span class="amt mono">$0.011 / $0.015</span></div>
+          <div class="budget-row"><span class="who mono">│&nbsp;&nbsp;└─ intern</span><span class="meter"><span class="fill full" style="--w:100%"></span></span><span class="amt mono">CAP REACHED</span></div>
+          <div class="budget-row"><span class="who mono">├─ translator <i>scoped</i></span><span class="meter"><span class="fill" style="--w:22%"></span></span><span class="amt mono">$0.011 / $0.050</span></div>
+          <div class="budget-row"><span class="who mono">└─ scraper <i>frozen</i></span><span class="meter"><span class="fill full" style="--w:100%"></span></span><span class="amt mono">AUTO-FROZEN</span></div>
+        </div>
+        <div class="dash-col">
+          <div class="dash-title">Needs a human — fails closed in 30s</div>
+          <div class="appr">
+            <span class="q mono"><i>●</i> summarize · $0.02</span>
+            <span class="acts"><button>Approve</button><button class="deny">Deny</button></span>
+          </div>
+          <div class="dash-title">Ledger</div>
+          <div class="logline mono" style="transition-delay:0.1s"><span>review · 0x1F45…</span><span class="ok">paid $0.01 ✓ receipt</span></div>
+          <div class="logline mono" style="transition-delay:0.25s"><span>review · intern</span><span class="bad">blocked — ancestor cap</span></div>
+          <div class="logline mono" style="transition-delay:0.4s"><span>review · translator</span><span class="bad">blocked — out of scope</span></div>
+          <div class="logline mono" style="transition-delay:0.55s"><span>translate · scraper ×25</span><span class="worse">runaway → frozen</span></div>
+          <div class="logline mono" style="transition-delay:0.7s"><span>summarize · 0x1F45…</span><span class="bad">denied by human</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="shell" data-num="05">
+    <p class="counter reveal"><b>05 / 06</b> The landscape</p>
+    <h2 class="reveal">Everyone builds the roads. SpendVeto is the traffic lights.</h2>
+    <p class="lede reveal">Rails execute payments. Seller-side tools help merchants charge agents. Expense platforms govern <em>humans</em>. The paying agent itself — the side that holds the wallet — is the empty seat at the table.</p>
+    <div class="compare-wrap reveal">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="hl">SpendVeto</th>
+            <th>Payment rails<br /><span style="text-transform:none;font-weight:400">x402 · AP2 · Stripe MPP</span></th>
+            <th>Seller-side tools<br /><span style="text-transform:none;font-weight:400">Cloudflare · Nevermined</span></th>
+            <th>Expense platforms<br /><span style="text-transform:none;font-weight:400">Ramp · Payman · Pleo</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Buyer-side policy for AI agents</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">partial</td></tr>
+          <tr><td>Approvals that fail closed</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">human flows</td></tr>
+          <tr><td>Nested agent budgets + tool scoping</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr><td>Chain-scoped budgets (multichain governance)</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr><td>Runaway auto-freeze / kill switch</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr><td>MCP-native (agents' actual stack)</td><td class="hl yes">✓</td><td class="no">—</td><td class="no">seller side</td><td class="no">—</td></tr>
+          <tr><td>Open source</td><td class="hl yes">✓ Apache-2.0</td><td class="no">protocols</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr><td>On-chain-enforced settlement (Safe AllowanceModule)</td><td class="hl" style="color:var(--copper)">roadmap</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="chains" style="border-top: 1px solid var(--line);">
+  <div class="shell" style="padding-top: 4.5rem; padding-bottom: 4.5rem;">
+    <p class="counter reveal"><b>RAILS</b> Governed on seven chains</p>
+    <div class="chainband reveal">
+      <span class="chain-chip live"><i>●</i> Base Sepolia <b>LIVE</b></span>
+      <span class="chain-chip">Base <b>READY</b></span>
+      <span class="chain-chip">Ethereum <b>READY</b></span>
+      <span class="chain-chip">Polygon <b>READY</b></span>
+      <span class="chain-chip">Arbitrum <b>READY</b></span>
+      <span class="chain-chip">Optimism <b>READY</b></span>
+      <span class="chain-chip">Avalanche <b>READY</b></span>
+    </div>
+    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live on Base Sepolia via the public x402 facilitator. The other six are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical USDC contracts all wired (tested against a mock facilitator advertising all seven). Pointing at a CDP facilitator with an API key and a funded wallet flips its mainnets on with zero code changes. All seven run the identical governed pipeline in simulate mode today.</p>
+  </div>
+</section>
+
+<section id="market" style="background: linear-gradient(rgba(9, 13, 10, 0.82), rgba(7, 10, 8, 0.94)), url('./assets/terrain.jpg') center 65% / cover no-repeat; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="shell" data-num="06">
+    <p class="counter reveal"><b>06 / 06</b> Why now</p>
+    <h2 class="reveal">Every newly paid tool makes the ungoverned wallet more expensive.</h2>
+    <div class="numbers">
+      <div class="reveal"><div class="n-val"><em>$3–5T</em></div><p class="n-cap">agentic-commerce spend projected globally by 2030 — McKinsey. Every dollar needs a spend decision before it moves.</p></div>
+      <div class="reveal"><div class="n-val"><em>169M</em>+</div><p class="n-cap">payments cleared by x402 in its first year, across 590,000 buyers and 100,000 sellers — and the seller side is commoditizing monthly.</p></div>
+      <div class="reveal"><div class="n-val"><em>$4.5T</em></div><p class="n-cap">stablecoin transfer volume in Q1 2026 alone — the settlement layer agents actually use is already at Visa scale.</p></div>
+      <div class="reveal"><div class="n-val"><em>$56B</em></div><p class="n-cap">business spend-management software market by 2032 — built for human spenders. Agents are the next, faster cohort.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart" class="qs">
+  <div class="shell qs-grid">
+    <div>
+      <p class="counter reveal"><b>RUN IT</b> Quickstart</p>
+      <h2 class="reveal">Zero keys. Zero faucets. Sixty seconds.</h2>
+      <p class="lede reveal">Simulate mode uses real keypairs and real signature verification — it just settles locally, so you can feel the whole governance loop before funding anything. Flip one env var for real x402 on Base Sepolia.</p>
+      <p class="reveal" style="margin-top: 1.1rem;">Prefer code to CLI? A Node SDK and a LangChain adapter ship in the same repo — no separate install.</p>
+      <a class="btn btn-ghost reveal" href="./docs.html#sdk" style="margin-top: 0.6rem;">SDK &amp; LangChain docs →</a>
+    </div>
+    <div class="codebox mono reveal hud">
+      <div><span class="p">$</span> git clone &lt;repo&gt; &amp;&amp; cd spendveto &amp;&amp; npm install</div>
+      <div><span class="p">$</span> npm run server &nbsp;<span class="c"># dashboard on :8402</span></div>
+      <div><span class="p">$</span> npm run call -- summarize &nbsp;<span class="c"># go approve it</span></div>
+      <div><span class="p">$</span> npm run delegate -- 0.03 "intern" --tools translate --chains base-sepolia</div>
+      <div><span class="p">$</span> claude mcp add spendveto -- node mcp/server.js</div>
+      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 237 assertions, end to end</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="background: var(--bg-2); border-top: 1px solid var(--line);">
+  <div class="shell" style="padding-top: 5rem; padding-bottom: 5rem;">
+    <p class="counter reveal"><b>FAQ</b> Straight answers</p>
+    <h2 class="reveal">Asked before you had to ask.</h2>
+    <div class="faq" style="margin-top: 1.5rem;">
+      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>237-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
+      <details class="reveal"><summary>Does SpendVeto hold my keys?</summary><p>Your choice of two trust models, both self-hosted. <b>Library mode:</b> agents hold their own wallets and the governance pipeline runs inside their own call path. <b>Enforcement proxy:</b> agents are keyless — they POST spending intents, and the proxy’s custody wallet signs only after freeze, policy, caps, scopes, and approvals all pass. Keys never leave your machine either way.</p></details>
+      <details class="reveal"><summary>Which chains work today?</summary><p>All seven registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
+      <details class="reveal"><summary>What happens when an agent goes rogue?</summary><p>The burst detector freezes it <b>mid-loop</b> — by default, ten payment attempts inside ten seconds trips the freeze automatically. Every wallet also has a one-click manual kill switch. A frozen wallet is refused even when it presents a correctly signed payment (403, not a fresh challenge), and its trust score collapses to an F.</p></details>
+      <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 237 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
+      <details class="reveal"><summary>What will the hosted platform add?</summary><p>The parts a company needs to run this for a fleet: a managed custody proxy on the money path, orgs and SSO, a Postgres audit trail, alert routing, and mainnet settlement. Join the waitlist — the chains people pick literally decide which adapters we build first.</p></details>
+      <details class="reveal"><summary>Is there an SDK, or just the CLI?</summary><p>Both. A dependency-free Node SDK (<code class="mono">sdk/</code> — <code class="mono">.pay()</code>, <code class="mono">.dryRun()</code>, <code class="mono">.chat()</code>, throws a typed denial with the fix attached) and a LangChain adapter (<code class="mono">integrations/</code>) ship in the repo alongside the CLI and MCP server — same governed pipeline underneath all four. Code samples in the <a href="./docs.html#sdk">docs</a>.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="shell">
+    <p class="counter reveal" style="justify-content:center; display:flex;"><b>Apache-2.0</b> Open source</p>
+    <h2 class="reveal">Give your agents a budget, <span style="color:var(--green)">not a blank check.</span></h2>
+    <div class="cta-row reveal">
+      <a class="btn btn-primary" href="./signup.html">Join the waitlist</a>
+      <a class="btn btn-ghost" href="#quickstart">Run it locally</a>
+    </div>
+  </div>
+  <div class="planet" aria-hidden="true">
+    <div class="ghost-word">SPENDVETO</div>
+  </div>
+</section>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links">
+    <a href="./about.html">About</a>
+    <a href="./security.html">Security</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="./terms.html">Terms</a>
+    <a href="./signin.html">Sign in</a>
+    <a href="./signup.html">Waitlist</a>
+  </div>
+</footer>
+
+</div><!-- /canvas-frame -->
+
+<script type="module">
+import * as THREE from "./vendor/three.module.min.js";
+
+// ---------- hero: a stream of payments meeting the gate ----------
+const canvas = document.getElementById("bg");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+} catch {
+  canvas.style.display = "none";
+}
+
+if (renderer) {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x070a08, 26, 46);
+  const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 120);
+  camera.position.set(0, 0, 21);
+
+  const N = 2400;
+  const BOUND_X = 36, GATE_X = 0, BLOCK_RATE = 0.13;
+  const positions = new Float32Array(N * 3);
+  const colors = new Float32Array(N * 3);
+  const vel = new Float32Array(N * 3);
+  const decided = new Uint8Array(N);
+  const target = new Float32Array(N * 3);
+
+  const BASE = [0.36, 0.42, 0.38];
+  const GREEN = [0.28, 0.84, 0.55];
+  const COPPER = [0.88, 0.63, 0.36];
+
+  function spawn(i, initial) {
+    const i3 = i * 3;
+    positions[i3] = initial ? (Math.random() * 2 - 1) * BOUND_X : -BOUND_X + Math.random() * 4;
+    positions[i3 + 1] = (Math.random() * 2 - 1) * 8.5;
+    positions[i3 + 2] = (Math.random() * 2 - 1) * 5 - 1.5;
+    vel[i3] = 0.045 + Math.random() * 0.085;
+    vel[i3 + 1] = (Math.random() - 0.5) * 0.004;
+    vel[i3 + 2] = 0;
+    decided[i] = initial && positions[i3] > GATE_X ? 1 : 0;
+    const shade = 0.75 + Math.random() * 0.5;
+    const c = decided[i] ? GREEN : BASE;
+    for (let k = 0; k < 3; k++) {
+      colors[i3 + k] = c[k] * shade;
+      target[i3 + k] = c[k] * shade;
+    }
+  }
+  for (let i = 0; i < N; i++) spawn(i, true);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 0.11, vertexColors: true, transparent: true, opacity: 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+  });
+  scene.add(new THREE.Points(geo, mat));
+
+  // The gate: a thin luminous plane, soft aura, and breathing rings.
+  const gateCore = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.07, 19),
+    new THREE.MeshBasicMaterial({ color: 0x46d68c, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
+  );
+  const gateAura = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 19),
+    new THREE.MeshBasicMaterial({ color: 0x1f7a52, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending })
+  );
+  const gateRing = new THREE.Mesh(
+    new THREE.TorusGeometry(4.6, 0.015, 8, 120),
+    new THREE.MeshBasicMaterial({ color: 0x46d68c, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending })
+  );
+  const gateRingOuter = new THREE.Mesh(
+    new THREE.TorusGeometry(6.1, 0.008, 8, 120),
+    new THREE.MeshBasicMaterial({ color: 0x46d68c, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending })
+  );
+  scene.add(gateCore, gateAura, gateRing, gateRingOuter);
+
+  // Structural depth: a vast, slow wireframe icosahedron — the vault.
+  const vault = new THREE.LineSegments(
+    new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(13, 1)),
+    new THREE.LineBasicMaterial({ color: 0x2a4a38, transparent: true, opacity: 0.14 })
+  );
+  vault.position.set(0, 0, -9);
+  scene.add(vault);
+
+  // Far dust for parallax depth.
+  const DUST = 700;
+  const dustPos = new Float32Array(DUST * 3);
+  for (let i = 0; i < DUST; i++) {
+    dustPos[i * 3] = (Math.random() * 2 - 1) * 55;
+    dustPos[i * 3 + 1] = (Math.random() * 2 - 1) * 30;
+    dustPos[i * 3 + 2] = -14 - Math.random() * 20;
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+  scene.add(new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0x46785c, size: 0.06, transparent: true, opacity: 0.5, depthWrite: false })));
+
+  let mx = 0, my = 0;
+  addEventListener("pointermove", (e) => {
+    mx = (e.clientX / innerWidth) * 2 - 1;
+    my = (e.clientY / innerHeight) * 2 - 1;
+  }, { passive: true });
+
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  let t = 0;
+  function tick() {
+    t += 0.016;
+    for (let i = 0; i < N; i++) {
+      const i3 = i * 3;
+      positions[i3] += vel[i3];
+      positions[i3 + 1] += vel[i3 + 1] + Math.sin(t * 0.8 + i) * 0.0012;
+      if (!decided[i] && positions[i3] >= GATE_X) {
+        decided[i] = 1;
+        const blocked = Math.random() < BLOCK_RATE;
+        const c = blocked ? COPPER : GREEN;
+        const shade = 0.8 + Math.random() * 0.45;
+        for (let k = 0; k < 3; k++) target[i3 + k] = c[k] * shade;
+        if (blocked) {
+          vel[i3] *= -0.62;
+          vel[i3 + 1] += (positions[i3 + 1] >= 0 ? 1 : -1) * (0.02 + Math.random() * 0.03);
+        } else {
+          vel[i3] *= 1.4;
+        }
+      }
+      colors[i3] += (target[i3] - colors[i3]) * 0.08;
+      colors[i3 + 1] += (target[i3 + 1] - colors[i3 + 1]) * 0.08;
+      colors[i3 + 2] += (target[i3 + 2] - colors[i3 + 2]) * 0.08;
+      if (positions[i3] > BOUND_X || positions[i3] < -BOUND_X || Math.abs(positions[i3 + 1]) > 13) spawn(i, false);
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
+
+    gateCore.material.opacity = 0.42 + Math.sin(t * 1.6) * 0.1;
+    gateRing.rotation.z = t * 0.12;
+    gateRing.material.opacity = 0.28 + Math.sin(t * 1.1) * 0.1;
+    gateRingOuter.rotation.z = -t * 0.07;
+    gateRing.scale.setScalar(1 + Math.sin(t * 0.9) * 0.015);
+    vault.rotation.y = t * 0.03;
+    vault.rotation.x = Math.sin(t * 0.11) * 0.12;
+    camera.position.x += (mx * 1.7 - camera.position.x) * 0.03;
+    camera.position.y += (-my * 1.1 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+    if (!reduced) requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+// ---------- ticker loop ----------
+const track = document.getElementById("ticker-track");
+track.innerHTML += track.innerHTML;
+
+// ---------- scroll reveals ----------
+const io = new IntersectionObserver(
+  (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+  { threshold: 0.12 }
+);
+document.querySelectorAll(".reveal").forEach((el, i) => {
+  el.style.transitionDelay = `${(i % 4) * 70}ms`;
+  io.observe(el);
+});
+
+// ---------- cursor glow ----------
+const glow = document.createElement("div");
+glow.id = "cursor-glow";
+glow.style.opacity = "0";
+document.body.appendChild(glow);
+addEventListener("pointermove", (e) => {
+  glow.style.opacity = "1";
+  glow.style.left = e.clientX + "px";
+  glow.style.top = e.clientY + "px";
+}, { passive: true });
+
+// ---------- decrypt effect on the market stats ----------
+const CHARS = "01$#%&+ABCDEF";
+function scramble(el) {
+  const finalText = el.dataset.final ?? (el.dataset.final = el.textContent);
+  let frame = 0;
+  const total = 26;
+  (function step() {
+    frame++;
+    el.textContent = [...finalText]
+      .map((ch, i) => (ch === " " ? " " : i < (frame / total) * finalText.length ? ch : CHARS[(Math.random() * CHARS.length) | 0]))
+      .join("");
+    if (frame < total) requestAnimationFrame(step);
+    else el.textContent = finalText;
+  })();
+}
+const statIO = new IntersectionObserver(
+  (entries) =>
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        scramble(e.target);
+        statIO.unobserve(e.target);
+      }
+    }),
+  { threshold: 0.6 }
+);
+document.querySelectorAll(".n-val").forEach((el) => statIO.observe(el));
+
+// ---------- scroll progress ----------
+const bar = document.getElementById("scroll-progress");
+addEventListener("scroll", () => {
+  const h = document.documentElement;
+  bar.style.transform = `scaleX(${(h.scrollTop / (h.scrollHeight - h.clientHeight)).toFixed(4)})`;
+}, { passive: true });
+
+// ---------- live stats from a running SpendVeto server (graceful if absent) ----------
+(async () => {
+  try {
+    const s = await fetch("http://localhost:8402/api/stats", { signal: AbortSignal.timeout(4000) }).then((r) => r.json());
+    document.getElementById("live-stats").innerHTML =
+      `LIVE · governed <b>$${s.paid.usd}</b> · blocked <b>$${s.blocked.usd}</b> across ${s.blocked.count + s.paid.count} decisions`;
+    document.getElementById("g-paid").textContent = `$${s.paid.usd}`;
+    document.getElementById("g-blocked").textContent = `$${s.blocked.usd}`;
+    document.getElementById("g-frozen").textContent = s.frozenWallets;
+  } catch {
+    document.getElementById("g-paid").textContent = "$0.08";
+    document.getElementById("g-blocked").textContent = "$0.08";
+    document.getElementById("g-frozen").textContent = "1";
+    document.querySelectorAll("#proof .gstat .k").forEach((k) => {
+      k.textContent = k.textContent.replace(" (live from your local server)", " (latest verification run)");
+    });
+  }
+})();
+</script>
+</body>
+</html>

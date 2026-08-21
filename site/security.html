@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Security</title>
+<meta name="description" content="How SpendVeto protects agent wallets: policy enforcement before payment, signed receipts, custody model, and how to report a vulnerability." />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .doc-wrap { max-width: 780px; margin: 0 auto; padding: 8.5rem clamp(1.2rem, 4vw, 3rem) 6rem; }
+  .doc-wrap h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.025em; margin-bottom: 0.8rem; }
+  .doc-wrap .lede { color: var(--dim); line-height: 1.7; max-width: 62ch; font-size: 1.02rem; }
+  .doc-wrap h2 { font-size: 1.4rem; letter-spacing: -0.015em; margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  .doc-wrap p { color: var(--dim); line-height: 1.75; margin: 0.9rem 0; max-width: 68ch; }
+  .doc-wrap p b { color: var(--ink); }
+  .doc-wrap ul { margin: 0.9rem 0 0.9rem 1.2rem; color: var(--dim); line-height: 1.85; }
+  .doc-wrap li b { color: var(--ink); }
+  .callout { border: 1px solid rgba(224, 160, 92, 0.35); background: rgba(224, 160, 92, 0.05); border-radius: 10px; padding: 1rem 1.2rem; font-size: 0.9rem; color: var(--dim); margin: 1.4rem 0; }
+  .callout b { color: var(--copper); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./about.html">About</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="doc-wrap">
+  <h1>Security</h1>
+  <p class="lede">SpendVeto sits between an agent and its money. That's a position that has to earn trust with evidence, not adjectives. Here's exactly what's enforced, what isn't yet, and how to report a problem.</p>
+
+  <h2>What's enforced today</h2>
+  <ul>
+    <li><b>Policy before payment.</b> Per-call caps, hourly budgets, call-rate limits, and chain/tool scope are checked against the live ledger before any signature is produced — not after.</li>
+    <li><b>Approvals fail closed.</b> A spend above your threshold pauses for a human decision. No answer within the timeout window means the call is denied, not allowed by default.</li>
+    <li><b>Nested budget hierarchies.</b> A delegated child's spend counts against its own cap <i>and</i> every ancestor's — a compromised or misbehaving sub-agent can't spend past what its parent was ever granted.</li>
+    <li><b>Chain-scoped signatures.</b> The chain is inside the signed payment message itself, so an authorization signed for one chain is cryptographically invalid on another — not just filtered by convention.</li>
+    <li><b>Runaway auto-freeze.</b> A wallet bursting past its call-rate threshold is frozen automatically, mid-loop, without waiting for a human to notice.</li>
+    <li><b>ECDSA-signed receipts.</b> Every settlement produces an independently verifiable signed receipt; the full ledger exports to CSV for reconciliation.</li>
+    <li><b>Server-authoritative enforcement.</b> The payment gate runs the full policy pipeline itself, server-side — so an agent holding its own key and running a hand-rolled client that skips its policy check still can't overspend: a validly-signed over-budget payment is refused at the gate, and above-threshold spends require a real, single-use approval record before settlement.</li>
+    <li><b>Tamper-evident ledger.</b> Every ledger entry is hash-chained to the one before it, so editing, deleting, or reordering any historical row is detectable; a verify-chain endpoint reports the first broken row.</li>
+    <li><b>Payee allowlisting.</b> Pin which recipient addresses an agent may pay at all — so even a compromised tool or a prompt-injected agent can't send money to an address that isn't on the list. Works globally and as a delegated scope that cascades through the budget tree.</li>
+    <li><b>Authenticated admin surface.</b> The endpoints that change policy, freeze wallets, mint budgets, or register tools sit behind bearer keys with roles (viewer / approver / admin). The first key is minted on the trusted host, never over the API, so there's no way to bootstrap privilege from an unauthenticated request.</li>
+  </ul>
+
+  <h2>Custody model</h2>
+  <p>SpendVeto can run in two modes. In the default mode, the agent's own keypair signs payments locally after the policy pipeline approves — SpendVeto never holds funds. In the <b>keyless / proxy</b> mode, an enforcement proxy holds custody and signs on the agent's behalf only after governance passes, so an agent can operate without ever touching a private key. In both modes, no payment is possible without a policy decision.</p>
+
+  <h2>What's not yet true</h2>
+  <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia. Neither mode has been through an external security audit yet, and mainnet settlement is not yet enabled. Treat this as pre-audit software: don't point it at funds you can't afford to lose until an audit has happened.</p>
+  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 237-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
+
+  <h2>Reporting a vulnerability</h2>
+  <p>If you find a way to bypass a policy check, forge a payment signature, or defeat an approval gate, please report it privately before any public disclosure — email <a href="mailto:security@spendveto.com" style="color:var(--green)">security@spendveto.com</a>. We'll acknowledge within 48 hours.</p>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a>
+    <a href="./about.html">About</a>
+    <a href="./security.html">Security</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="./terms.html">Terms</a>
+  </div>
+</footer>
+
+</div><!-- /canvas-frame -->
+</body>
+</html>

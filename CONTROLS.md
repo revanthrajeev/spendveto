@@ -1,0 +1,48 @@
+# SpendVeto control inventory
+
+**What this is:** every governance control SpendVeto enforces, mapped to the runtime expectations that appear in current AI-governance frameworks (EU AI Act, NIST AI RMF) and enterprise agent-deployment checklists — with, for each control, the `npm run verify` assertion that exercises it end-to-end on every change.
+
+**What this is not:** a certification. SpendVeto has **no SOC 2, no ISO 27001, no external security audit**, and is pre-mainnet. This document is a self-assessment whose factual claims are machine-checked by the suite (237 assertions), nothing more. Framework references describe *which expectation a control addresses*, not conformity with the framework.
+
+## How to read the table
+
+- **Control** — what SpendVeto enforces, in the product's own terms.
+- **Framework expectation addressed** — the runtime requirement this maps to: EU AI Act Article 12 (record-keeping / logging), Article 14 (human oversight, including the ability to intervene or interrupt); NIST AI RMF functions (GOVERN / MAP / MEASURE / MANAGE).
+- **Exercised by** — a representative assertion label from `scripts/verify.mjs` (run `npm run verify` and grep the label). Many controls are covered by several assertions; one is cited for traceability.
+
+| # | Control | Framework expectation addressed | Exercised by (assertion label excerpt) |
+|---|---|---|---|
+| 1 | Pre-payment policy enforcement (per-call cap, hourly budget, rate limit) | NIST MANAGE (risk treatment before impact); EU AI Act Art. 14 (effective oversight of operation) | "a validly-signed over-cap payment that skips the client is refused AT THE GATE" |
+| 2 | Server-authoritative enforcement (gate re-runs the full pipeline; client can't bypass) | NIST GOVERN (controls independent of the actor being governed) | "a validly-signed over-cap payment that skips the client is refused AT THE GATE (server-authoritative enforcement)" |
+| 3 | Human-in-the-loop approvals above a threshold; timeout fails **closed**; approvals single-use and tied to settlement | EU AI Act Art. 14 (human oversight, ability to decide not to use / to interrupt) | "an above-threshold raw payment with no approval on record is refused at the gate" |
+| 4 | Budget delegation with n-level cascading caps, TTL expiry, tool/chain/payee scope | NIST MAP+MANAGE (bounded authority for sub-agents) | "would exceed delegated budget cap … granted to ancestor" (cascade assertions) |
+| 5 | Payee allowlisting (global policy + per-delegation scope) | NIST MANAGE (constrain impact of compromised/prompt-injected agents) | "a payment to a payee NOT on the allowlist is refused at the gate (payee allowlisting)" |
+| 6 | Kill switch: manual wallet freeze + runaway-burst auto-freeze | EU AI Act Art. 14 ("stop" capability); NIST MANAGE (incident response) | "stats: exactly the runaway wallet is still frozen" |
+| 7 | Tamper-evident audit ledger (SHA-256 hash chain; verify-chain endpoint locates the first broken row) | EU AI Act Art. 12 (record-keeping over the system's lifetime); NIST MEASURE | "tampering with a historical ledger amount is detected by the hash-chain at that row" |
+| 8 | ECDSA-signed settlement receipts, independently verifiable | EU AI Act Art. 12 (traceability); NIST MEASURE | receipt-verification assertions ("signed receipt" family) |
+| 9 | Policy versioning: every gate decision stamped with the SHA-256 of the policy in force | EU AI Act Art. 12 (logs sufficient to reconstruct *why*); NIST GOVERN (policy traceability) | "every decision is stamped with the policy version in force (policyHash changes when the policy does)" |
+| 10 | Structured decision events, one stable schema, JSONL/SIEM export | Enterprise checklist: SIEM/log-export integration; NIST MEASURE | "the JSONL export parses one decision per line — straight into Splunk/Datadog/jq" |
+| 11 | Signed governance verdicts for AP2-style mandates (portable decision evidence) | EU AI Act Art. 12 (verifiable records of decisions); NIST GOVERN | "an AP2-shaped mandate within policy gets an ECDSA-signed allow verdict (portable evidence)" |
+| 12 | Shadow mode: candidate policy evaluated on live traffic without enforcing | NIST MEASURE (pre-deployment testing of a control change) | "shadow mode never blocks the live call — the real payment still settles" |
+| 13 | Role-based API-key auth on the admin surface (viewer < approver < admin); first key minted on the trusted host only | NIST GOVERN (access control over the governance system itself) | "a viewer key is refused a write it isn't allowed (403 — role enforcement)" |
+| 14 | Anomaly signal panel (block-rate spike, novel payee, category drift, amount outlier) — advisory, deterministic, reproducible | NIST MEASURE (monitoring for emergent behavior); enterprise checklist: cost/behavior visibility | "advanced anomaly analysis flags a wallet whose recent attempts are mostly blocked" |
+| 15 | Trust scoring per wallet + org rollups + counterparty (payee) reputation | NIST MAP (characterize actors and counterparties) | "the trust graph scores every wallet as a node, links delegations as edges, and rolls each root up into an org score" |
+| 16 | Real-time alert webhooks (freeze/block/approval events), HMAC-signed | Enterprise checklist: real-time alerting into existing ops channels | tampered-webhook-signature assertion (HMAC verification family) |
+| 17 | Chain-scoped payment signatures (an authorization for one chain is invalid on another) | NIST MANAGE (limit blast radius of a leaked authorization) | "an authorization signed for polygon is rejected on arbitrum" |
+| 18 | Billing/usage event emission post-settlement (governed → billable, keyed by receipt id) | Enterprise checklist: reconciliation hooks (ERP/billing) — partial: event emission, not ERP integration | "a paid settlement emits a spendveto.usage.v1 event to the billing webhook, keyed by receipt id" |
+| 19 | Per-agent identity rate limiting + freeze, independent of the wallet's own budget/freeze | NIST MANAGE (contain a single misbehaving actor without penalizing every agent sharing its wallet) | "the 4th call in the same minute is throttled at the agent identity, not the wallet" / "3 consecutive rate-limit violations auto-freeze the agent identity (not the wallet)" |
+| 20 | Signed consent records for delegation grant + revoke, independently verifiable | EU AI Act Art. 12 (verifiable record of authorization and its withdrawal) | "granting a delegation writes a signed consent record" / "the grant consent's ECDSA signature verifies independently of the stored file" |
+| 21 | Agentic tokens: a delegation scoped to exactly one merchant payee, bundled with its signed consent | NIST MANAGE (constrain a grant to one named counterparty, not just a cap) | "an agentic token bundles a delegation scoped to exactly one merchant plus its signed consent" |
+| 22 | Verifiable-Credential-shaped export of AP2 verdicts | EU AI Act Art. 12 (portable, verifiable decision evidence) | "?format=vc wraps the AP2 verdict as a Verifiable-Credential-shaped envelope" |
+| 23 | Cross-rail receipt normalization: one schema regardless of which rail settled | Enterprise checklist: consistent reconciliation data across payment rails | "the normalized receipt view gives an x402 settlement and a metered API-spend entry the same shape" |
+| 24 | AP2 mandate-chain drift detection: the cart is checked against the intent it claims to derive from (total ceiling, declared-total arithmetic, merchant scope, category scope, merchant fan-out, intent expiry, intent identity) | EU AI Act Art. 14 (the authorization a human actually gave remains the operative limit); NIST MANAGE (constrain a compromised agent to the mandate it was granted) | "a cart naming a merchant the intent never authorized is denied (merchant_drift)" / "a cart whose declared total contradicts its own line items is refused before any cap is checked" |
+| 25 | Human-not-present authority: where no human can answer an approval, the signed intent's ceiling is the only pre-authorization — and an amount beyond it fails closed rather than escalating to nobody | EU AI Act Art. 14 (oversight that degrades safely when the human is absent); NIST GOVERN (no implicit authority) | "human-not-present with no ceiling in the intent fails CLOSED — no pre-authorization, and no human to ask (hnp_no_authority)" |
+| 26 | Governed discovery: a Bazaar-discovered catalog is filtered through the live policy before the agent sees it, so services it could never be allowed to pay for are never offered to it | NIST MANAGE (reduce what a prompt-injected agent can even name); enterprise checklist: supplier vetting before transaction | "a discovered catalog is filtered by the live policy before the agent sees it — over-cap and unpriced listings never reach it" |
+
+## Known gaps (deliberate, stated plainly)
+
+- **No external security audit** and **no mainnet settlement** — treat as pre-audit software; don't point it at funds you can't afford to lose.
+- **No SSO/SCIM, no orgs/multi-tenancy** — the admin surface is API-key + roles; enterprise identity integration belongs to the hosted milestone.
+- **No data-residency controls** — storage is local JSON on your own host (which *is* the residency story for self-hosting: your infra, your region), but there is no managed regional storage.
+- **No ERP integration** — the billing sink emits events; mapping them into SAP/Oracle/NetSuite is downstream work.
+- **SOC 2 / ISO 27001** — not started, on purpose at this stage; this inventory is the groundwork a future audit would formalize.

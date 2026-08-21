@@ -1,0 +1,30 @@
+{
+  "name": "spendveto-sdk",
+  "version": "0.1.0",
+  "description": "Thin client for the SpendVeto spend-governance proxy — pay(), dryRun(), chat(), registerAgent() instead of raw curl.",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": ["index.js", "index.d.ts", "README.md"],
+  "license": "Apache-2.0",
+  "author": "Revanth Rajeev",
+  "homepage": "https://github.com/revanthrajeev/spendveto#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/revanthrajeev/spendveto.git",
+    "directory": "sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/revanthrajeev/spendveto/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["ai-agents", "x402", "usdc", "spend-governance", "mcp", "agent-payments", "governance", "budget"]
+}

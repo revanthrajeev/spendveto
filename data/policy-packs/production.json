@@ -1,0 +1,15 @@
+{
+  "$description": "For fleets you already trust: higher throughput, approvals reserved for genuinely large spends, runaway guard still armed, spending pinned to the Base chains. Set alertWebhookUrl before using this one.",
+  "maxPerCallUSD": 0.25,
+  "maxPerHourUSD": 2,
+  "maxCallsPerHour": 60,
+  "requireApprovalAboveUSD": 0.1,
+  "anomaly": {
+    "burstAttempts": 20,
+    "burstWindowSeconds": 10
+  },
+  "allowedChains": [
+    "base-sepolia",
+    "base"
+  ]
+}

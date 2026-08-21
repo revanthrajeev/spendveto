@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SpendVeto — Pricing</title>
+<meta name="description" content="Self-host free forever. Hosted platform launch pricing: Desk $49, Team $199 + 0.5% of governed spend, Money Path at basis points on volume." />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .banner { max-width: 60rem; margin: 0 auto 2.2rem; border: 1px solid rgba(224,160,92,.4); background: rgba(224,160,92,.06); border-radius: 12px; padding: .9rem 1.2rem; color: var(--dim,#93a094); font-size: .9rem; line-height: 1.6; }
+  .banner b { color: var(--copper,#e0a05c); }
+  .tiers { max-width: 72rem; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.1rem; padding: 0 1.2rem; }
+  .tier { border: 1px solid var(--line,#22291f); border-radius: 16px; background: rgba(255,255,255,.012); padding: 1.5rem 1.4rem; display: flex; flex-direction: column; }
+  .tier.hot { border-color: var(--green-deep,#1f7a52); background: rgba(70,214,140,.04); position: relative; }
+  .tier.hot::before { content: "MOST TEAMS"; position: absolute; top: -.55rem; left: 1.2rem; font-size: .58rem; letter-spacing: .16em; font-weight: 800; color: var(--green,#46d68c); background: var(--bg,#0b0f0c); padding: 0 .5rem; }
+  .tier h2 { font-size: 1rem; letter-spacing: .04em; }
+  .price { font-size: 1.9rem; font-weight: 800; margin: .7rem 0 .1rem; font-family: "Space Grotesk", sans-serif; }
+  .price span { font-size: .8rem; font-weight: 500; color: var(--faint,#5c675e); }
+  .per { font-size: .78rem; color: var(--dim,#93a094); min-height: 2.2em; }
+  .tier ul { list-style: none; padding: 0; margin: 1rem 0 1.4rem; display: grid; gap: .5rem; font-size: .86rem; color: var(--dim,#93a094); }
+  .tier li::before { content: "— "; color: var(--green,#46d68c); }
+  .tier .cta { margin-top: auto; text-align: center; font: inherit; font-size: .9rem; font-weight: 700; padding: .7rem; border-radius: 11px; text-decoration: none; border: 1px solid var(--line,#22291f); color: var(--ink,#eef3ed); }
+  .tier.hot .cta, .cta.go { background: var(--green,#46d68c); border-color: var(--green,#46d68c); color: #06130b; }
+  .foot-note { max-width: 60rem; margin: 2.4rem auto 0; padding: 0 1.2rem; color: var(--faint,#5c675e); font-size: .82rem; line-height: 1.7; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="wordmark" href="./index.html">SPENDVETO<span class="tick">_</span></a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<header style="text-align:center; padding: 4.5rem 1.2rem 2.4rem;">
+  <h1 style="font-size:clamp(2rem,5vw,3rem)">Free to govern yourself.<br />Paid when we run it for you.</h1>
+</header>
+
+<div class="banner"><b>Launch pricing.</b> The hosted platform is a waitlist, not yet live — these are the prices the waitlist locks in. The open-source core is Apache-2.0 and free forever; nothing below removes anything from the repo.</div>
+
+<div class="tiers">
+  <div class="tier">
+    <h2>Self-host</h2>
+    <div class="price">$0 <span>forever</span></div>
+    <div class="per">Apache-2.0 · your machine, your keys</div>
+    <ul>
+      <li>Every control in the repo — all 237 verified behaviors</li>
+      <li>Unlimited agents, wallets, budgets, chains</li>
+      <li>Marketplace, console, MCP, proxy, API rail</li>
+      <li>Community support</li>
+    </ul>
+    <a class="cta" href="./docs.html#quickstart">Run it in 60 seconds</a>
+  </div>
+
+  <div class="tier">
+    <h2>Desk</h2>
+    <div class="price">$49 <span>/ month</span></div>
+    <div class="per">For solo operators &amp; trading desks</div>
+    <ul>
+      <li>Hosted console + managed proxy</li>
+      <li>10 agent identities, wallet-bound tokens</li>
+      <li>Daily allowances, trading-hours windows</li>
+      <li>Slack/Telegram approvals + alerts</li>
+      <li>90-day audit retention</li>
+    </ul>
+    <a class="cta" href="./signup.html">Join the waitlist</a>
+  </div>
+
+  <div class="tier hot">
+    <h2>Team</h2>
+    <div class="price">$199 <span>/ month</span></div>
+    <div class="per">+ 0.5% of governed API/LLM spend</div>
+    <ul>
+      <li>Everything in Desk, unlimited identities</li>
+      <li>Category caps, N-approver rules, policy packs</li>
+      <li>Team seats + roles, 1-year audit retention</li>
+      <li>Trust scores across your whole fleet</li>
+      <li>Priority support</li>
+    </ul>
+    <a class="cta" href="./signup.html">Join the waitlist</a>
+  </div>
+
+  <div class="tier">
+    <h2>Money Path</h2>
+    <div class="price">10–25 <span>bps on governed volume</span></div>
+    <div class="per">Custody proxy on the payment rail — custom</div>
+    <ul>
+      <li>Managed custody, keyless agent fleets</li>
+      <li>Mainnet settlement (CDP facilitator)</li>
+      <li>SLAs, SSO, dedicated support</li>
+      <li>SOC 2 on the funded roadmap — stated honestly</li>
+    </ul>
+    <a class="cta" href="mailto:revanthrajeev2004@gmail.com?subject=SpendVeto%20Money%20Path">Talk to us</a>
+  </div>
+</div>
+
+<p class="foot-note">Why these prices: observability tools that only <em>watch</em> agent spend charge $20–500/mo — SpendVeto <em>enforces before the money moves</em>, and one prevented runaway loop typically covers a year of Desk. The 0.5% take on governed API spend and the basis-point Money Path track how spend-management platforms actually monetize: on the volume they protect, not the seats they count.</p>
+
+<footer class="foot">
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Self-host is free forever. Hosted tiers are launch pricing, subject to change at GA.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./signup.html">Waitlist</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+</footer>
+</body>
+</html>

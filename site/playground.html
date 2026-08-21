@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Playground</title>
+<meta name="description" content="Set a budget, fire agent spend at it, and watch SpendVeto's real policy engine pass, pause, or block each payment — live in your browser, no install." />
+<meta property="og:title" content="SpendVeto — Live governance playground" />
+<meta property="og:description" content="Set a budget, fire agent spend at it, and watch SpendVeto's real policy engine pass, pause, or block each payment — live in your browser, no install." />
+<meta property="og:image" content="./assets/generated/og-playground.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="./assets/generated/og-playground.png" />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .pg { max-width: 1180px; margin: 0 auto; padding: 8rem clamp(1.2rem, 4vw, 3rem) 5rem; }
+  .pg-head { max-width: 60ch; margin-bottom: 2.2rem; }
+  .pg-head h1 { font-size: clamp(2rem, 4.6vw, 3rem); letter-spacing: -0.025em; margin-bottom: 0.6rem; }
+  .pg-head p { color: var(--dim); line-height: 1.65; }
+  .pg-head .real { color: var(--green); font-weight: 600; }
+  .pg-grid { display: grid; grid-template-columns: 340px 1fr; gap: 1.4rem; align-items: start; }
+  @media (max-width: 900px) { .pg-grid { grid-template-columns: 1fr; } }
+
+  .panel { border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, var(--panel-2), rgba(7,10,8,0.35) 70%); padding: 1.3rem 1.4rem; }
+  .panel h2 { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--faint); margin-bottom: 1.1rem; font-family: ui-monospace, monospace; }
+
+  .ctl { margin-bottom: 1.05rem; }
+  .ctl label { display: flex; justify-content: space-between; font-size: 0.84rem; color: var(--dim); margin-bottom: 0.4rem; }
+  .ctl label b { color: var(--ink); font-family: ui-monospace, monospace; font-weight: 600; }
+  .ctl input[type="range"] { width: 100%; accent-color: var(--green); }
+  .ctl.toggle { display: flex; align-items: center; justify-content: space-between; }
+  .switch { position: relative; width: 42px; height: 24px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 99px; cursor: pointer; transition: 0.2s; }
+  .slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: var(--faint); border-radius: 50%; transition: 0.2s; }
+  .switch input:checked + .slider { background: rgba(70,214,140,0.2); border-color: var(--green-deep); }
+  .switch input:checked + .slider::before { transform: translateX(18px); background: var(--green); }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.4rem; }
+  .abtn { font: inherit; font-size: 0.8rem; text-align: left; padding: 0.6rem 0.7rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(7,10,8,0.5); color: var(--ink); cursor: pointer; transition: border-color 0.15s, transform 0.1s; line-height: 1.3; }
+  .abtn:hover { border-color: rgba(70,214,140,0.4); }
+  .abtn:active { transform: translateY(1px); }
+  .abtn small { display: block; color: var(--faint); font-family: ui-monospace, monospace; font-size: 0.7rem; margin-top: 0.15rem; }
+  .abtn.warn:hover { border-color: rgba(224,160,92,0.5); }
+  .abtn.span2 { grid-column: 1 / -1; }
+  .row2 { display: flex; gap: 0.5rem; margin-top: 0.7rem; }
+  .minor { flex: 1; font: inherit; font-size: 0.78rem; padding: 0.5rem; border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--dim); cursor: pointer; }
+  .minor:hover { color: var(--ink); border-color: var(--faint); }
+
+  /* the gate stage */
+  .stage { position: relative; height: 190px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(ellipse 60% 90% at 50% 120%, rgba(70,214,140,0.08), transparent 70%), #04120b; margin-bottom: 1rem; }
+  .gate-line { position: absolute; left: 50%; top: 12%; bottom: 12%; width: 2px; transform: translateX(-50%); background: linear-gradient(180deg, transparent, rgba(70,214,140,0.6), transparent); box-shadow: 0 0 16px 2px rgba(70,214,140,0.4); }
+  .gate-label { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font-family: ui-monospace, monospace; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--faint); text-transform: uppercase; }
+  .pk { position: absolute; top: 50%; left: -30px; display: inline-flex; align-items: center; gap: 5px; padding: 0.28rem 0.6rem; border-radius: 99px; font-family: ui-monospace, monospace; font-size: 0.7rem; white-space: nowrap; border: 1px solid var(--line); background: rgba(11,16,12,0.9); color: var(--dim); }
+  .pk i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
+  .pk.paid i { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .pk.pending i { background: var(--copper); box-shadow: 0 0 8px var(--copper); }
+  .pk.blocked i { background: var(--rust); box-shadow: 0 0 8px var(--rust); }
+  .pk.paid { color: var(--green); border-color: var(--green-deep); }
+  .pk.pending { color: var(--copper); border-color: rgba(224,160,92,0.4); }
+  .pk.blocked { color: var(--rust); border-color: rgba(224,100,74,0.4); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+  .stat { border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 0.9rem; background: var(--panel); }
+  .stat .v { font-family: "Space Grotesk", sans-serif; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+  .stat .v.green { color: var(--green); } .stat .v.copper { color: var(--copper); } .stat .v.rust { color: var(--rust); }
+  .stat .k { color: var(--faint); font-size: 0.72rem; margin-top: 0.2rem; }
+
+  .meters { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1rem; }
+  .meter-row { font-size: 0.78rem; color: var(--dim); }
+  .meter-row .top { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+  .meter-row .top b { font-family: ui-monospace, monospace; color: var(--ink); }
+  .bar { height: 7px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--green); transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1); }
+  .bar span.warn { background: var(--copper); } .bar span.full { background: var(--rust); }
+
+  .frozen-banner { display: none; align-items: center; gap: 0.6rem; border: 1px solid rgba(224,100,74,0.5); background: rgba(224,100,74,0.08); color: var(--rust); border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.82rem; margin-bottom: 1rem; }
+  .frozen-banner.on { display: flex; }
+  .frozen-banner button { margin-left: auto; font: inherit; font-size: 0.74rem; font-weight: 700; padding: 0.3rem 0.8rem; border-radius: 99px; border: 1px solid rgba(224,100,74,0.5); background: transparent; color: var(--rust); cursor: pointer; }
+
+  .pending-q { margin-bottom: 1rem; }
+  .pend { display: flex; align-items: center; gap: 0.7rem; border: 1px solid rgba(224,160,92,0.35); background: rgba(224,160,92,0.05); border-radius: 10px; padding: 0.6rem 0.85rem; font-size: 0.82rem; margin-bottom: 0.5rem; }
+  .pend .q { color: var(--copper); flex: 1; }
+  .pend .q i { font-style: normal; }
+  .pend button { font: inherit; font-size: 0.72rem; font-weight: 700; padding: 0.3rem 0.75rem; border-radius: 99px; cursor: pointer; border: 1px solid var(--green-deep); background: transparent; color: var(--green); }
+  .pend button.deny { border-color: rgba(224,100,74,0.5); color: var(--rust); }
+
+  .log { border-top: 1px solid var(--line); max-height: 240px; overflow-y: auto; }
+  .logline { display: flex; justify-content: space-between; gap: 1rem; font-family: ui-monospace, monospace; font-size: 0.75rem; padding: 0.55rem 0.1rem; border-bottom: 1px dashed var(--line); }
+  .logline .what { color: var(--dim); }
+  .logline .verdict.paid { color: var(--green); } .logline .verdict.pending { color: var(--copper); } .logline .verdict.blocked { color: var(--rust); }
+  .log-empty { color: var(--faint); font-size: 0.82rem; padding: 1rem 0; }
+
+  .foot-note { margin-top: 1.4rem; color: var(--faint); font-size: 0.8rem; line-height: 1.6; }
+  .foot-note code { color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./use-cases.html">Use cases</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./about.html">About</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="pg">
+  <div class="pg-head">
+    <p class="counter"><b>PLAYGROUND</b> the real policy engine, in your browser</p>
+    <h1>Give an agent a budget. Watch SpendVeto decide.</h1>
+    <p>Set the policy, then fire spend at it. This runs the <span class="real">same decision logic</span> as SpendVeto's policy engine — per-call caps, hourly budget, rate limit, approval threshold, payee allowlist, runaway auto-freeze — entirely client-side. Nothing is sent anywhere; no wallet, no install.</p>
+  </div>
+
+  <div class="pg-grid">
+    <!-- CONTROLS -->
+    <div class="panel">
+      <h2>Policy</h2>
+      <div class="ctl">
+        <label>Per-call cap <b id="v-percall">$0.05</b></label>
+        <input type="range" id="percall" min="1" max="20" step="1" value="5" />
+      </div>
+      <div class="ctl">
+        <label>Hourly budget <b id="v-hourly">$0.20</b></label>
+        <input type="range" id="hourly" min="5" max="100" step="5" value="20" />
+      </div>
+      <div class="ctl">
+        <label>Max calls / window <b id="v-rate">10</b></label>
+        <input type="range" id="rate" min="3" max="30" step="1" value="10" />
+      </div>
+      <div class="ctl">
+        <label>Approval above <b id="v-appr">$0.015</b></label>
+        <input type="range" id="appr" min="1" max="30" step="1" value="15" />
+      </div>
+      <div class="ctl toggle">
+        <label style="margin:0">Payee allowlist <b id="v-payee" style="color:var(--faint)">off</b></label>
+        <span class="switch"><input type="checkbox" id="payee" /><span class="slider"></span></span>
+      </div>
+
+      <h2 style="margin-top:1.6rem">Fire agent spend</h2>
+      <div class="actions">
+        <button class="abtn" data-tool="translate" data-price="0.005" data-payee="trusted">translate<small>$0.005 · trusted</small></button>
+        <button class="abtn" data-tool="review" data-price="0.01" data-payee="trusted">review<small>$0.01 · trusted</small></button>
+        <button class="abtn" data-tool="summarize" data-price="0.02" data-payee="trusted">summarize<small>$0.02 · trusted</small></button>
+        <button class="abtn" data-tool="premium-data" data-price="0.08" data-payee="trusted">premium data<small>$0.08 · trusted</small></button>
+        <button class="abtn warn span2" data-tool="unknown-vendor" data-price="0.03" data-payee="unknown">pay an unknown vendor<small>$0.03 · payee NOT on allowlist</small></button>
+        <button class="abtn warn span2" id="burst" data-tool="scrape" data-price="0.01" data-payee="trusted">runaway burst — 12× rapid calls<small>$0.01 each · trips the rate limit &amp; auto-freeze</small></button>
+      </div>
+      <div class="row2">
+        <button class="minor" id="autorun">▶ Auto-run</button>
+        <button class="minor" id="reset">↺ Reset window</button>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="panel">
+      <h2>Governed console</h2>
+      <div class="frozen-banner" id="frozen"><span>⛔ Wallet auto-frozen — runaway burst detected. Nothing spends until a human unfreezes.</span><button id="unfreeze">Unfreeze</button></div>
+
+      <div class="stage" id="stage">
+        <div class="gate-line"></div>
+        <div class="gate-label">spendveto</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="v green" id="s-paid">$0.000</div><div class="k">paid</div></div>
+        <div class="stat"><div class="v copper" id="s-pending">0</div><div class="k">awaiting approval</div></div>
+        <div class="stat"><div class="v rust" id="s-blocked">$0.000</div><div class="k">blocked</div></div>
+      </div>
+
+      <div class="meters">
+        <div class="meter-row"><div class="top"><span>Hourly budget</span><b id="m-hourly-txt">$0.000 / $0.20</b></div><div class="bar"><span id="m-hourly"></span></div></div>
+        <div class="meter-row"><div class="top"><span>Calls this window</span><b id="m-rate-txt">0 / 10</b></div><div class="bar"><span id="m-rate"></span></div></div>
+      </div>
+
+      <div class="pending-q" id="pending-q"></div>
+
+      <div class="log" id="log"><div class="log-empty">No attempts yet — fire some spend on the left.</div></div>
+      <p class="foot-note">This is a faithful re-implementation of <code>client/policy.js</code>'s decision order: freeze → per-call cap → payee allowlist → rate limit → hourly budget → approval threshold. In the real product the same checks run server-side at the payment gate, so an agent can't skip them. <a href="./docs.html#governance" style="color:var(--green)">See the governance model →</a></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>The real policy logic, running locally in your browser — nothing leaves this page.</span>
+  <div class="links">
+    <a href="./use-cases.html">Use cases</a>
+    <a href="./playground.html">Playground</a>
+    <a href="./about.html">About</a>
+    <a href="./security.html">Security</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="./terms.html">Terms</a>
+  </div>
+</footer>
+
+</div><!-- /canvas-frame -->
+<script>
+(function () {
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (id) => document.getElementById(id);
+  const round = (n) => Math.round(n * 1e6) / 1e6;
+  const fmt = (n) => "$" + n.toFixed(3);
+
+  // Live policy, driven by the sliders. Values mirror data/policy.json.
+  const policy = { maxPerCallUSD: 0.05, maxPerHourUSD: 0.2, maxCallsPerHour: 10, requireApprovalAboveUSD: 0.015, allowlist: false };
+  // Window state = "this hour" (Reset starts a new window).
+  const state = { spent: 0, calls: 0, paidUSD: 0, blockedUSD: 0, frozen: false, burstTimes: [] };
+  let pendingId = 0;
+
+  // ---- controls ----
+  function syncLabels() {
+    $("v-percall").textContent = fmt(policy.maxPerCallUSD);
+    $("v-hourly").textContent = fmt(policy.maxPerHourUSD);
+    $("v-rate").textContent = policy.maxCallsPerHour;
+    $("v-appr").textContent = fmt(policy.requireApprovalAboveUSD);
+    $("v-payee").textContent = policy.allowlist ? "on" : "off";
+    $("v-payee").style.color = policy.allowlist ? "var(--green)" : "var(--faint)";
+    renderMeters();
+  }
+  $("percall").oninput = (e) => { policy.maxPerCallUSD = e.target.value / 100; syncLabels(); };
+  $("hourly").oninput = (e) => { policy.maxPerHourUSD = e.target.value / 100; syncLabels(); };
+  $("rate").oninput = (e) => { policy.maxCallsPerHour = +e.target.value; syncLabels(); };
+  $("appr").oninput = (e) => { policy.requireApprovalAboveUSD = e.target.value / 100; syncLabels(); };
+  $("payee").onchange = (e) => { policy.allowlist = e.target.checked; syncLabels(); };
+
+  // ---- the decision (mirrors checkPolicy order) ----
+  function decide(action) {
+    if (state.frozen) return { verdict: "blocked", reason: "wallet frozen (runaway auto-freeze)" };
+    if (action.price > policy.maxPerCallUSD) return { verdict: "blocked", reason: "per_call_cap — over the per-call limit" };
+    if (policy.allowlist && action.payee === "unknown") return { verdict: "blocked", reason: "payee_not_allowed — recipient not on the allowlist" };
+    if (state.calls + 1 > policy.maxCallsPerHour) return { verdict: "blocked", reason: "rate_cap — too many calls this window" };
+    if (state.spent + action.price > policy.maxPerHourUSD) return { verdict: "blocked", reason: "hourly_budget — would exceed the window budget" };
+    if (action.price > policy.requireApprovalAboveUSD) return { verdict: "pending", reason: "needs human approval" };
+    return { verdict: "paid", reason: "within policy" };
+  }
+
+  // ---- runaway auto-freeze: >8 attempts in 3s (mirrors the burst detector) ----
+  function noteAttemptForBurst() {
+    const now = Date.now();
+    state.burstTimes = state.burstTimes.filter((t) => now - t < 3000);
+    state.burstTimes.push(now);
+    if (state.burstTimes.length > 8 && !state.frozen) {
+      state.frozen = true;
+      $("frozen").classList.add("on");
+    }
+  }
+
+  // ---- rendering ----
+  function renderMeters() {
+    const hp = Math.min(100, (state.spent / policy.maxPerHourUSD) * 100);
+    const rp = Math.min(100, (state.calls / policy.maxCallsPerHour) * 100);
+    const hb = $("m-hourly"), rb = $("m-rate");
+    hb.style.width = hp + "%"; rb.style.width = rp + "%";
+    hb.className = hp >= 100 ? "full" : hp >= 75 ? "warn" : "";
+    rb.className = rp >= 100 ? "full" : rp >= 75 ? "warn" : "";
+    $("m-hourly-txt").textContent = fmt(state.spent) + " / " + fmt(policy.maxPerHourUSD);
+    $("m-rate-txt").textContent = state.calls + " / " + policy.maxCallsPerHour;
+  }
+  function renderStats() {
+    $("s-paid").textContent = fmt(state.paidUSD);
+    $("s-blocked").textContent = fmt(state.blockedUSD);
+    $("s-pending").textContent = document.querySelectorAll(".pend").length;
+  }
+  function logLine(action, verdict, reason) {
+    const empty = document.querySelector(".log-empty"); if (empty) empty.remove();
+    const el = document.createElement("div");
+    el.className = "logline";
+    const label = verdict === "paid" ? "paid " + fmt(action.price) : verdict === "pending" ? "awaiting human" : "blocked";
+    el.innerHTML = `<span class="what">${action.tool} · ${fmt(action.price)}${action.payee === "unknown" ? " · ext" : ""}</span><span class="verdict ${verdict}">${label}${verdict === "blocked" ? " — " + reason.split(" — ")[0] : ""}</span>`;
+    $("log").prepend(el);
+  }
+  function flyChip(action, verdict) {
+    if (reduced) return;
+    const stage = $("stage");
+    const chip = document.createElement("div");
+    chip.className = "pk " + verdict;
+    chip.innerHTML = `<i></i>${action.tool} ${fmt(action.price)}`;
+    const lane = 22 + Math.random() * 56; // vertical %
+    chip.style.top = lane + "%";
+    stage.appendChild(chip);
+    const midX = stage.clientWidth / 2 - 40;
+    const endX = verdict === "blocked" ? midX - 6 : stage.clientWidth + 40;
+    const endY = verdict === "blocked" ? lane + 26 : verdict === "pending" ? lane : lane;
+    chip.animate(
+      verdict === "blocked"
+        ? [ { transform: "translate(0,0)", opacity: 0 }, { transform: `translate(${midX}px,0)`, opacity: 1, offset: 0.55 }, { transform: `translate(${midX}px,${26}px)`, opacity: 0 } ]
+        : [ { transform: "translate(0,0)", opacity: 0 }, { transform: `translate(${midX}px,0)`, opacity: 1, offset: 0.5 }, { transform: `translate(${endX}px,0)`, opacity: verdict === "pending" ? 1 : 0 } ],
+      { duration: verdict === "pending" ? 900 : 1500, easing: "cubic-bezier(0.3,0.7,0.3,1)", fill: "forwards" }
+    ).onfinish = () => { if (verdict !== "pending") chip.remove(); else setTimeout(() => chip.remove(), 400); };
+  }
+
+  function settle(action) {
+    state.spent = round(state.spent + action.price);
+    state.calls += 1;
+    state.paidUSD = round(state.paidUSD + action.price);
+    renderMeters(); renderStats();
+  }
+
+  function addPending(action) {
+    const id = ++pendingId;
+    const el = document.createElement("div");
+    el.className = "pend";
+    el.dataset.id = id;
+    el.innerHTML = `<span class="q"><i>●</i> ${action.tool} · ${fmt(action.price)} — needs sign-off</span><button data-ok="1">Approve</button><button class="deny" data-ok="0">Deny</button>`;
+    $("pending-q").appendChild(el);
+    el.querySelector('[data-ok="1"]').onclick = () => {
+      // Re-check budget at approval time — an approval doesn't bypass the caps.
+      const d = decide(action);
+      if (d.verdict === "blocked") { logLine(action, "blocked", d.reason); state.blockedUSD = round(state.blockedUSD + action.price); flyChip(action, "blocked"); }
+      else { settle(action); logLine(action, "paid", "approved"); flyChip(action, "paid"); }
+      el.remove(); renderStats();
+    };
+    el.querySelector('[data-ok="0"]').onclick = () => {
+      logLine(action, "blocked", "denied by human");
+      state.blockedUSD = round(state.blockedUSD + action.price);
+      flyChip(action, "blocked"); el.remove(); renderStats();
+    };
+    renderStats();
+  }
+
+  function fire(action) {
+    noteAttemptForBurst();
+    const d = decide(action);
+    flyChip(action, d.verdict);
+    if (d.verdict === "paid") { settle(action); logLine(action, "paid", d.reason); }
+    else if (d.verdict === "pending") { addPending(action); logLine(action, "pending", d.reason); }
+    else { state.blockedUSD = round(state.blockedUSD + action.price); logLine(action, "blocked", d.reason); renderStats(); }
+  }
+
+  document.querySelectorAll(".abtn[data-tool]").forEach((b) => {
+    if (b.id === "burst") return;
+    b.onclick = () => fire({ tool: b.dataset.tool, price: +b.dataset.price, payee: b.dataset.payee });
+  });
+  $("burst").onclick = () => {
+    let i = 0;
+    const iv = setInterval(() => { fire({ tool: "scrape", price: 0.01, payee: "trusted" }); if (++i >= 12) clearInterval(iv); }, 180);
+  };
+
+  let autoTimer = null;
+  const pool = [
+    { tool: "translate", price: 0.005, payee: "trusted" }, { tool: "review", price: 0.01, payee: "trusted" },
+    { tool: "summarize", price: 0.02, payee: "trusted" }, { tool: "premium-data", price: 0.08, payee: "trusted" },
+    { tool: "unknown-vendor", price: 0.03, payee: "unknown" },
+  ];
+  $("autorun").onclick = (e) => {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; e.target.textContent = "▶ Auto-run"; return; }
+    e.target.textContent = "⏸ Stop"; e.target.style.color = "var(--green)";
+    autoTimer = setInterval(() => fire(pool[Math.floor(Math.random() * pool.length)]), 950);
+  };
+
+  $("reset").onclick = () => {
+    Object.assign(state, { spent: 0, calls: 0, paidUSD: 0, blockedUSD: 0, frozen: false, burstTimes: [] });
+    $("frozen").classList.remove("on");
+    $("pending-q").innerHTML = "";
+    $("log").innerHTML = '<div class="log-empty">No attempts yet — fire some spend on the left.</div>';
+    renderMeters(); renderStats();
+  };
+  $("unfreeze").onclick = () => { state.frozen = false; state.burstTimes = []; $("frozen").classList.remove("on"); };
+
+  syncLabels(); renderStats();
+})();
+</script>
+</body>
+</html>

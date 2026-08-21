@@ -1,0 +1,8 @@
+{
+  "$description": "The shipped default: sensible caps, human sign-off on anything above $0.015, 10-attempts-in-10s runaway freeze.",
+  "maxPerCallUSD": 0.05,
+  "maxPerHourUSD": 0.2,
+  "maxCallsPerHour": 10,
+  "requireApprovalAboveUSD": 0.015,
+  "anomaly": { "burstAttempts": 10, "burstWindowSeconds": 10 }
+}
