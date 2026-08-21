@@ -1,0 +1,14 @@
+{
+  "$description": "Tight training wheels: tiny caps, everything above a cent needs a human, hair-trigger runaway freeze, spending pinned to the one live chain. Start every new agent fleet here.",
+  "maxPerCallUSD": 0.02,
+  "maxPerHourUSD": 0.05,
+  "maxCallsPerHour": 5,
+  "requireApprovalAboveUSD": 0.01,
+  "anomaly": {
+    "burstAttempts": 5,
+    "burstWindowSeconds": 10
+  },
+  "allowedChains": [
+    "base-sepolia"
+  ]
+}

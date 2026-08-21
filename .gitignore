@@ -1,0 +1,14 @@
+node_modules/
+.env.local
+data/ledger.json
+data/balances.json
+data/delegations.json
+data/children.json
+data/freezes.json
+data/waitlist.json
+data/tools.json
+data/agents.json
+data/consents.json
+data/policy.json.bak
+*.log
+.DS_Store

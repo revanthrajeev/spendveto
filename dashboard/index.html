@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SpendVeto Console</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">SPENDVETO<span> console</span></div>
+    <nav>
+      <a href="#overview" data-nav="overview">Overview</a>
+      <a href="#approvals" data-nav="approvals">Approvals <b class="badge" id="nav-approvals-badge" hidden>0</b></a>
+      <a href="#budgets" data-nav="budgets">Budgets</a>
+      <a href="#ledger" data-nav="ledger">Ledger</a>
+      <a href="#chains" data-nav="chains">Chains</a>
+      <a href="#analytics" data-nav="analytics">Analytics</a>
+      <a href="#trust" data-nav="trust">Trust</a>
+      <a href="#policy" data-nav="policy">Policy</a>
+      <a href="#agents" data-nav="agents">Agents</a>
+      <a href="#report" data-nav="report">Report</a>
+    </nav>
+    <div class="side-foot">
+      <span class="mode">mode: <b id="mode-badge">…</b></span>
+      <a href="http://localhost:8403" target="_blank">Site ↗</a>
+      <a href="http://localhost:8403/docs.html" target="_blank">Docs ↗</a>
+    </div>
+  </aside>
+
+  <main>
+    <section data-page="overview">
+      <header><h1>Overview</h1><p>The governance layer at a glance — live, refreshed every 2s.</p></header>
+      <div class="stat-row" id="stat-row"></div>
+      <div class="two-col">
+        <div class="card"><h2>Catalog</h2><div id="ov-catalog"></div></div>
+        <div class="card"><h2>Wallet balances <span class="hint">per chain · freeze = kill switch</span></h2><div id="ov-balances"></div></div>
+      </div>
+      <div class="card"><h2>Recent activity</h2><table class="tbl"><thead><tr><th>time</th><th>wallet</th><th>resource</th><th>amount</th><th>status</th><th>detail</th></tr></thead><tbody id="ov-recent"></tbody></table></div>
+    </section>
+
+    <section data-page="approvals" hidden>
+      <header><h1>Approvals</h1><p>Spends above the policy threshold pause here. No decision in 30s → the call fails closed.</p></header>
+      <div class="card"><h2>Pending</h2><div id="ap-pending"></div></div>
+      <div class="card"><h2>History</h2><table class="tbl"><thead><tr><th>when</th><th>wallet</th><th>resource</th><th>price</th><th>outcome</th></tr></thead><tbody id="ap-history"></tbody></table></div>
+    </section>
+
+    <section data-page="budgets" hidden>
+      <header><h1>Budgets</h1><p>IAM for money: capped, scoped, time-boxed grants — every ancestor's limits bind its whole subtree.</p></header>
+      <div class="two-col">
+        <div class="card">
+          <h2>Grant a budget</h2>
+          <form id="grant-form" class="form">
+            <label>Cap (USD) <input name="capUSD" type="number" step="0.001" min="0.001" value="0.03" required /></label>
+            <label>Label <input name="label" type="text" placeholder="research agent" required /></label>
+            <label>Parent <span class="hint">blank = main wallet</span> <input name="parent" type="text" placeholder="label or 0x…" /></label>
+            <label>Tool scope <span class="hint">comma-sep, blank = all</span> <input name="tools" type="text" placeholder="translate,review" /></label>
+            <label>Chain scope <span class="hint">blank = all</span> <input name="chains" type="text" placeholder="base-sepolia" /></label>
+            <label>TTL seconds <span class="hint">blank = never expires</span> <input name="ttl" type="number" min="1" placeholder="600" /></label>
+            <button class="btn go" type="submit">Create wallet + grant</button>
+            <p class="form-note" id="grant-result"></p>
+          </form>
+        </div>
+        <div class="card"><h2>Budget tree <span class="hint">live spend vs cap</span></h2><div id="bu-tree"></div></div>
+      </div>
+      <div class="card"><h2>All grants</h2><table class="tbl"><thead><tr><th>label</th><th>child</th><th>cap</th><th>scopes</th><th>expires</th><th>status</th><th></th></tr></thead><tbody id="bu-grants"></tbody></table></div>
+    </section>
+
+    <section data-page="ledger" hidden>
+      <header><h1>Ledger</h1><p>Every attempt, every outcome, every reason — the audit trail.</p></header>
+      <div class="filter-row">
+        <select id="lf-status"><option value="">all statuses</option><option>paid</option><option>blocked</option><option>failed</option></select>
+        <select id="lf-chain"><option value="">all chains</option></select>
+        <input id="lf-q" type="text" placeholder="filter by wallet / resource / reason…" />
+        <a class="btn ghost" href="/api/export.csv">Download CSV</a>
+      </div>
+      <div class="card"><table class="tbl"><thead><tr><th>time</th><th>wallet</th><th>resource</th><th>chain</th><th>amount</th><th>status</th><th>reason</th></tr></thead><tbody id="le-body"></tbody></table></div>
+    </section>
+
+    <section data-page="chains" hidden>
+      <header><h1>Chains</h1><p>Seven registered chains. The chain rides inside every signed authorization; balances and analytics are per chain.</p></header>
+      <div class="chain-grid" id="ch-grid"></div>
+      <div class="card"><h2>Rails <span class="hint">one pay() contract — governance never cares which rail settles</span></h2><div id="ch-rails"></div></div>
+      <div class="card"><h2>Spend by chain</h2><table class="tbl"><thead><tr><th>chain</th><th>paid</th><th>paid $</th><th>blocked</th><th>blocked $</th></tr></thead><tbody id="ch-analytics"></tbody></table></div>
+    </section>
+
+    <section data-page="analytics" hidden>
+      <header><h1>Analytics</h1><p>Where the money went — and where the governance layer stopped it.</p></header>
+      <div class="two-col">
+        <div class="card"><h2>By tool</h2><table class="tbl"><thead><tr><th>tool</th><th>paid</th><th>paid $</th><th>blocked</th><th>blocked $</th></tr></thead><tbody id="an-tool"></tbody></table></div>
+        <div class="card"><h2>By wallet</h2><table class="tbl"><thead><tr><th>wallet</th><th>paid</th><th>paid $</th><th>blocked</th><th>blocked $</th></tr></thead><tbody id="an-wallet"></tbody></table></div>
+      </div>
+      <div class="card"><h2>Freeze log</h2><table class="tbl"><thead><tr><th>when</th><th>wallet</th><th>source</th><th>reason</th><th>status</th><th></th></tr></thead><tbody id="an-freezes"></tbody></table></div>
+    </section>
+
+    <section data-page="trust" hidden>
+      <header><h1>Trust</h1><p>Every wallet's governance history compressed to a score — the ledger as an agent credit file.</p></header>
+      <div class="card">
+        <h2>Look up a wallet</h2>
+        <form id="trust-form" class="inline-form"><input name="addr" type="text" placeholder="0x…" required /><button class="btn go" type="submit">Score</button></form>
+        <div id="trust-result"></div>
+      </div>
+      <div class="card"><h2>Known wallets</h2><table class="tbl"><thead><tr><th>wallet</th><th>score</th><th>grade</th><th>paid</th><th>blocked</th><th>failed</th><th>freezes</th></tr></thead><tbody id="trust-list"></tbody></table></div>
+    </section>
+
+    <section data-page="policy" hidden>
+      <header><h1>Policy</h1><p>The live spend rules. Edits apply to the very next payment attempt.</p></header>
+      <div class="two-col">
+        <div class="card">
+          <h2>Edit live policy</h2>
+          <form id="policy-form" class="form">
+            <label>Max per call (USD) <input name="maxPerCallUSD" type="number" step="0.001" min="0.001" required /></label>
+            <label>Max per hour (USD) <input name="maxPerHourUSD" type="number" step="0.001" min="0.001" required /></label>
+            <label>Max calls / hour <input name="maxCallsPerHour" type="number" min="1" required /></label>
+            <label>Human approval above (USD) <input name="requireApprovalAboveUSD" type="number" step="0.001" min="0.001" required /></label>
+            <label>Allowed chains <span class="hint">comma-sep, blank = all 7</span> <input name="allowedChains" type="text" placeholder="base-sepolia,base" /></label>
+            <button class="btn go" type="submit">Save policy</button>
+            <p class="form-note" id="policy-result"></p>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Policy packs</h2>
+          <p class="hint" style="margin-bottom:0.8rem">Importable presets — applying one backs the current policy up to <code>policy.json.bak</code>.</p>
+          <div id="packs-list"></div>
+          <h2 style="margin-top:1.6rem">Raw</h2>
+          <pre class="raw" id="policy-raw"></pre>
+        </div>
+      </div>
+    </section>
+    <section data-page="agents" hidden>
+      <header><h1>Agents &amp; Market</h1><p>Supply side: mint wallet-bound agent identities, and list paid tools behind the gate.</p></header>
+      <div class="two-col">
+        <div class="card">
+          <h2>Mint an agent identity <span class="hint">bearer token · once minted, the proxy requires tokens</span></h2>
+          <form id="agent-form" class="form">
+            <label>Label <input name="label" type="text" placeholder="desk bot" required /></label>
+            <label>Bind to wallet <span class="hint">child label — blank = custody wallet</span> <input name="child" type="text" placeholder="intern" /></label>
+            <button class="btn go" type="submit">Mint token</button>
+            <p class="form-note" id="agent-result"></p>
+          </form>
+          <div id="agents-list" style="margin-top:1rem"></div>
+        </div>
+        <div class="card">
+          <h2>List a paid tool <span class="hint">marketplace — same 402 gate, receipts, ledger</span></h2>
+          <form id="tool-form" class="form">
+            <label>Id <input name="id" type="text" placeholder="haiku" required pattern="[a-z0-9-]{2,40}" /></label>
+            <label>Price (USD) <input name="price" type="number" step="0.001" min="0.001" value="0.01" required /></label>
+            <label>Label <input name="label" type="text" placeholder="Haiku writer" /></label>
+            <label>Upstream URL <span class="hint">blank = canned response</span> <input name="upstreamUrl" type="url" placeholder="https://…" /></label>
+            <button class="btn go" type="submit">Register tool</button>
+            <p class="form-note" id="tool-result"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section data-page="report" hidden>
+      <header><h1>Report</h1><p>The number you forward to whoever owns the budget.</p></header>
+      <div class="filter-row"><select id="rp-days"><option value="1">last 24h</option><option value="7" selected>last 7 days</option><option value="30">last 30 days</option></select></div>
+      <div class="card"><p id="rp-headline" style="font-size:1.05rem;color:var(--ink);line-height:1.6">…</p></div>
+      <div class="stat-row" id="rp-stats"></div>
+      <div class="two-col">
+        <div class="card"><h2>Paid by category</h2><div id="rp-cat"></div></div>
+        <div class="card"><h2>Paid by chain / rail</h2><div id="rp-chain"></div></div>
+      </div>
+      <div class="card"><h2>What governance stopped</h2><table class="tbl"><thead><tr><th>reason</th><th>times</th></tr></thead><tbody id="rp-reasons"></tbody></table></div>
+    </section>
+  </main>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>

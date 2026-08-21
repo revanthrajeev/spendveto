@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Join the waitlist</title>
+<meta name="description" content="Join the waitlist for hosted SpendVeto — the spend-governance platform for AI agents. Multi-chain, wallet-native." />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .auth-wrap { min-height: 100vh; display: grid; grid-template-columns: 1.05fr 1fr; }
+  @media (max-width: 940px) { .auth-wrap { grid-template-columns: 1fr; } .auth-side { display: none; } }
+  .auth-side {
+    position: relative; overflow: hidden; border-right: 1px solid var(--line);
+    background: linear-gradient(rgba(7, 10, 8, 0.55), rgba(7, 10, 8, 0.92)), url("./assets/terrain.jpg") center 70% / cover no-repeat;
+    display: flex; flex-direction: column; justify-content: flex-end; padding: 3rem clamp(1.5rem, 4vw, 3.5rem) 3.5rem;
+  }
+  .auth-side h2 { font-size: clamp(1.7rem, 2.8vw, 2.5rem); letter-spacing: -0.02em; max-width: 18ch; }
+  .auth-side p { color: var(--dim); margin-top: 1rem; max-width: 46ch; line-height: 1.7; font-size: 0.95rem; }
+  .auth-main { display: flex; flex-direction: column; justify-content: center; padding: 7.5rem clamp(1.4rem, 5vw, 4.5rem) 4rem; }
+  .auth-box { width: min(460px, 100%); margin: 0 auto; }
+  .auth-box h1 { font-size: 2rem; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+  .auth-box .sub { color: var(--dim); font-size: 0.92rem; line-height: 1.65; margin-bottom: 2rem; }
+  label { display: block; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 1.3rem 0 0.5rem; }
+  input[type="email"], textarea {
+    width: 100%; padding: 0.8rem 1rem; border-radius: 10px; font: inherit; font-size: 0.95rem;
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus { border-color: rgba(70, 214, 140, 0.5); }
+  .chain-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chain-pill {
+    display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; user-select: none;
+    padding: 0.45rem 0.9rem; border-radius: 99px; border: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--dim); transition: all 0.15s; background: var(--panel);
+  }
+  .chain-pill input { display: none; }
+  .chain-pill.on { border-color: var(--green); color: var(--ink); background: rgba(70, 214, 140, 0.08); }
+  .chain-pill .live-tag { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--green); border: 1px solid var(--green-deep); border-radius: 4px; padding: 0.05rem 0.35rem; }
+  .chain-pill .soon-tag { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0.05rem 0.35rem; }
+  .wallet-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 1rem; margin-top: 0.5rem;
+    background: var(--panel); font-size: 0.88rem; color: var(--dim);
+  }
+  .wallet-row.connected { border-color: rgba(70, 214, 140, 0.4); color: var(--ink); }
+  .wallet-btn { font: inherit; font-size: 0.78rem; font-weight: 650; padding: 0.4rem 0.9rem; border-radius: 99px; cursor: pointer; border: 1px solid var(--green-deep); color: var(--green); background: transparent; }
+  .wallet-btn:hover { background: rgba(70, 214, 140, 0.08); }
+  .submit {
+    margin-top: 2rem; width: 100%; font: inherit; font-weight: 700; font-size: 1rem;
+    padding: 0.95rem; border-radius: 99px; border: none; cursor: pointer;
+    background: var(--green); color: #06130c;
+    box-shadow: 0 0 0 1px rgba(70, 214, 140, 0.4), 0 10px 45px -10px rgba(70, 214, 140, 0.6);
+  }
+  .submit:hover { background: #5ce39d; }
+  .submit:disabled { opacity: 0.55; cursor: default; }
+  .result { margin-top: 1.4rem; font-size: 0.9rem; line-height: 1.6; display: none; padding: 0.9rem 1.1rem; border-radius: 10px; }
+  .result.ok { display: block; border: 1px solid rgba(70, 214, 140, 0.4); background: rgba(70, 214, 140, 0.07); color: var(--ink); }
+  .result.err { display: block; border: 1px solid rgba(224, 100, 74, 0.4); background: rgba(224, 100, 74, 0.06); color: var(--dim); }
+  .alt { margin-top: 1.6rem; text-align: center; font-size: 0.84rem; color: var(--faint); }
+  .alt a { color: var(--green); }
+  .side-points { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.6rem; }
+  .side-points span { font-size: 0.84rem; color: var(--dim); }
+  .side-points span::before { content: "✓ "; color: var(--green); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./pricing.html">Pricing</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a class="nav-cta" href="./signin.html">Sign in</a>
+  </div>
+</nav>
+
+<div class="auth-wrap">
+  <div class="auth-side">
+    <h2>Give your agents a budget, not a blank check.</h2>
+    <p>The open-source stack runs on your machine today. The waitlist is for <b style="color:var(--ink)">hosted SpendVeto</b> — managed custody, orgs and SSO, alerts, and audit exports, on the chains you need.</p>
+    <div class="side-points">
+      <span>237 end-to-end checks on every claim</span>
+      <span>x402 + MCP native, Apache-2.0 licensed</span>
+      <span>Keyless agents via the enforcement proxy</span>
+    </div>
+  </div>
+
+  <div class="auth-main">
+    <div class="auth-box">
+      <h1>Join the waitlist</h1>
+      <p class="sub">Early access to the hosted platform, in cohort order. Tell us which chains your agents spend on — it decides what we build first.</p>
+
+      <form id="wl-form">
+        <label for="email">Work email</label>
+        <input type="email" id="email" placeholder="you@company.com" autocomplete="email" />
+
+        <label>Wallet <span style="text-transform:none;letter-spacing:0">(optional — connect any installed wallet)</span></label>
+        <div class="wallet-row" id="wallet-row">
+          <span id="wallet-label" class="mono">No wallet connected</span>
+          <span id="wallet-actions"><button type="button" class="wallet-btn" id="wallet-open">Connect wallet</button></span>
+        </div>
+        <div id="wallet-list" style="display:none; margin-top:0.5rem;"></div>
+
+        <label>Chains your agents need</label>
+        <div class="chain-grid" id="chain-grid"></div>
+
+        <label for="notes">What are your agents buying? <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="notes" rows="2" placeholder="e.g. search APIs, data feeds, other agents' tools…"></textarea>
+
+        <button class="submit" id="submit-btn" type="submit">Join the waitlist →</button>
+        <div class="result" id="result"></div>
+      </form>
+
+      <p class="alt">Prefer to self-host now? <a href="./docs.html#quickstart">Run it locally in 60 seconds</a>.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Hosted platform is a waitlist, not yet live. The open-source core is Apache-2.0 — every claim covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./signin.html">Sign in</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+</footer>
+
+</div>
+
+<script type="module">
+import { discoverWallets, connectWallet, loadChains, joinWaitlist, short } from "./wallet-connect.js";
+import { openWalletModal } from "./wallet-modal.js";
+
+let connection = null;
+const walletLabel = document.getElementById("wallet-label");
+const walletRow = document.getElementById("wallet-row");
+const walletList = document.getElementById("wallet-list");
+const walletOpen = document.getElementById("wallet-open");
+
+walletList.style.display = "none";
+walletOpen.addEventListener("click", () =>
+  openWalletModal({
+    onConnect: (c) => {
+      connection = c;
+      walletLabel.textContent = `${c.walletName} · ${short(c.address)}`;
+      walletRow.classList.add("connected");
+      document.getElementById("wallet-actions").innerHTML = `<span style="color:var(--green);font-size:0.78rem">connected ✓</span>`;
+    },
+    onError: (err) => {
+      walletLabel.textContent = err?.message?.slice(0, 60) || "connection rejected";
+    },
+  })
+);
+
+const chainGrid = document.getElementById("chain-grid");
+const chains = await loadChains();
+for (const c of chains) {
+  const pill = document.createElement("label");
+  pill.className = "chain-pill" + (c.status === "live" ? " on" : "");
+  pill.innerHTML = `<input type="checkbox" value="${c.id}" ${c.status === "live" ? "checked" : ""} />${c.name} <span class="${c.status === "live" ? "live-tag" : "soon-tag"}">${c.status === "live" ? "LIVE" : "READY"}</span>`;
+  pill.addEventListener("click", () => setTimeout(() => pill.classList.toggle("on", pill.querySelector("input").checked), 0));
+  chainGrid.appendChild(pill);
+}
+
+const form = document.getElementById("wl-form");
+const result = document.getElementById("result");
+const submitBtn = document.getElementById("submit-btn");
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("email").value.trim();
+  const wallet = connection?.address || null;
+  if (!email && !wallet) {
+    result.className = "result err";
+    result.textContent = "Add an email or connect a wallet — we need one way to reach you.";
+    return;
+  }
+  const picked = [...chainGrid.querySelectorAll("input:checked")].map((i) => i.value);
+  submitBtn.disabled = true;
+  try {
+    const res = await joinWaitlist({ email, wallet, chains: picked, notes: document.getElementById("notes").value.trim() });
+    result.className = "result ok";
+    result.innerHTML = `You're <b>#${res.position}</b> on the waitlist. We'll reach out in cohort order — and star the repo to follow the build in public.`;
+    form.querySelectorAll("input, textarea, button").forEach((el) => (el.disabled = true));
+  } catch {
+    submitBtn.disabled = false;
+    result.className = "result err";
+    result.innerHTML = `The hosted waitlist isn't live yet — the open-source core is. Email <a href="mailto:revanthrajeev2004@gmail.com" style="color:var(--green)">revanthrajeev2004@gmail.com</a> and I'll add you, or <a href="./docs.html#quickstart" style="color:var(--green)">run it yourself in 60 seconds</a>.`;
+  }
+});
+</script>
+</body>
+</html>

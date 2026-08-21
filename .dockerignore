@@ -1,0 +1,11 @@
+node_modules
+data
+.env
+.env.local
+.git
+.gitignore
+launch
+site
+dashboard
+docs
+*.md

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Sign in</title>
+<meta name="description" content="Sign in to SpendVeto with any installed wallet. Hosted platform is a waitlist, not yet live." />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .auth-center { min-height: 100vh; display: grid; place-items: center; padding: 7.5rem 1.4rem 4rem; position: relative; overflow: hidden; }
+  .auth-center::before {
+    content: ""; position: absolute; left: 50%; bottom: -30%; transform: translateX(-50%);
+    width: 120%; aspect-ratio: 2.4; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(70, 214, 140, 0.14), transparent 60%);
+    pointer-events: none;
+  }
+  .card {
+    position: relative; width: min(440px, 100%);
+    border: 1px solid var(--line); border-radius: 18px; padding: 2.2rem 2rem 2rem;
+    background: linear-gradient(165deg, var(--panel-2), rgba(7, 10, 8, 0.6) 60%);
+    box-shadow: 0 50px 120px -50px rgba(0, 0, 0, 0.9);
+  }
+  .card h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+  .card .sub { color: var(--dim); font-size: 0.9rem; line-height: 1.65; margin-bottom: 1.8rem; }
+  .beta-tag { display: inline-block; font-family: ui-monospace, monospace; font-size: 0.66rem; letter-spacing: 0.16em; color: var(--copper); border: 1px solid rgba(224, 160, 92, 0.4); border-radius: 5px; padding: 0.2rem 0.55rem; margin-bottom: 1.1rem; }
+  .wallet-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 12px; padding: 0.85rem 1.05rem; margin-bottom: 0.6rem;
+    background: var(--panel); transition: border-color 0.15s, transform 0.15s; font-size: 0.92rem;
+  }
+  .wallet-item:hover { border-color: rgba(70, 214, 140, 0.45); transform: translateY(-1px); }
+  .wallet-item .name { display: inline-flex; align-items: center; gap: 0.7rem; }
+  .wallet-item img { width: 22px; height: 22px; border-radius: 6px; }
+  .wallet-item .go { color: var(--green); font-size: 0.8rem; font-weight: 650; }
+  .empty-note { border: 1px dashed var(--line); border-radius: 12px; padding: 1rem 1.1rem; color: var(--faint); font-size: 0.85rem; line-height: 1.6; }
+  .state { margin-top: 1.2rem; font-size: 0.88rem; line-height: 1.65; display: none; padding: 0.95rem 1.1rem; border-radius: 10px; }
+  .state.ok { display: block; border: 1px solid rgba(70, 214, 140, 0.4); background: rgba(70, 214, 140, 0.07); }
+  .state.err { display: block; border: 1px solid rgba(224, 100, 74, 0.4); background: rgba(224, 100, 74, 0.06); color: var(--dim); }
+  .chainline { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-top: 0.9rem; font-size: 0.8rem; color: var(--dim); }
+  .mini-btn { font: inherit; font-size: 0.74rem; font-weight: 650; padding: 0.35rem 0.8rem; border-radius: 99px; cursor: pointer; border: 1px solid var(--green-deep); color: var(--green); background: transparent; }
+  .mini-btn:hover { background: rgba(70, 214, 140, 0.08); }
+  .alt { margin-top: 1.6rem; text-align: center; font-size: 0.84rem; color: var(--faint); }
+  .alt a { color: var(--green); }
+.connect-big{width:100%;font:inherit;font-size:1rem;font-weight:700;background:var(--green,#46d68c);color:#06130b;border:0;border-radius:12px;padding:0.85rem;cursor:pointer;letter-spacing:0.01em}.connect-big:hover{filter:brightness(1.07)}
+.app-glyph{width:56px;height:56px;border-radius:16px;background:rgba(70,214,140,.1);border:1px solid var(--green-deep,#1f7a52);display:grid;place-items:center;margin:0 auto 0.9rem}
+.or-div{display:flex;align-items:center;gap:0.8rem;margin:1.1rem 0;color:var(--faint,#5c675e);font-size:0.68rem;letter-spacing:0.14em}
+.or-div i{flex:1;border-top:1px dashed var(--line,#22291f)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem}
+.duo-btn{font:inherit;font-size:0.92rem;font-weight:650;padding:0.7rem;border-radius:11px;border:1px solid var(--line,#22291f);background:rgba(255,255,255,.02);color:var(--ink,#eef3ed);cursor:pointer;text-align:center;text-decoration:none}
+.duo-btn:hover{border-color:var(--green-deep,#1f7a52)}
+.beta-box{margin-top:1.1rem;border:1px solid rgba(224,160,92,.4);background:rgba(224,160,92,.06);border-radius:12px;padding:0.85rem 1rem;font-size:0.82rem;color:var(--dim,#93a094);line-height:1.6}
+.beta-box b{display:block;color:var(--copper,#e0a05c);margin-bottom:0.2rem;font-size:0.85rem}
+.beta-box a{color:var(--copper,#e0a05c)}
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./pricing.html">Pricing</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./pitch.html">Pitch</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="auth-center">
+  <div class="card">
+    <div class="app-glyph"><img src="./assets/logo.svg" alt="" width="30" height="30" /></div>
+    <h1 style="text-align:center">Launch App</h1>
+    <p class="sub" style="text-align:center">Connect your wallet to access the console</p>
+
+    <div id="wallets"><div class="empty-note">Looking for installed wallets…</div></div>
+
+    <div class="or-div"><i></i><span>OR</span><i></i></div>
+    <div class="duo">
+      <button class="duo-btn" id="alt-signin">⇥&nbsp; Sign In</button>
+      <a class="duo-btn" href="./signup.html">⊕&nbsp; Sign Up</a>
+    </div>
+
+    <div class="beta-box"><b>🔒 Waitlist only</b>The hosted console is not live yet. <a href="./signup.html">Join the waitlist</a> if you don't have access — or <a href="./docs.html#quickstart">self-host in 60 seconds</a>.</div>
+
+    <div class="state" id="state"></div>
+  </div>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Wallet sign-in uses EIP-6963 discovery + a plain signed message. Nothing leaves this page except through your wallet.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./signup.html">Waitlist</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+</footer>
+
+</div>
+
+<script type="module">
+import { discoverWallets, connectWallet, signIn, switchToBaseSepolia, short } from "./wallet-connect.js";
+import { openWalletModal } from "./wallet-modal.js";
+
+const walletsEl = document.getElementById("wallets");
+const state = document.getElementById("state");
+
+walletsEl.innerHTML = "";
+const openBtn = document.createElement("button");
+openBtn.className = "connect-big";
+openBtn.textContent = "Connect Wallet";
+openBtn.onclick = () => openWalletModal({
+  onConnect: afterConnect,
+  onError: (err) => { state.className = "state err"; state.textContent = err?.code === 4001 ? "Request rejected in the wallet." : (err?.message?.slice(0, 90) || String(err)); },
+});
+walletsEl.appendChild(openBtn);
+document.getElementById("alt-signin")?.addEventListener("click", () => openBtn.click());
+
+async function afterConnect(connection) {
+  try {
+    state.className = "state ok";
+    state.textContent = "Connected. Now sign the ownership message in your wallet…";
+    await signIn(connection);
+    localStorage.setItem("spendveto.wallet", connection.address);
+
+    state.innerHTML = `Signed in as <b class="mono">${short(connection.address)}</b> via ${connection.walletName} ✓<br /><span style="color:var(--dim)">Hosted SpendVeto is a waitlist, not yet live — your wallet is noted. Meanwhile, everything runs self-hosted: <span class="mono">npm run server</span>.</span>
+      <div class="chainline"><span>Settlement chain: Base Sepolia (live)</span><button class="mini-btn" id="switch-chain">Switch wallet to Base Sepolia</button></div>`;
+
+    document.getElementById("switch-chain")?.addEventListener("click", async () => {
+      try {
+        await switchToBaseSepolia(connection);
+        document.getElementById("switch-chain").textContent = "On Base Sepolia ✓";
+      } catch (err) {
+        state.className = "state err";
+        state.textContent = `Chain switch declined: ${err?.message?.slice(0, 80) || err}`;
+      }
+    });
+
+    // Quietly register the verified wallet on the local waitlist if it's up.
+    fetch("http://localhost:8402/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: connection.address, chains: ["base-sepolia"], notes: "wallet sign-in" }),
+      signal: AbortSignal.timeout(4000),
+    }).catch(() => {});
+  } catch (err) {
+    state.className = "state err";
+    state.textContent = err?.code === 4001 ? "Request rejected in the wallet." : `Could not connect: ${err?.message?.slice(0, 90) || err}`;
+  }
+}
+</script>
+</body>
+</html>

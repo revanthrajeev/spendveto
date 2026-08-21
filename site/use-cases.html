@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Use cases</title>
+<meta name="description" content="Where spend governance for AI agents actually earns its keep: procurement bots, compliance lookups, support triage, analytics copilots, agent-to-agent data buying, and CI/coding agents." />
+<meta property="og:title" content="SpendVeto — Use cases" />
+<meta property="og:description" content="Where spend governance for AI agents actually earns its keep: procurement bots, compliance lookups, support triage, analytics copilots, agent-to-agent data buying, and CI/coding agents." />
+<meta property="og:image" content="./assets/generated/og-default.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="./assets/generated/og-default.png" />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .uc-wrap { max-width: 1100px; margin: 0 auto; padding: 8.5rem clamp(1.2rem, 4vw, 3rem) 6rem; }
+  .uc-head { max-width: 62ch; }
+  .uc-head h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.025em; margin-bottom: 0.8rem; }
+  .uc-head .lede { color: var(--dim); line-height: 1.7; font-size: 1.05rem; }
+  .uc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; margin-top: 3rem; }
+  @media (max-width: 820px) { .uc-grid { grid-template-columns: 1fr; } }
+  .uc { border: 1px solid var(--line); border-radius: 16px; padding: 1.5rem 1.6rem; background: linear-gradient(180deg, var(--panel-2), rgba(7,10,8,0.35) 70%); transition: border-color 0.25s, transform 0.25s; position: relative; overflow: hidden; }
+  .uc:hover { border-color: rgba(70,214,140,0.32); transform: translateY(-3px); }
+  .uc .ico { width: 46px; height: 46px; margin-bottom: 1rem; }
+  .uc h3 { font-size: 1.12rem; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+  .uc .who { font-family: ui-monospace, monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 0.7rem; }
+  .uc p { color: var(--dim); font-size: 0.9rem; line-height: 1.62; margin-bottom: 0.9rem; }
+  .uc .risk { color: var(--copper); }
+  .uc .controls { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; }
+  .uc .tag { font-family: ui-monospace, monospace; font-size: 0.66rem; color: var(--dim); border: 1px solid var(--line); border-radius: 99px; padding: 0.2rem 0.6rem; background: rgba(7,10,8,0.5); }
+  .uc-cta { margin-top: 3.4rem; text-align: center; border: 1px solid var(--line); border-radius: 16px; padding: 2.4rem 1.6rem; background: var(--panel); }
+  .uc-cta h2 { font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -0.02em; margin-bottom: 0.7rem; }
+  .uc-cta p { color: var(--dim); max-width: 52ch; margin: 0 auto 1.5rem; line-height: 1.65; }
+  .row-btns { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./playground.html">Playground</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./about.html">About</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="uc-wrap">
+  <div class="uc-head">
+    <p class="counter"><b>USE CASES</b> where governance earns its keep</p>
+    <h1>Every one of these is an agent spending money you can't watch in real time.</h1>
+    <p class="lede">A single agent conversation can trigger hundreds of sub-cent purchases — API calls, data pulls, model inference, other agents' tools. That's exactly where an unbounded wallet turns a bug into an invoice. Here's who's spending, what goes wrong without a governor, and the SpendVeto controls that stop it.</p>
+  </div>
+
+  <div class="uc-grid">
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="14" width="34" height="24" rx="2"/><path d="M7 20h34"/><path d="M16 14v-4h16v4"/><circle cx="24" cy="29" r="3"/></svg>
+      <div class="who">Procurement bot</div>
+      <h3>Autonomous purchasing &amp; restocking</h3>
+      <p>An inventory agent predicts a shortage and places supplier orders on its own, settling in stablecoins. <span class="risk">A bad forecast or a retry loop can order ten times what's needed before anyone looks.</span></p>
+      <div class="controls"><span class="tag">per-call cap</span><span class="tag">hourly budget</span><span class="tag">payee allowlist</span><span class="tag">approval &gt; $X</span></div>
+    </div>
+
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6l14 6v9c0 9-6 15-14 18-8-3-14-9-14-18v-9z"/><path d="M18 24l4 4 8-9"/></svg>
+      <div class="who">Compliance agent</div>
+      <h3>Sanctions &amp; risk-score lookups</h3>
+      <p>A compliance bot pings a paid sanctions database and buys supplier-risk scores per check. <span class="risk">Charged per query, a mis-scoped batch job can rack up thousands of paid lookups overnight.</span></p>
+      <div class="controls"><span class="tag">rate limit</span><span class="tag">category cap</span><span class="tag">tool scope</span><span class="tag">runaway auto-freeze</span></div>
+    </div>
+
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 34V12a2 2 0 012-2h28a2 2 0 012 2v22"/><path d="M6 34h36l-4 6H10z"/><path d="M18 18h12M18 24h8"/></svg>
+      <div class="who">Support triage agent</div>
+      <h3>Tier-1 tickets, priced per interaction</h3>
+      <p>A triage agent resolves common tickets and escalates hard ones, paying per model call and per tool. <span class="risk">A prompt-injected ticket can steer it into paying an attacker or looping a premium tool.</span></p>
+      <div class="controls"><span class="tag">payee allowlist</span><span class="tag">human approval</span><span class="tag">per-agent budget</span><span class="tag">kill switch</span></div>
+    </div>
+
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 40V22M18 40V10M28 40V26M38 40V16"/><path d="M6 40h36"/></svg>
+      <div class="who">Analytics copilot</div>
+      <h3>Scoped data pulls, billed per query</h3>
+      <p>A copilot runs data pulls and summaries against metered datasets, billed by the query. <span class="risk">"Analyze everything" becomes an unbounded fan-out of paid queries — precise consumption, no ceiling.</span></p>
+      <div class="controls"><span class="tag">hourly budget</span><span class="tag">API-spend rail</span><span class="tag">shadow-test limits</span><span class="tag">audit trail</span></div>
+    </div>
+
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="24" r="6"/><circle cx="35" cy="13" r="6"/><circle cx="35" cy="35" r="6"/><path d="M18.5 21l11-5M18.5 27l11 5"/></svg>
+      <div class="who">Agent-to-agent</div>
+      <h3>Buying datasets &amp; tools from other agents</h3>
+      <p>Agents pay other agents for data and API access in real time, at machine velocity. <span class="risk">A chain of micro-payments across untrusted counterparties is impossible to reconcile after the fact — or to stop mid-chain.</span></p>
+      <div class="controls"><span class="tag">nested budgets</span><span class="tag">payee scope</span><span class="tag">signed receipts</span><span class="tag">trust score</span></div>
+    </div>
+
+    <div class="uc reveal">
+      <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="#46d68c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16l-8 8 8 8M30 16l8 8-8 8"/></svg>
+      <div class="who">Coding &amp; CI agents</div>
+      <h3>Fleets that buy compute &amp; premium tools</h3>
+      <p>Claude Code / LangChain / CrewAI fleets call paid models, review tools, and sandboxes across many parallel sub-agents. <span class="risk">One runaway parent can fan a budget out across dozens of children before a human notices.</span></p>
+      <div class="controls"><span class="tag">delegation tree</span><span class="tag">MCP-native</span><span class="tag">concurrency-safe caps</span><span class="tag">trading-hours</span></div>
+    </div>
+  </div>
+
+  <div class="uc-cta reveal">
+    <h2>See the decision happen — no install.</h2>
+    <p>The playground runs SpendVeto's real policy logic in your browser: set a budget, fire agent spend at it, and watch each attempt pass, pause for approval, or get blocked with a reason.</p>
+    <div class="row-btns">
+      <a class="pill pill-primary" href="./playground.html">Open the playground →</a>
+      <a class="pill pill-ghost" href="./docs.html#quickstart">Run it locally in 60s</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links">
+    <a href="./use-cases.html">Use cases</a>
+    <a href="./playground.html">Playground</a>
+    <a href="./about.html">About</a>
+    <a href="./security.html">Security</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./docs.html">Docs</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="./terms.html">Terms</a>
+  </div>
+</footer>
+
+</div><!-- /canvas-frame -->
+<script>
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el, i) => { el.style.transitionDelay = `${(i % 3) * 70}ms`; io.observe(el); });
+</script>
+</body>
+</html>

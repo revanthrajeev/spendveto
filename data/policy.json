@@ -1,0 +1,10 @@
+{
+  "maxPerCallUSD": 0.05,
+  "maxPerHourUSD": 0.2,
+  "maxCallsPerHour": 10,
+  "requireApprovalAboveUSD": 0.015,
+  "anomaly": {
+    "burstAttempts": 10,
+    "burstWindowSeconds": 10
+  }
+}

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Docs</title>
+<meta name="description" content="SpendVeto documentation: quickstart, commands, API reference, policy configuration, MCP setup." />
+<link rel="icon" href="./assets/favicon.svg" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .docs-wrap { display: grid; grid-template-columns: 220px 1fr; gap: 3rem; max-width: 1150px; margin: 0 auto; padding: 8.5rem clamp(1.2rem, 4vw, 3rem) 5rem; }
+  @media (max-width: 860px) { .docs-wrap { grid-template-columns: 1fr; } aside { display: none; } }
+  aside { position: sticky; top: 7.5rem; align-self: start; }
+  aside a { display: block; padding: 0.4rem 0; color: var(--dim); font-size: 0.86rem; border-left: 2px solid var(--line); padding-left: 0.9rem; }
+  aside a:hover { color: var(--ink); border-color: var(--green); }
+  article h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.025em; margin-bottom: 0.8rem; }
+  article .lede { color: var(--dim); line-height: 1.7; max-width: 62ch; }
+  article h2 { font-size: 1.5rem; letter-spacing: -0.015em; margin: 3.2rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  article h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+  article p { color: var(--dim); line-height: 1.7; margin: 0.7rem 0; max-width: 68ch; }
+  article p b, article li b { color: var(--ink); }
+  article ul { margin: 0.8rem 0 0.8rem 1.2rem; color: var(--dim); line-height: 1.8; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin: 1.2rem 0; }
+  pre.block { margin: 1.2rem 0; }
+  .callout { border: 1px solid rgba(224, 160, 92, 0.35); background: rgba(224, 160, 92, 0.05); border-radius: 10px; padding: 0.9rem 1.1rem; font-size: 0.88rem; color: var(--dim); margin: 1.2rem 0; }
+  .callout b { color: var(--copper); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./pricing.html">Pricing</a>
+    <a href="./index.html">Home</a>
+    <a href="./pitch.html">Pitch</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="docs-wrap">
+  <aside>
+    <a href="#quickstart">Quickstart</a>
+    <a href="#commands">Commands</a>
+    <a href="#governance">Governance model</a>
+    <a href="#policy">policy.json</a>
+    <a href="#delegation">Delegation & scoping</a>
+    <a href="#freezes">Kill switch</a>
+    <a href="#mcp">MCP setup</a>
+    <a href="#sdk">SDK &amp; integrations</a>
+    <a href="#api">HTTP API</a>
+    <a href="#modes">Modes</a>
+    <a href="#verify">Verification</a>
+  </aside>
+
+  <article>
+    <h1>Documentation</h1>
+    <p class="lede">SpendVeto is a governance gate in front of a catalog of paid (x402/USDC) endpoints, reachable three ways — CLI, delegated child agents, and any MCP client. Everything on this page is exercised by the 237-assertion suite in <code>npm run verify</code>.</p>
+
+    <h2 id="quickstart">Quickstart</h2>
+    <pre class="block"><span class="p">$</span> git clone &lt;repo&gt; &amp;&amp; cd spendveto &amp;&amp; npm install
+<span class="p">$</span> npm run server        <span class="c"># API + dashboard on http://localhost:8402</span>
+<span class="p">$</span> npm run call           <span class="c"># pays for "review" ($0.01), auto-approved</span>
+<span class="p">$</span> npm run call -- summarize  <span class="c"># $0.02 — pauses for approval on the dashboard</span></pre>
+    <p>No keys, no faucets: the default <b>simulate</b> mode uses real secp256k1 keypairs and real ECDSA verification, settling against a local ledger seeded with $5.00 of simulated USDC.</p>
+
+    <h2 id="commands">Commands</h2>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm run server</code></td><td>Start the governed API + dashboard (:8402)</td></tr>
+        <tr><td><code>npm run call -- &lt;tool&gt; [--child[=label]] [--chain=id] [--dry-run]</code></td><td>Governed paid call (or a zero-side-effect dry run of the verdict)</td></tr>
+        <tr><td><code>npm run delegate -- &lt;cap&gt; [label] [--parent &lt;label&gt;] [--tools a,b] [--chains id1,id2] [--ttl 10m]</code></td><td>Grant a capped budget — optionally tool-scoped, chain-scoped, and time-boxed</td></tr>
+        <tr><td><code>npm run mcp</code></td><td>Start the MCP stdio server exposing the paid catalog</td></tr>
+        <tr><td><code>npm run proxy</code></td><td>Enforcement proxy (:8404): keyless agents POST intents; custody signs after governance</td></tr>
+        <tr><td><code>npm run policy [-- apply &lt;pack&gt;]</code></td><td>List or apply policy packs (cautious / standard / production)</td></tr>
+        <tr><td><code>npm run apikey -- [role] [label]</code></td><td>Mint an admin-surface API key (role: viewer / approver / admin). First key flips the server to auth-required.</td></tr>
+        <tr><td><code>npm run verify</code></td><td>237 end-to-end assertions, headless</td></tr>
+        <tr><td><code>npm run site</code></td><td>Serve this marketing site (:8403)</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="governance">Governance model</h2>
+    <p>Every call runs the same pipeline, <b>before any payment happens</b>:</p>
+    <ul>
+      <li><b>Frozen?</b> — manual kill switch or the runaway-burst detector.</li>
+      <li><b>Policy</b> — per-call cap, hourly budget, call-rate limit, checked against the live ledger.</li>
+      <li><b>Delegation chain</b> — every ancestor's cap and tool scope binds the whole subtree beneath it.</li>
+      <li><b>Human approval</b> — prices above the threshold pause for Approve/Deny; <b>no decision in 30s fails closed</b>.</li>
+      <li><b>Pay + prove</b> — x402 settles; the response carries an ECDSA-signed receipt.</li>
+    </ul>
+
+    <h2 id="policy">policy.json</h2>
+    <pre class="block">{
+  "maxPerCallUSD": 0.05,
+  "maxPerHourUSD": 0.2,
+  "maxCallsPerHour": 10,
+  "requireApprovalAboveUSD": 0.015,
+  "anomaly": { "burstAttempts": 10, "burstWindowSeconds": 10 },
+  "allowedChains": ["base-sepolia", "base"],
+  "allowedPayees": ["0xVendorA…", "0xVendorB…"],   <span class="c">// optional</span>
+  "alertWebhookUrl": "https://hooks.slack.com/…"   <span class="c">// optional</span>
+}</pre>
+    <p>Lives at <code>data/policy.json</code>. <b>anomaly</b>: a wallet exceeding <code>burstAttempts</code> ledger events inside <code>burstWindowSeconds</code> is frozen automatically. <b>alertWebhookUrl</b>: freezes, blocked calls, and pending approvals POST there in real time. <b>allowedChains</b> (optional): pins which chains agents may settle on — omit it to allow all seven registered chains. <b>allowedPayees</b> (optional): pins which recipient addresses agents may pay at all — a payment to any other address is refused before it's signed, so a compromised or prompt-injected agent can't reach an attacker's wallet.</p>
+
+    <h2 id="delegation">Delegation &amp; scoping</h2>
+    <pre class="block"><span class="p">$</span> npm run delegate -- 0.015 "team lead"
+<span class="p">$</span> npm run delegate -- 0.05 "intern" --parent "team lead"
+<span class="p">$</span> npm run delegate -- 0.02 "translator" --tools translate
+<span class="p">$</span> npm run call -- review --child=intern     <span class="c"># blocked when team lead's cap would be exceeded</span>
+<span class="p">$</span> npm run call -- review --child=translator <span class="c"># blocked: outside delegated scope</span>
+<span class="p">$</span> npm run delegate -- 0.02 "base only" --chains base-sepolia
+<span class="p">$</span> npm run call -- review --child="base only" --chain=polygon <span class="c"># blocked: outside delegated chain scope</span></pre>
+    <p>Caps and scopes cascade: a grandchild's spend counts against its own cap <b>and every ancestor's</b>; a revoked link (<code>POST /api/delegations/:id/revoke</code>) kills the whole branch.</p>
+    <div class="callout"><b>Note:</b> child private keys are stored in gitignored <code>data/children.json</code> — fine for simulate-mode demo money; use a real secret store before funding anything.</div>
+
+    <h2 id="freezes">Kill switch</h2>
+    <p>Freeze from the dashboard (per-wallet button) or the API. Frozen wallets are blocked in their own policy check <b>and</b> refused at the simulate payment gate with 403 — even with a correctly signed payment. The anomaly detector applies the same freeze automatically mid-burst.</p>
+
+    <h2 id="mcp">MCP setup</h2>
+    <pre class="block"><span class="c"># Claude Code (server must be running)</span>
+<span class="p">$</span> claude mcp add spendveto -- node /abs/path/spendveto/mcp/server.js</pre>
+    <p>Claude sees four tools: <code>review</code>, <code>summarize</code>, <code>translate</code> (priced in their descriptions) and free <code>spendveto_status</code>. Every paid call silently runs the full pipeline; blocked calls come back as tool errors naming the gate.</p>
+
+    <h2 id="sdk">SDK &amp; integrations</h2>
+    <p>Two ways to call the governed proxy from code instead of the CLI — both ship in this repo (<code>sdk/</code>, <code>integrations/</code>), both exercised by <code>npm run verify</code> against the live proxy, not just parsed.</p>
+    <h3>Node SDK</h3>
+    <pre class="block">import { SpendVeto, SpendVetoDenialError } from "./sdk/index.js";
+
+const tg = new SpendVeto({ agentToken: "tg_…" });  <span class="c">// optional — omit while no agents are registered</span>
+try {
+  const result = await tg.pay("review");
+} catch (err) {
+  if (err instanceof SpendVetoDenialError) {
+    console.log(err.code, err.suggestion); <span class="c">// e.g. "delegation_cap", "pick a cheaper tool…"</span>
+  }
+}</pre>
+    <p><code>.pay(toolId, opts)</code>, <code>.dryRun(toolId, opts)</code>, <code>.chat(prompt, opts)</code> (governed LLM/API spend), <code>.registerAgent(label, opts)</code>, <code>.catalog()</code>. A blocked call always throws <code>SpendVetoDenialError{code, suggestion, stage}</code> instead of silently no-oping.</p>
+    <h3>LangChain</h3>
+    <pre class="block">import { createSpendVetoTools } from "./integrations/langchain.js";
+
+const tools = await createSpendVetoTools({ agentToken: "tg_…" });
+<span class="c">// [{ name: "spendveto_review", description: "…", func: async () => "…" }, …]
+// pass into tool() from "@langchain/core/tools" for a first-class StructuredTool</span></pre>
+    <p>Dependency-free — no <code>@langchain/core</code> install required to use these, so it doesn't force LangChain on anyone who isn't using it. One tool per live catalog entry, fetched fresh each call so marketplace tools show up automatically.</p>
+
+    <h2 id="api">HTTP API (:8402)</h2>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/catalog</code></td><td>Priced tool catalog</td></tr>
+        <tr><td><code>GET /api/ledger</code> · <code>POST /api/ledger/event</code></td><td>Full ledger; client-side event logging</td></tr>
+        <tr><td><code>GET /api/stats</code> · <code>GET /api/analytics</code></td><td>Paid/blocked totals; per-tool, per-wallet + per-chain rollups</td></tr>
+        <tr><td><code>GET /metrics</code></td><td>Same numbers as <code>/api/stats</code>, in Prometheus text-exposition format</td></tr>
+        <tr><td><code>GET /api/chains</code></td><td>7-chain registry: status, canonical USDC contract, RPC</td></tr>
+        <tr><td><code>GET /api/rails</code></td><td>Rail adapter registry — one pay() contract; x402 live, AP2/ACP/MPP/Safe-AllowanceModule slots (see <code>docs/safe-allowance.md</code> in the repo)</td></tr>
+        <tr><td><code>GET /api/receipts/:id</code> · <code>POST /api/receipts/verify</code></td><td>Receipt lookup + independent ECDSA verification</td></tr>
+        <tr><td><code>GET /api/ledger/verify-chain</code></td><td>Tamper-evidence: confirm the ledger hash-chain is intact; reports the first broken row</td></tr>
+        <tr><td><code>GET /api/shadow</code> · <code>PUT</code> · <code>DELETE</code></td><td>Shadow mode: set a candidate policy that runs without enforcing, read the divergence report, or clear it</td></tr>
+        <tr><td><code>POST /proxy/llm</code></td><td>API-spend rail: estimate → govern → execute → meter actual cost (:8404)</td></tr>
+        <tr><td><code>POST /api/catalog/tools</code></td><td>Marketplace: register a paid tool behind the governance gate</td></tr>
+        <tr><td><code>POST /api/balances/topup</code></td><td>Fund a per-chain balance (simulate mode only)</td></tr>
+        <tr><td><code>POST /proxy/agents</code></td><td>Agent identities: bearer tokens, optionally wallet-bound (:8404)</td></tr>
+        <tr><td><code>GET /api/report?days=N</code></td><td>Spend report: headline, category/chain breakdown, top block reasons</td></tr>
+        <tr><td><code>GET /api/approvals/:id/decide?decision=…</code></td><td>One-click approve/deny (the links the webhook alert carries)</td></tr>
+        <tr><td><code>GET /api/export.csv</code></td><td>Audit export</td></tr>
+        <tr><td><code>GET/POST /api/approvals</code> · <code>POST /api/approvals/:id/decide</code></td><td>Human-in-the-loop queue</td></tr>
+        <tr><td><code>GET/POST /api/delegations</code> · <code>POST /api/delegations/:id/revoke</code></td><td>Budget grants (caps + scopes)</td></tr>
+        <tr><td><code>GET/POST /api/freezes</code> · <code>POST /api/freezes/:id/unfreeze</code></td><td>Kill switch</td></tr>
+        <tr><td><code>GET /api/trust/:address</code></td><td>Agent trust score (0–100 + grade) from governance history</td></tr>
+        <tr><td><code>GET /api/policy</code></td><td>Active policy</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="modes">Modes</h2>
+    <p><b>simulate</b> (default): real keypairs, real signature verification, nonce replay protection, local settlement — zero setup. <b>testnet</b>: the real x402 v2 packages, facilitator-adaptive: the gate asks its facilitator what it can settle at boot and brings every supported registry chain live (multi-chain 402s, per-chain USDC). The public facilitator settles Base Sepolia — fund one wallet at faucet.circle.com and set <code>SPENDVETO_MODE=testnet</code>; a CDP facilitator key unlocks its mainnet chains with zero code changes.</p>
+
+    <h2 id="verify">Verification</h2>
+    <p><code>npm run verify</code> boots everything headlessly and runs <b>237 assertions</b>: forged-signature rejection, all three approval outcomes, cascading caps, tool + chain scoping, chain-scoped signatures with per-chain balances, burst auto-freeze, manual freeze/unfreeze, signed-receipt verification, CSV export, per-chain analytics, webhook delivery to a live receiver, and a real MCP stdio JSON-RPC session.</p>
+  </article>
+</div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Apache-2.0. Prototype in public — every claim covered by <span class="mono">npm run verify</span>.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./pitch.html">Pitch</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,146 @@
+# SpendVeto — Pitch Source Doc
+
+One `##` per slide (same pattern as a Gamma-ready deck source). Every number below is cited at the bottom; nothing is invented. Written 2026-07-10.
+
+## One-liner
+
+**SpendVeto is the spend-governance layer for AI agents that pay for things.** Payment rails move an agent's money; SpendVeto decides whether the agent should be allowed to move it.
+
+## Problem
+
+AI agents now pay for tools, APIs, and data autonomously — no human, no card form. The x402 protocol alone cleared **169M payments across 590,000 buyers and 100,000 sellers in its first year** (Coinbase via InfoQ, July 2026; ~$50M cumulative volume per Coinbase's April 2026 disclosures). Coinbase, Stripe, Visa, Mastercard, Google, and Cloudflare are all shipping agent-payment rails in 2026.
+
+Every one of those rails answers "*how* does the agent pay?" Almost nobody answers the question every team deploying agents actually asks first: **"how do I stop it from overspending?"** An agent with a wallet and no governor is a corporate card with no limit, issued to software that runs at machine speed.
+
+## Why now (the asymmetry)
+
+The **seller side is commoditizing fast**: Cloudflare opened its x402 Monetization Gateway waitlist on **July 1, 2026** — anyone can now charge for any resource behind Cloudflare. Stripe has the Machine Payments Protocol. Nevermined, xpay.sh, Zuplo, and Apify all monetize MCP tools for sellers. And the rail itself just stopped being one company's protocol: the Linux Foundation operationally launched the **x402 Foundation** on **July 14, 2026**, with Coinbase contributing the protocol and **40 organizations** joining as members — including Visa, Mastercard, AWS, Google, Stripe, and Circle. A protocol with that member list isn't going away or getting displaced; the "how does the agent pay" question is now standardized. The "how do we stop it from overspending" question is still wide open.
+
+Every newly-paid tool makes the **buyer side** — the agent doing the spending — more exposed. That side is now being funded (Catena Labs raised a $30M Series A in May 2026, a16z crypto + Acrew, to build the governance layer for agent transactions), but every funded player is **closed and custodial**: Catena is filing for a national trust bank charter; Payman is a closed fiat platform. What's still empty is the position SpendVeto holds: **open-source, self-hostable, rail-neutral, MCP-native** buyer-side governance — the GitLab-vs-a-bank position. SpendVeto sits above every rail and works with any custodian, not competing with either.
+
+## Product (working today, not a plan)
+
+Open-source (Apache-2.0) Node.js stack, every claim below covered by a 237-assertion end-to-end verification suite:
+
+1. **Payment rails** — real x402 (HTTP 402 + USDC) gating a catalog of priced tools; runs against the live Base Sepolia facilitator, plus a zero-setup simulate mode with real ECDSA signing and replay protection.
+2. **Policy engine** — the agent's own rules, enforced *before* payment: per-call cap, hourly budget, call-rate limit, checked against live spend history.
+3. **Human-in-the-loop** — spends above a threshold pause for a real Approve/Deny on a live dashboard; unanswered requests **fail closed**.
+4. **n-level budget delegation + tool & chain scoping** — wallets grant capped sub-budgets down an arbitrary hierarchy ("IAM for money"); every ancestor's cap, **tool whitelist, and chain scope** governs its whole subtree, so a grandchild agent is blocked the moment its team's budget would be exceeded — or the moment it reaches for a tool or a settlement chain outside its scope. Revoking a link kills the branch.
+5. **Runaway detection + kill switch** — a wallet bursting past the attempt-rate threshold is auto-frozen mid-loop; any wallet can be frozen manually from the dashboard. Frozen wallets are refused even with a **correctly signed** payment.
+6. **MCP middleware** — a Model Context Protocol server that exposes the paid catalog to any MCP client (Claude Desktop, Claude Code). The agent sees ordinary tools; every call silently runs policy → approval → payment. **Governance the model cannot opt out of.**
+7. **Governance dashboard + analytics** — blocked-spend headline stats, per-tool/per-wallet spend rollups, live catalog, balances with per-wallet freeze buttons, hierarchical budget tree with spend-vs-cap bars, freeze log, approval queue, and a full ledger with reasons.
+8. **Audit-grade evidence** — every settlement is **ECDSA-signed by the server** (independently verifiable receipts), the ledger exports to CSV for accounting, and freezes/blocks/approvals fire real-time webhook alerts (Slack-ready). Blocked-spend dollars is a first-class metric: the number that proves value before real money even settles.
+9. **Enforcement proxy (custody mode)** — agents don't get wallets at all: they POST spending *intents*; the proxy holds the keys and only signs after the full pipeline passes. A rogue agent can't skip its policy check because it never had anything to sign with. **This is SpendVeto on the money path** — the self-hostable version of the hosted product, and the point where volume-based pricing lives.
+10. **Trust scores + policy packs** — every wallet's governance history compresses to a 0–100 score with a letter grade (the ledger as an agent credit file — the seed of a trust graph no competitor has), and governance ships as importable presets (`cautious` / `standard` / `production`) that teams can share and commit.
+11. **Multichain governance** — seven chains registered with their canonical USDC contracts; the chain rides *inside* every signed payment authorization (a Polygon-signed authorization is rejected on Arbitrum — tested), every `(wallet, chain)` pair keeps its own balance, policies carry chain allowlists, and delegated grants pin settlement chains per subtree. On-chain settlement live on Base Sepolia; all seven run the identical pipeline in simulate mode, and the live-settlement wiring for the other six is **done, not roadmap** (see #24).
+12. **Self-correcting denials, dry runs, time-boxed budgets** — every refusal is structured (machine code + concrete fix) and fed back to the agent through CLI, MCP, and the proxy, so a blocked agent adjusts instead of retry-looping; any intent can be dry-run through the full pipeline with zero side effects; grants can carry a TTL and expire on their own; and approval alerts ship one-click approve/deny links that work from Slack.
+13. **The API-spend rail (v0.9)** — the same pipeline governs the money agents *already* burn: LLM tokens and metered APIs. Auth/capture shape: worst-case cost estimated up front, the full pipeline (freeze → policy → cascading budgets → human approval, fails closed) runs against the estimate, the upstream call executes only if it passes, and the *actual* metered cost lands in the same ledger — same budgets, same kill switch, same trust scores as USDC spend. Tested: an above-threshold estimate fails closed with the upstream never called; a delegated cap blocks token spend exactly like crypto spend.
+14. **Tool registration + allowances (v0.10)** — anyone registers a paid tool behind the same governance gate (the supply-side primitive; a full two-sided marketplace with discovery/payouts/reputation is roadmap, not a present claim), and budgets can be **recurring allowances** that re-fill on a rolling window ("$5 every week") — the team-budget primitive today and the consumer agent-allowance primitive tomorrow. Plus simulate-mode top-ups for the coin-economy loop.
+15. **Competitor-parity controls (v0.11)** — the funded players' flagship features, open-sourced: Skyfire-style agent identities (bearer tokens bound to wallets — an authenticated proxy), Ramp-style hourly category caps, Safe-style N-approver rules, and trading-hours windows ("nothing spends at 3am") — the trading-desk wedge's native controls.
+16. **Concurrency-safe caps, SDK, LangChain (v0.13)** — closed a real race condition: concurrent calls against the same wallet could each read the same "spent so far" snapshot and jointly clear a cap sized for one. A per-wallet lock now serializes the decide-and-commit unit; proven with 6 concurrent calls against a cap with room for exactly one (exactly one wins, every run) — the correctness bar competitors advertise but that this project could independently verify. Shipped alongside it: a dependency-free Node SDK (`sdk/`) and a LangChain adapter (`integrations/`), both exercised against the live proxy in the verify suite, not just parsed.
+17. **Server-authoritative enforcement (v0.15)** — the payment gate itself now runs the full governance pipeline server-side, so an agent holding its own key and running a hand-rolled client that skips its policy check *still* cannot overspend: a validly-signed over-budget payment POSTed straight to the gate is refused there, and above-threshold spends require a real, single-use human-approval record before settlement. Governance is enforced by the party holding the money, not trusted to the party spending it — proven by an assertion that reproduces the bypass attack and confirms the gate blocks it.
+18. **Hash-chained audit ledger (v0.15)** — every ledger entry carries the hash of the entry before it, so editing, deleting, or reordering any historical row is detectable; `GET /api/ledger/verify-chain` reports the first broken row. The ledger stops being "a JSON file an admin can quietly edit" and becomes a tamper-evident audit record — the property a compliance team actually asks for. Tested by tampering a settled amount on disk and confirming the chain reports it broken at that exact row.
+19. **Payee allowlisting (v0.16)** — pin **which recipients** an agent may pay at all, enforced server-side at the gate. Even if a tool is compromised to redirect its payout, or an agent is prompt-injected into paying an attacker, a payment to an address not on the allowlist is refused before anything is signed — the most-cited 2026 agentic-payments guardrail ("allowlisting limits blast radius"). Works as a global policy (`allowedPayees`) and as a delegated scope that cascades through the budget tree exactly like tool and chain scope. Tested: a payment to an off-list payee is blocked, the same payment settles once the payee is allowlisted, and a payee-scoped sub-agent is blocked from paying an out-of-scope recipient.
+20. **Shadow mode (v0.16)** — the safe way to change a policy that sits in front of real money. Set a **candidate** policy and it runs alongside the live one *without enforcing*: every real decision is also evaluated against the candidate (same delegations, freezes, and spend history), and `GET /api/shadow` reports exactly how much spend the candidate would have additionally blocked or newly allowed. A team measures a policy change against live traffic — "this stricter policy would have blocked $X across N calls that currently go through" — before promoting it. Tested: a live call still settles while the report shows the strict candidate would have blocked it.
+21. **API-key auth + roles on the admin surface (v0.17)** — the management API (rewrite policy, unfreeze wallets, mint delegations, register tools, top up balances) is now behind bearer keys with roles (viewer / approver / admin), using the same "open until configured" pattern the proxy uses for agent identities: zero keys = frictionless open mode for demos; the first key (minted on the host with `npm run apikey`, never over the API) flips every admin endpoint to auth-required. Tested: an unauthenticated policy rewrite is refused (401), an admin key is accepted, a viewer key is refused the write (403), public reads stay open, and removing all keys restores open mode.
+22. **Trust graph, counterparty bureau, anomaly panel (v0.18)** — the per-wallet 0–100 score scaled out into a graph: every wallet a scored node, every delegation an edge, every delegation root an "org" with a paid-volume-weighted score over its whole sub-tree (`GET /api/trust/graph`); plus the **counterparty bureau** (`GET /api/trust/payee/:address`) — a *recipient's* reputation aggregated across every wallet that ever paid or was blocked from paying it, weighted by its payers' own governance scores. Alongside: an advisory anomaly panel beyond the burst freeze — block-rate spike, novel payee, category drift, amount outlier — deterministic and reproducible, no black-box model. Tested: the bureau aggregates two independent payers, refuses to invent reputation for a never-paid recipient, and the panel flags a mostly-blocked wallet while staying silent on a clean one.
+23. **Evidence surfaces: SIEM decision events, policy versioning, signed AP2 verdicts, governed billing (v0.19)** — the enterprise-evidence layer the 2026 buyer checklists ask for: every ledger decision exposed as one stable schema (`spendveto.decision.v1`) with JSONL export for Splunk/Datadog/Elastic; every gate decision stamped with the SHA-256 of the policy in force (`policyHash` — "which policy allowed this spend?" answerable from the ledger alone); AP2-shaped mandates evaluated by the full policy pipeline with the verdict **ECDSA-signed** (portable evidence; settlement stays an honest roadmap slot); and paid settlements pushed as `spendveto.usage.v1` events to any Lago/Orb-style billing webhook, keyed by receipt id. Plus an OpenAI Agents SDK adapter beside the LangChain one, and `CONTROLS.md` mapping every control to EU AI Act / NIST AI RMF expectations with its verify assertion cited. Tested: 9 assertions.
+24. **Facilitator-adaptive multichain live settlement (v0.20)** — the live x402 v2 gate is no longer hardcoded to one chain: at boot it asks its configured facilitator what it can settle (`GET /supported`) and brings **every registry chain the facilitator names** live — per-chain scheme registration, one payment option per chain in every 402, each priced as an explicit atomic-USDC amount against that chain's canonical contract. The live set is the facilitator's truth, not marketing: tested against a mock facilitator both directions (all seven advertised → all seven live; one advertised → exactly one live, six reporting settlement-ready). The public facilitator settles Base Sepolia today; a CDP facilitator key + a funded wallet flips its mainnet chains live with zero code changes — the remaining gap to mainnet spend is a key, funds, and an audit, not engineering.
+
+## Positioning
+
+> Stripe moves money. SpendVeto decides whether the agent should be allowed to move it.
+
+Think **Open Policy Agent, for agent spending** — rail-agnostic by design, and now rail-agnostic **in the code**: `rails/` defines one `pay()` contract with x402 live behind it (simulate + Base Sepolia) and AP2 / OpenAI ACP / Stripe MPP as declared adapter slots, so new rails are adapters, not rewrites. The policy layer never learns which rail settled.
+
+**One policy engine for everything an agent spends — tokens, API calls, and stablecoins.** The long-game framing: **SpendVeto is the trust and governance layer for autonomous AI agents** — it sits between an agent and any action that moves money, decides whether that action is allowed, records why, and enforces organizational policy across rails and frameworks. Spend governance is the wedge; the control plane is the company.
+
+## Competition
+
+| Player | What they are | What they don't do |
+|---|---|---|
+| Coinbase x402 ecosystem | The rail itself (protocol, facilitator, middleware) | No buyer-side policy, budgets, or approvals |
+| Cloudflare Monetization Gateway (Jul 2026) | Seller-side: charge for anything behind Cloudflare | Nothing for the paying agent |
+| Stripe MPP | Seller-side machine payments | Same |
+| Skyfire ($9.5M total raised, incl. $8.5M seed — Coinbase Ventures, a16z CSX) | Wallets + identity + payment execution | Not a policy/governance SDK |
+| Nevermined | Seller-side agent monetization & metering | Buyer governance not the focus |
+| Payman | **Closest**: spend limits, approvals, allowlists | Fiat/enterprise, closed platform — not open-source, not x402/MCP-native |
+| Catena Labs ($30M Series A, May 2026 — a16z crypto + Acrew; OCC trust-bank charter filed) | **Closest funded competitor.** Governance layer for agent transactions: spending limits, approved recipients, deterministic policies, audit trails | **Custodial and closed** — becoming a regulated bank for agents; not OSS, not self-hostable, not MCP-middleware, not rail-neutral. SpendVeto is the open GitLab-position to their bank |
+| Pleo AI agents (Jun 2026) | AI agents *inside* human spend management | Governs human company spend — not autonomous agents' own wallets |
+| ReimburseAI | AI-verified expense reimbursements settled in USDC | Human expenses in, one payout out — no agent policy engine, budgets, or kill switch |
+| Snowmind | Autonomous DeFi yield agent with scoped permissions | A *user* of constrained-agent-money, not a governance layer others can adopt |
+| Google AP2 / Mastercard AP4M / Agent Pay | Authorization *protocols/standards* | Standards, not developer tooling — SpendVeto can implement them |
+
+The gap: **open-source, developer-first, buyer-side governance that plugs into the stacks agents already use (MCP).** Skyfire's $9.5M seed at the rail layer prices what this space is worth to Coinbase Ventures and a16z at exactly our stage.
+
+## Market (TAM → SAM → SOM)
+
+**TAM — the spend that needs governing.** McKinsey: **$3–5T** global agentic-commerce spend by 2030 (Bain: $300–500B US alone; Morgan Stanley: $190–385B US). The rails are already at scale: stablecoins moved **$4.5T in Q1 2026 alone** (~Visa scale). Every one of those agent dollars needs a spend decision before it moves. The proven monetizable analog: business spend-management software (built for *human* spenders) is **$26B today → $56B by 2032** — agents are the next, faster-growing cohort of spenders, currently unserved.
+
+## The path to $1B+ revenue (scenario math on cited figures — mechanism, not projection)
+
+Spend-governance monetizes like a payment network, not like seat software: **a take-rate on governed volume**. Applied to McKinsey's cited $3–5T of agentic-commerce spend by 2030, the arithmetic is:
+
+| Scenario | Share of agent spend governed by SpendVeto | Governed volume | Take rate | Revenue / yr |
+|---|---|---|---|---|
+| Conservative | 0.5% of $3T | $15B | 10 bps | **$15M** |
+| Base | 2% of $4T | $80B | 25 bps | **$200M** |
+| Standard-setter | 5% of $5T | $250B | 40 bps | **$1.0B+** |
+
+…plus the SaaS layer (per-team pricing on governed API/LLM spend) stacked on top. These are labeled scenarios, not projections — what they establish is that **the ceiling is set by penetration of a trillion-scale flow, not by seat count.**
+
+Why the standard-setter scenario is earnable rather than fantasy: governance layers become standards through **distribution, and OSS is the distribution cheat code** — free for every individual developer, MCP-native so it lives inside the agents' actual stack, rail-neutral so no rail has a reason to block it. And two compounding locks: the **trust graph** (every governed decision enriches an agent credit file no rail or observability tool accumulates) and **policy packs** (shared, committed governance configs that spread team-to-team). The wedge SOM is deliberately small — you don't get 5% of the 2030 flow without first being the *default* somewhere; the x402 niche is small enough to own outright, and owning the default is the entire game.
+
+**The ARR engine — spend that exists TODAY, no crypto adoption required.** Every company running agents already burns real dollars on LLM tokens, metered APIs, and cloud — unbudgeted per-agent, with runaway loops that turn into four-figure overnight invoices. The existing tools (Helicone, Langfuse, Portkey) *observe* that spend; none *enforce* before it happens. SpendVeto's API-spend rail does — same engine, custody of the API key instead of the wallet key. That makes the near-term buyer "every AI team," not "every crypto team": land as SaaS (per-team + a % of governed API spend), keep the bps-on-governed-volume engine for the agentic-commerce curve. Illustrative shape: 10,000 teams at ~$200/mo is ~$24M ARR before any crypto volume — the wedge stops depending on someone else's adoption curve.
+
+**SAM — who we can serve with this product.** Teams running paying agents on crypto rails and MCP today: 590,000 x402 buyers (169M+ payments in year one) and the fast-growing MCP ecosystem those agents live in — plus every agent-fleet team (Claude Code / LangChain / CrewAI) that needs governance *before* it trusts agents with real money (simulate mode serves exactly them).
+
+**SOM — first 18–24 months.** OSS-led wedge: launch → design partners → hosted platform. Monetizes like usage-billing infra (Lago, Metronome, Orb): **open-source core, hosted platform for money** — orgs/SSO/RBAC, alerts, audit/compliance exports, hosted enforcement proxy as the paid tier, priced per governed agent + basis points on governed volume. A few hundred paying teams ≈ $1–3M ARR — accelerator-exit scale, with the volume-based upside compounding as agent spend grows toward the TAM.
+
+**Pricing (hosted launch tiers, self-host free forever):** Desk **$49/mo** (solo operators & trading desks) · Team **$199/mo + 0.5% of governed API/LLM spend** · Money Path **10–25 bps on governed volume** (managed custody). Anchors: observability-only tools charge $20–500/mo to *watch* spend; we *enforce* — and the volume components track how spend platforms actually monetize. Illustrative: 1,000 Team accounts ≈ $2.4M/yr base before usage; the volume take scales with the curve, not the seat count.
+
+**Why this can be venture-scale, not just a tool:** the enforcement proxy puts SpendVeto **on the money path** — custody of the spending decision, not a library beside it. Governed volume is the metric that compounds: at even $10B/yr of agent spend flowing through governed custody (0.2–1% of the 2030 projections), 10 bps is $10M/yr revenue before seats — and the trust graph built from every governed decision (which agents behave, which get frozen) is a data asset no rail or seller-side tool accumulates.
+
+## Why this fits accelerators right now
+
+- **Y Combinator** — the 2026 RFS explicitly asks for agent-first infrastructure ("agents need machine-readable infrastructure like APIs, **MCPs**, and CLIs… build what agents depend on") *and* quiet stablecoin infrastructure. YC now funds S26 companies **$500K in USDC**. SpendVeto is both RFS items in one repo.
+- **a16z CSX** — $500K for 7%, crypto-native accelerator; already backed Skyfire one layer below us.
+- **Alliance DAO** — crypto+AI accelerator, $500K, rolling applications with **decisions within two weeks**; next cohort (ALL18) starts **Sept 7, 2026** → apply now.
+- Ecosystem angels: Coinbase Ventures (x402's steward, funded Skyfire), Aiccelerate DAO (Coinbase/Google/ai16z-adjacent, agentic-AI focused).
+
+## Traction plan (pre-application, 30–60 days)
+
+1. **Ship in public**: GitHub OSS launch → Show HN, PR into awesome-x402, x402 Foundation Discord, MCP server registries. Drafts ready in `launch/` (Show HN post, 90-second demo script, listing blurbs) **plus a deploy-ready marketing site in `site/`** (Three.js hero, animated product walkthrough — `npm run site`, drop-on-Vercel static). The MCP angle is the demo that travels: *"Claude Desktop asked for permission before spending my money."*
+2. **5 design partners** running agent fleets (Claude Code / LangChain / CrewAI teams) using the policy engine in simulate mode — governance value lands even before real money moves.
+3. **Metrics to walk in with**: stars/installs, tools governed, blocked-spend dollars (already a first-class stat on the dashboard — the number nobody else can show), one testimonial from a team whose runaway agent got auto-frozen mid-loop.
+
+## Honest gaps (and the plan)
+
+- Solo founder, prototype-grade storage (JSON files) → hosted Postgres backend is the first funded milestone.
+- The enforcement proxy (agents POST intents, keys never leave custody) **ships and is verified today as self-host** → the funded milestone is the hosted, multi-tenant version of it: orgs, SSO, per-team custody, SLAs — the product businesses pay for.
+- x402 v1 packages (deprecated-but-functional) → migrate to v2 `@x402/*`.
+- Simulate-mode-first adoption story → mainnet Base support once design partners want real settlement.
+- No production users yet → that's what the 30–60 day plan above is for; applications go in with usage, not promises.
+
+## The ask
+
+Accelerator-stage: $500K to go from verified prototype to hosted product — multi-rail adapters (AP2, Stripe MPP), richer anomaly models and real-time alerting on top of the shipped detector, SOC 2 path, and the hosted governance dashboard that is the business.
+
+---
+
+### Sources
+
+- x402 traction (169M payments, 590K buyers, 100K sellers, first year): [InfoQ — Cloudflare and AWS embed x402 at the edge, Jul 2026](https://www.infoq.com/news/2026/07/cloudflare-aws-x402-micropayment/) · ~$50M cumulative: [Coinbase disclosures via MCP-monetization roundup, Apr 2026](https://gist.github.com/ThomsenDrake/bd5ef7f13329d6feb48e3945a23f413a)
+- Cloudflare Monetization Gateway (July 1, 2026 waitlist): [Cloudflare blog](https://blog.cloudflare.com/monetization-gateway/) · [explainx guide](https://explainx.ai/blog/cloudflare-monetization-gateway-x402-mcp-api-micropayments-2026)
+- Skyfire $9.5M total raised (incl. $8.5M seed) / backers: [The Block](https://www.theblock.co/post/322742/coinbase-ventures-and-a16zs-csx-bring-skyfires-total-funding-raised-to-9-5-million) · [Finextra](https://www.finextra.com/newsarticle/44621/skyfire-raises-85m-to-bring-autonomous-payments-to-ai-agents) · [Crunchbase](https://www.crunchbase.com/organization/skyfire-systems) · [Skyfire](https://skyfire.xyz/)
+- x402 Foundation operational launch (Linux Foundation, Jul 14 2026; 40 member orgs incl. Coinbase, Circle, Visa, Mastercard, AWS, Google, Stripe): [Linux Foundation](https://www.linuxfoundation.org/press/linux-foundation-announces-operational-launch-of-x402-foundation-to-standardize-internet-native-payments-for-ai-agents-and-applications) · [CryptoTimes](https://www.cryptotimes.io/2026/07/15/circle-coinbase-join-40-firms-backing-linux-foundations-x402/)
+- Payman capabilities: [Stellagent agentic-commerce infra roundup](https://stellagent.ai/insights/agentic-commerce-infra-startups)
+- Nevermined positioning: [Nevermined blog](https://nevermined.ai/blog/best-platforms-agentic-payments) · [MCP monetization](https://nevermined.ai/blog/mcp-monetization-tool-calling)
+- YC 2026 RFS (agent infrastructure + MCPs, stablecoin infra) and $500K-in-USDC policy: [Tech Startups](https://techstartups.com/2026/02/04/y-combinator-is-out-with-its-2026-request-for-startups/) · [Crypto Briefing on S26](https://cryptobriefing.com/y-combinator-s26-demo-day-usdc-stablecoin-funding/) · [Forbes](https://www.forbes.com/sites/josipamajic/2026/02/04/ycs-2026-roadmap-signals-a-shift-from-human-augmented-to-ai-native-startups/)
+- a16z CSX terms (~$500K/7%, ~3% acceptance): [a16z crypto](https://a16zcrypto.com/accelerator/) · [Superscout](https://superscout.co/program/a16z-csx-crypto-startup-accelerator)
+- Alliance DAO (ALL18 Sept 7 2026, rolling, ~5% acceptance): [alliance.xyz](https://alliance.xyz/)
+- Market size: [McKinsey QuantumBlack projection via Fenwick](https://www.fenwick.com/insights/publications/is-2026-the-year-of-agentic-payments) · [McKinsey $5T via DigitalCommerce360](https://www.digitalcommerce360.com/2025/10/20/mckinsey-forecast-5-trillion-agentic-commerce-sales-2030/) · [Bain US forecast](https://www.bain.com/insights/2030-forecast-how-agentic-ai-will-reshape-us-retail-snap-chart/) · [Morgan Stanley](https://www.morganstanley.com/insights/articles/agentic-commerce-market-impact-outlook) · Juniper Research (Apr 2026 forecast)
+- Stablecoin volume ($4.5T Q1 2026): [Forbes](https://www.forbes.com/sites/digital-assets/2026/04/29/nearly-two-thirds-stablecoins-suddenly-hit-45t-q1-volume-record/) · [BCG white paper](https://www.bcg.com/assets/2026/white-paper-stablecoin-payments-truth-behind-numbers.pdf)
+- Spend-management software market ($26B→$56B by 2032): [Fortune Business Insights](https://www.fortunebusinessinsights.com/business-spend-management-bsm-software-market-104930)
+- Adjacent/competitive scans: [Catena via TFSF Ventures](https://www.tfsfventures.com/blog/policy-governed-agent-payments) · [Pleo AI agents](https://fintech.global/2026/06/11/pleo-launches-ai-agents-for-autonomous-spend-management/) · [Mastercard Agent Pay for Machines](https://www.mastercard.com/us/en/news-and-trends/press/2026/june/mastercard-launches-agent-pay-for-machines.html) · [snowmind.xyz](https://www.snowmind.xyz/) · [reimburseai.app](https://www.reimburseai.app/)
+- Aiccelerate DAO: [BeInCrypto](https://beincrypto.com/coinbase-ai16z-members-back-new-crypto-x-ai-dao-aiccelerate/)

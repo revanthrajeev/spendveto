@@ -1,0 +1,10 @@
+{
+  "$description": "For trading desks: tight per-trade caps, two approvers above the position threshold, a hair-trigger runaway freeze, and a UTC trading window (edit allowedHoursUTC to your session — shipped wide open so nothing surprises you on day one).",
+  "maxPerCallUSD": 0.02,
+  "maxPerHourUSD": 0.1,
+  "maxCallsPerHour": 20,
+  "requireApprovalAboveUSD": 0.01,
+  "approversRequired": 2,
+  "anomaly": { "burstAttempts": 5, "burstWindowSeconds": 10 },
+  "allowedHoursUTC": { "start": 0, "end": 24 }
+}

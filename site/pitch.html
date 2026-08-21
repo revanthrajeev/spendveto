@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>SpendVeto — Investor Deck</title>
+<meta name="description" content="SpendVeto investor deck: the spend-governance layer for AI agents. Every number cited." />
+<link rel="icon" href="./assets/favicon.svg" />
+<meta property="og:title" content="SpendVeto — Investor Deck" />
+<meta property="og:image" content="./assets/generated/og-default.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="./assets/generated/og-default.png" />
+<link rel="stylesheet" href="./pages.css" />
+<style>
+  .deck { scroll-snap-type: y proximity; }
+  .slide {
+    min-height: 100vh; scroll-snap-align: start;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 7rem clamp(1.4rem, 6vw, 5rem) 4rem;
+    border-bottom: 1px solid var(--line); position: relative;
+  }
+  .slide:nth-child(even) { background: var(--bg-2); }
+  .shell { max-width: 1050px; margin: 0 auto; width: 100%; }
+  h1 { font-size: clamp(2.6rem, 7vw, 5.4rem); line-height: 1.0; letter-spacing: -0.025em; text-transform: uppercase; }
+  h1 .g { color: var(--green); }
+  h2 { font-size: clamp(1.8rem, 4.2vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; max-width: 26ch; }
+  .sub { margin-top: 1.4rem; color: var(--dim); max-width: 62ch; line-height: 1.75; font-size: 1.05rem; }
+  .sub strong { color: var(--ink); }
+  .quote {
+    margin-top: 2rem; padding-left: 1.4rem; border-left: 2px solid var(--green);
+    font-family: "Space Grotesk", sans-serif; font-size: clamp(1.2rem, 2.4vw, 1.7rem); line-height: 1.4; max-width: 40ch;
+  }
+  .rows { margin-top: 2.6rem; display: flex; flex-direction: column; gap: 1.15rem; max-width: 780px; }
+  .row { display: flex; gap: 1rem; align-items: baseline; color: var(--dim); line-height: 1.65; }
+  .row b { color: var(--ink); }
+  .row::before { content: "→"; color: var(--green); flex-shrink: 0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.4rem; margin-top: 3rem; }
+  @media (max-width: 800px) { .stat-grid { grid-template-columns: 1fr; } }
+  .big { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; }
+  .big em { font-style: normal; color: var(--green); }
+  .cap { color: var(--faint); font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.6; }
+  .cap a { color: var(--dim); border-bottom: 1px dotted var(--faint); }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; margin-top: 2.6rem; }
+  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile { border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.05rem; background: var(--panel); }
+  .tile b { display: block; font-size: 0.9rem; margin-bottom: 0.35rem; }
+  .tile span { color: var(--faint); font-size: 0.78rem; line-height: 1.5; }
+  .table-wrap { overflow-x: auto; margin-top: 2.6rem; border: 1px solid var(--line); border-radius: 12px; }
+  .data { min-width: 680px; }
+  .slide-num {
+    position: absolute; top: 6.4rem; right: clamp(1.4rem, 6vw, 5rem);
+    font-family: ui-monospace, monospace; font-size: 0.75rem; color: var(--faint);
+  }
+  .dots {
+    position: fixed; right: calc(var(--frame) + 12px); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 55;
+  }
+  .dots a { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background 0.3s, transform 0.3s; }
+  .dots a.on { background: var(--green); transform: scale(1.4); }
+  @media (max-width: 800px) { .dots { display: none; } }
+  .foot-note { margin-top: 2.4rem; font-size: 0.8rem; color: var(--faint); }
+  .foot-note a { color: var(--dim); border-bottom: 1px dotted var(--faint); }
+</style>
+</head>
+<body>
+<div id="canvas-frame">
+
+<nav>
+  <a class="wordmark" href="./index.html">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#46d68c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v16"/><path d="M14 4v16"/><path d="M4 4h6"/><path d="M14 6h6"/></svg>
+    SPENDVETO<span class="tick">_</span>
+  </a>
+  <div class="nav-links">
+    <a href="./index.html">Home</a>
+    <a href="./pricing.html">Pricing</a>
+    <a href="./docs.html">Docs</a>
+    <a class="nav-cta" href="./signup.html">Join waitlist</a>
+  </div>
+</nav>
+
+<div class="deck">
+
+  <section class="slide" id="s1">
+    <div class="shell">
+      <p class="counter reveal"><b>DECK · 2026-07</b> Pre-seed / accelerator</p>
+      <h1 class="reveal">Your agents can spend.<br /><span class="g">SpendVeto decides.</span></h1>
+      <p class="sub reveal"><strong>The spend-governance layer for AI agents.</strong> Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it. Open source, x402 + MCP native, working today — every claim in this deck is executed by a 237-assertion verification suite before it's published.</p>
+    </div>
+    <span class="slide-num mono">01 / 11</span>
+  </section>
+
+  <section class="slide" id="s2">
+    <div class="shell">
+      <p class="counter reveal"><b>02</b> Problem</p>
+      <h2 class="reveal">An agent with a wallet is a corporate card with no limit — issued to software that runs at machine speed.</h2>
+      <div class="rows">
+        <p class="row reveal"><span>AI agents now pay for tools, APIs, and data autonomously — no human, no card form. x402 alone: <b>169M payments across 590,000 buyers</b> in its first year (~$50M cumulative).</span></p>
+        <p class="row reveal"><span>Coinbase, Stripe, Visa, Mastercard, Google, and Cloudflare are all shipping agent-payment rails in 2026. Every one answers <b>"how does the agent pay?"</b></span></p>
+        <p class="row reveal"><span>Almost nobody answers the question every team asks first: <b>"how do I stop it from overspending?"</b></span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">02 / 11</span>
+  </section>
+
+  <section class="slide" id="s3">
+    <div class="shell">
+      <p class="counter reveal"><b>03</b> Why now — the asymmetry</p>
+      <h2 class="reveal">The seller side is commoditizing monthly. The buyer side is funded — but closed.</h2>
+      <div class="rows">
+        <p class="row reveal"><span>Cloudflare opened its x402 Monetization Gateway waitlist <b>July 1, 2026</b> — anyone can now charge agents for anything. Stripe MPP, Nevermined, xpay, Zuplo all monetize the <b>seller</b> side.</span></p>
+        <p class="row reveal"><span>Buyer-side governance is now being funded — <b>Catena Labs raised $30M (a16z crypto, May 2026)</b> and is filing for a bank charter — but every funded player is <b>closed and custodial</b>. Payman is a closed fiat platform.</span></p>
+        <p class="row reveal"><span>The open position is empty: <b>open-source, self-hostable, rail-neutral, MCP-native</b> buyer-side governance. The GitLab-vs-a-bank position — SpendVeto works <b>with</b> any rail and any custodian, competing with none.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">03 / 11</span>
+  </section>
+
+  <section class="slide" id="s4">
+    <div class="shell">
+      <p class="counter reveal"><b>04</b> Product — working today, not a plan</p>
+      <h2 class="reveal">Twelve controls between an agent and its money.</h2>
+      <div class="tiles">
+        <div class="tile reveal"><b>Policy engine</b><span>caps, hourly budgets, rate limits — enforced before payment</span></div>
+        <div class="tile reveal"><b>Human approvals</b><span>Approve/Deny on a live dashboard; fails closed in 30s</span></div>
+        <div class="tile reveal"><b>n-level budgets</b><span>ancestor caps bind whole subtrees — IAM for money</span></div>
+        <div class="tile reveal"><b>Tool + chain scoping</b><span>grants whitelist which tools an agent may buy and which chains it may settle on</span></div>
+        <div class="tile reveal"><b>Kill switch</b><span>manual freeze + automatic runaway-burst freeze</span></div>
+        <div class="tile reveal"><b>MCP middleware</b><span>governance Claude cannot opt out of</span></div>
+        <div class="tile reveal"><b>Signed receipts</b><span>ECDSA-signed settlements + CSV audit export</span></div>
+        <div class="tile reveal"><b>Alerts + analytics</b><span>webhooks on freeze/block; blocked-spend as a first-class metric</span></div>
+        <div class="tile reveal"><b>Enforcement proxy</b><span>agents POST intents; keys never leave custody — SpendVeto on the money path</span></div>
+        <div class="tile reveal"><b>Trust scores + packs</b><span>the ledger as an agent credit file; governance as importable presets</span></div>
+        <div class="tile reveal"><b>Multichain governance</b><span>chain-scoped signatures, per-chain balances, chain allowlists across 7 registered chains</span></div>
+        <div class="tile reveal"><b>Self-correcting denials + dry runs</b><span>every block returns a machine code + fix the agent can act on; dry-run any intent with zero side effects; time-boxed budgets that self-expire</span></div>
+      </div>
+      <p class="foot-note reveal">Real x402 on Base Sepolia + zero-setup simulate mode with real ECDSA and replay protection. 237 end-to-end assertions: <span class="mono">npm run verify</span>.</p>
+    </div>
+    <span class="slide-num mono">04 / 11</span>
+  </section>
+
+  <section class="slide" id="s5">
+    <div class="shell">
+      <p class="counter reveal"><b>05</b> Positioning</p>
+      <h2 class="reveal">Open Policy Agent, for agent spending.</h2>
+      <p class="quote reveal">"Stripe moves money. SpendVeto decides whether the agent should be allowed to move it."</p>
+      <p class="sub reveal">Rail-agnostic by design: x402 today; Google AP2, Stripe MPP, and Mastercard adapters on the roadmap — the policy layer shouldn't care which rail settles.</p>
+    </div>
+    <span class="slide-num mono">05 / 11</span>
+  </section>
+
+  <section class="slide" id="s6">
+    <div class="shell">
+      <p class="counter reveal"><b>06</b> Competition</p>
+      <h2 class="reveal">Everyone builds the roads. SpendVeto is the traffic lights.</h2>
+      <div class="table-wrap reveal">
+        <table class="data">
+          <thead><tr><th>Player</th><th>What they are</th><th>What they don't do</th></tr></thead>
+          <tbody>
+            <tr><td>Coinbase x402 ecosystem</td><td>The rail itself</td><td>No buyer-side policy, budgets, approvals</td></tr>
+            <tr><td>Cloudflare · Stripe MPP · Nevermined</td><td>Seller-side monetization</td><td>Nothing for the paying agent</td></tr>
+            <tr><td>Skyfire ($9.5M seed)</td><td>Wallets + identity + execution</td><td>Not a policy/governance SDK</td></tr>
+            <tr><td>Payman</td><td>Closest: limits, approvals</td><td>Fiat, closed, enterprise — not x402/MCP-native</td></tr>
+            <tr><td>Catena Labs</td><td>Enterprise agent-payment control plane</td><td>Closed, institutional; no OSS, no MCP middleware</td></tr>
+            <tr><td>Pleo AI agents · ReimburseAI</td><td>AI inside human spend/expenses</td><td>Governs humans' spend, not agents' wallets</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="foot-note reveal">The gap: open-source, developer-first, buyer-side governance in the stack agents already use (MCP). Skyfire's $9.5M seed — Coinbase Ventures + a16z CSX — prices this space at exactly our stage.</p>
+    </div>
+    <span class="slide-num mono">06 / 11</span>
+  </section>
+
+  <section class="slide" id="s7">
+    <div class="shell">
+      <p class="counter reveal"><b>07</b> Market</p>
+      <h2 class="reveal">Every agent dollar needs a spend decision before it moves.</h2>
+      <div class="stat-grid">
+        <div class="reveal"><div class="big"><em>$3–5T</em></div><p class="cap">TAM — global agentic-commerce spend by 2030 (McKinsey; Bain: $300–500B US). Stablecoins already move $4.5T/quarter.</p></div>
+        <div class="reveal"><div class="big"><em>69K</em> agents</div><p class="cap">SAM — teams already paying via x402/MCP today, plus every agent-fleet team that needs governance before trusting agents with money.</p></div>
+        <div class="reveal"><div class="big"><em>$1–3M</em> ARR</div><p class="cap">SOM, 18–24 months — OSS-led: a few hundred teams on the hosted tier (orgs, SSO, alerts, audit, enforcement proxy) + bps on governed volume.</p></div>
+      </div>
+      <p class="foot-note reveal">Monetizes like usage-billing infra (Lago, Metronome, Orb): open-source core, hosted platform for money. Spend-management software (human spenders) is $26B → $56B by 2032 — agents are the next cohort.</p>
+    </div>
+    <span class="slide-num mono">07 / 11</span>
+  </section>
+
+  <section class="slide" id="s8">
+    <div class="shell">
+      <p class="counter reveal"><b>08</b> Fit — why these funds, right now</p>
+      <h2 class="reveal">Two RFS items in one repo.</h2>
+      <div class="rows">
+        <p class="row reveal"><span><b>Y Combinator</b> — the 2026 RFS explicitly asks for agent infrastructure naming MCPs, and stablecoin infrastructure. YC now funds S26 in <b>$500K USDC</b>.</span></p>
+        <p class="row reveal"><span><b>a16z CSX</b> — $500K for 7%, crypto-native; already backed Skyfire one layer below us.</span></p>
+        <p class="row reveal"><span><b>Alliance DAO</b> — crypto×AI accelerator, $500K, rolling applications, decisions in 2 weeks. Next cohort starts <b>Sept 7, 2026</b>.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">08 / 11</span>
+  </section>
+
+  <section class="slide" id="s9">
+    <div class="shell">
+      <p class="counter reveal"><b>09</b> Traction plan — before applications go in</p>
+      <h2 class="reveal">Ship in public. Walk in with usage, not promises.</h2>
+      <div class="rows">
+        <p class="row reveal"><span><b>Launch:</b> GitHub OSS → Show HN, awesome-x402, MCP registries, x402 Discord. Site, deck, demo script, and listing blurbs are already built.</span></p>
+        <p class="row reveal"><span><b>5 design partners</b> running agent fleets in simulate mode — governance value lands before real money moves.</span></p>
+        <p class="row reveal"><span><b>The metric nobody else can show:</b> blocked-spend dollars — already a first-class stat — plus one testimonial from a team whose runaway agent got auto-frozen mid-loop.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">09 / 11</span>
+  </section>
+
+  <section class="slide" id="s10">
+    <div class="shell">
+      <p class="counter reveal"><b>10</b> Honest gaps — and what funding fixes</p>
+      <h2 class="reveal">Prototype-grade where it should be. Real where it must be.</h2>
+      <div class="rows">
+        <p class="row reveal"><span>JSON-file storage → <b>hosted Postgres backend</b> is the first funded milestone.</span></p>
+        <p class="row reveal"><span>The enforcement proxy — keyless agents, custody-side signing — <b>ships verified as self-host today</b> → funding builds the hosted multi-tenant version: orgs, SSO, per-team custody, SLAs.</span></p>
+        <p class="row reveal"><span>x402 v1 packages → migrate to v2; simulate-first → mainnet Base when design partners want real settlement.</span></p>
+        <p class="row reveal"><span>Solo founder, no production users yet → that's what the 30–60 day plan is for.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">10 / 11</span>
+  </section>
+
+  <section class="slide" id="s11">
+    <div class="shell">
+      <p class="counter reveal"><b>11</b> The ask</p>
+      <h1 class="reveal" style="font-size:clamp(2.2rem,5.5vw,4.2rem)">$500K to go from<br /><span class="g">verified prototype</span> to hosted product.</h1>
+      <p class="sub reveal">Multi-rail adapters (AP2, Stripe MPP), richer anomaly models and real-time alerting, SOC 2 path, and the hosted governance dashboard that is the business.</p>
+      <div class="rows" style="margin-top:2rem">
+        <p class="row reveal"><span>Revanth Rajeev · <span class="mono">revanthrajeev2004@gmail.com</span></span></p>
+        <p class="row reveal"><span>All sources for every number: <a href="https://github.com/" rel="noopener">PITCH.md in the repo</a> — McKinsey, Bain, Morgan Stanley, Forbes/BCG, Fortune BI, Coinbase disclosures.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">11 / 11</span>
+  </section>
+
+</div>
+
+<div class="dots" id="dots"></div>
+
+<footer>
+  <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
+  <span>Every product claim in this deck is covered by <span class="mono">npm run verify</span> — 237 end-to-end assertions.</span>
+  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./docs.html">Docs</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+</footer>
+
+</div>
+
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const dots = document.getElementById("dots");
+slides.forEach((s, i) => {
+  const a = document.createElement("a");
+  a.href = `#${s.id}`;
+  dots.appendChild(a);
+});
+const dotEls = [...dots.children];
+const spy = new IntersectionObserver(
+  (es) => es.forEach((e) => {
+    if (e.isIntersecting) dotEls.forEach((d, i) => d.classList.toggle("on", slides[i] === e.target));
+  }),
+  { threshold: 0.55 }
+);
+slides.forEach((s) => spy.observe(s));
+
+const io = new IntersectionObserver(
+  (es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+  { threshold: 0.12 }
+);
+document.querySelectorAll(".reveal").forEach((el, i) => {
+  el.style.transitionDelay = `${(i % 4) * 80}ms`;
+  io.observe(el);
+});
+
+addEventListener("keydown", (e) => {
+  const idx = slides.findIndex((s) => s.getBoundingClientRect().top > -innerHeight / 2);
+  if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); slides[Math.min(idx + (slides[idx]?.getBoundingClientRect().top < innerHeight / 2 ? 1 : 0), slides.length - 1)]?.scrollIntoView({ behavior: "smooth" }); }
+  if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); slides[Math.max(idx - 1, 0)]?.scrollIntoView({ behavior: "smooth" }); }
+});
+</script>
+</body>
+</html>
