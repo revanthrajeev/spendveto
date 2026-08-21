@@ -49,7 +49,7 @@ What it does today:
 
 It runs in a zero-setup simulate mode (real secp256k1 keys, real ECDSA verify, replay
 protection — settlement is just a local ledger) or against the real x402 facilitator on
-Base Sepolia. `npm run verify` runs 267 end-to-end assertions covering all of the above,
+Base Sepolia. `npm run verify` runs 264 end-to-end assertions covering all of the above,
 including a real JSON-RPC session against the MCP server and a synthetic runaway agent
 getting frozen mid-burst.
 
