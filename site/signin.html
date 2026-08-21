@@ -138,8 +138,9 @@ async function afterConnect(connection) {
       }
     });
 
-    // Quietly register the verified wallet on the local waitlist if it's up.
-    fetch("http://localhost:8402/api/waitlist", {
+    // Quietly register the verified wallet on the local waitlist — but only
+    // when this page is served locally. See the note in index.html.
+    if (["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname)) fetch("http://localhost:8402/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet: connection.address, chains: ["base-sepolia"], notes: "wallet sign-in" }),

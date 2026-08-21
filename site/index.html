@@ -1148,8 +1148,18 @@ addEventListener("scroll", () => {
 }, { passive: true });
 
 // ---------- live stats from a running SpendVeto server (graceful if absent) ----------
+// The console API only ever exists on the machine running `npm run server`.
+// A PUBLIC page reaching for localhost is indistinguishable from malware
+// probing your machine — Chrome's Local Network Access permission now prompts
+// every visitor with "wants to access other apps and services on this device".
+// So only ask when this page is itself served locally; the public build takes
+// the fallback path that was already written for a server being absent.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]", "::1"];
+const IS_LOCAL = LOCAL_HOSTS.includes(location.hostname);
+
 (async () => {
   try {
+    if (!IS_LOCAL) throw new Error("public build — no local server to ask");
     const s = await fetch("http://localhost:8402/api/stats", { signal: AbortSignal.timeout(4000) }).then((r) => r.json());
     document.getElementById("live-stats").innerHTML =
       `LIVE · governed <b>$${s.paid.usd}</b> · blocked <b>$${s.blocked.usd}</b> across ${s.blocked.count + s.paid.count} decisions`;
