@@ -24,6 +24,7 @@ const PORT = 8402;
 const BASE = `http://localhost:${PORT}`;
 
 let failures = 0;
+let verifyStats = null;
 function check(label, ok, detail) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${label}${detail ? ` — ${detail}` : ""}`);
   if (!ok) failures++;
@@ -1419,6 +1420,18 @@ try {
   );
   check("stats: exactly the runaway wallet is still frozen", stats.frozenWallets === 1, `frozenWallets=${stats.frozenWallets}`);
 
+  // Publish this run's own figures for the marketing site to read. The proof
+  // panel used to hard-code them, which meant every feature that changed a
+  // ledger total silently made the public page wrong — it drifted three times
+  // before anyone noticed. Now the number on the page IS the number the suite
+  // just asserted, or it isn't there at all.
+  verifyStats = {
+    generatedAt: new Date().toISOString(),
+    paid: stats.paid,
+    blocked: stats.blocked,
+    frozenWallets: stats.frozenWallets,
+  };
+
   // --- Ledger reflects everything ---
   const { entries } = await fetch(`${BASE}/api/ledger`).then((r) => r.json());
   const paid = entries.filter((e) => e.status === "paid");
@@ -1954,6 +1967,15 @@ try {
       2
     )
   );
+}
+
+if (verifyStats && failures === 0) {
+  const assertions = Number(process.env.SPENDVETO_ASSERTION_COUNT) || null;
+  writeFileSync(
+    `${ROOT}site/assets/verify-stats.json`,
+    JSON.stringify({ ...verifyStats, ...(assertions ? { assertions } : {}) }, null, 2) + "\n"
+  );
+  console.log(`\nwrote site/assets/verify-stats.json — blocked $${verifyStats.blocked.usd} across ${verifyStats.blocked.count}, ${verifyStats.frozenWallets} frozen`);
 }
 
 console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
