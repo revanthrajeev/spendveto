@@ -1,0 +1,16 @@
+{
+  // Static-assets Worker: there is no server here, just site/ served from
+  // Cloudflare's edge. No "main" entry point because there is no code to run —
+  // the marketing site is deliberately self-contained (no CDNs, no functions),
+  // which is also what makes it portable off any host in five minutes.
+  "name": "spendveto",
+  "compatibility_date": "2026-08-21",
+  "assets": {
+    "directory": "./site",
+    // No 404.html in site/, so let the edge return its own rather than
+    // rewriting unknown paths to index.html — this is a multi-page site,
+    // not a single-page app, and SPA-style fallback would turn every typo
+    // into a 200 and quietly wreck how crawlers see the site.
+    "not_found_handling": "none"
+  }
+}
