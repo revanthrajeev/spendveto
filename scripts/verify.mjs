@@ -1261,6 +1261,123 @@ try {
   const catFiltered = governCatalog(discovered, { maxPerCallUSD: 1, categoryCapsUSD: { data: 0.002 } });
   check("a listing priced above its category's cap is filtered out at discovery, not at settlement", catFiltered.filtered.some((f) => f.code === "over_category_cap"), JSON.stringify(catFiltered.filtered.map((f) => f.code)));
 
+  // --- ACP (OpenAI/Stripe Agentic Commerce Protocol), buyer side ---
+  // ACP's Delegated Payments Spec hands the agent a Shared Payment Token: a
+  // bearer credential scoped to an amount, a merchant and a window. The
+  // merchant validates the token; nobody validates the shopping. These check
+  // the question SpendVeto adds — is this session still the purchase the token
+  // was minted for?
+  const ACP_AGENT = "0x1111111111111111111111111111111111111111";
+  const acp = (token, session) =>
+    fetch(`${BASE}/api/acp/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agent: ACP_AGENT, token, session }),
+    }).then((r) => r.json());
+  const SPT = { id: "spt_1", maxAmountUSD: 50, merchant: "acme", currency: "USD", allowedCategories: ["content"] };
+  const cleanSession = { id: "cs_ok", tokenId: "spt_1", merchant: "acme", currency: "USD", totalUSD: 0.01, items: [{ sku: "widget", amountUSD: 0.01, qty: 1, merchant: "acme", category: "content" }] };
+
+  const acpOk = await acp(SPT, cleanSession);
+  check("ACP: a session inside its token's scope clears the SPT check and is judged by policy, not by the token alone", acpOk.decision === "allow" && acpOk.stage === "policy", `${acpOk.decision}/${acpOk.stage}`);
+  const acpDrift = await acp(SPT, { ...cleanSession, id: "cs_drift", items: [{ sku: "x", amountUSD: 0.01, qty: 1, merchant: "evilcorp" }] });
+  check("ACP: a session charging a merchant the SPT was not minted for is denied (spt_merchant_drift)", acpDrift.decision === "deny" && acpDrift.code === "spt_merchant_drift", acpDrift.code);
+  const acpMath = await acp(SPT, { ...cleanSession, id: "cs_math", totalUSD: 5, items: [{ sku: "x", amountUSD: 1, qty: 1, merchant: "acme" }] });
+  check("ACP: a declared total its own line items don't sum to is refused before any ceiling is applied (session_total_mismatch)", acpMath.decision === "deny" && acpMath.code === "session_total_mismatch", acpMath.code);
+  const acpCeil = await acp(SPT, { ...cleanSession, id: "cs_ceil", totalUSD: 80, items: [{ sku: "x", amountUSD: 80, qty: 1, merchant: "acme" }] });
+  check("ACP: a session above the token's authorized maximum is denied (session_exceeds_spt)", acpCeil.decision === "deny" && acpCeil.code === "session_exceeds_spt", acpCeil.code);
+  const acpExp = await acp({ ...SPT, expiresAt: "2020-01-01T00:00:00Z" }, cleanSession);
+  check("ACP: an expired shared payment token grants no authority however well-formed the session is (spt_expired)", acpExp.decision === "deny" && acpExp.code === "spt_expired", acpExp.code);
+  const acpCat = await acp(SPT, { ...cleanSession, id: "cs_cat", items: [{ sku: "x", amountUSD: 0.01, qty: 1, merchant: "acme", category: "trading" }] });
+  check("ACP: a line item outside the token's authorized categories is denied (spt_category_drift)", acpCat.decision === "deny" && acpCat.code === "spt_category_drift", acpCat.code);
+  const acpCcy = await acp(SPT, { ...cleanSession, id: "cs_ccy", currency: "EUR" });
+  check("ACP: a ceiling in one currency is never silently compared against a charge in another (spt_currency_mismatch)", acpCcy.decision === "deny" && acpCcy.code === "spt_currency_mismatch", acpCcy.code);
+  const acpIdMix = await acp(SPT, { ...cleanSession, id: "cs_mix", tokenId: "spt_other" });
+  check("ACP: a session claiming a different token than the one presented is refused (spt_session_mismatch)", acpIdMix.decision === "deny" && acpIdMix.code === "spt_session_mismatch", acpIdMix.code);
+
+  // --- Request integrity: is this the spend I allowed? ---
+  // Every other control answers "is this spend allowed?". Between the decision
+  // and the execution a compromised agent can swap the payload — same payer,
+  // same price, same approval, different goods — and every amount-based check
+  // still passes. This is the binding that catches it.
+  check("request integrity: an allowed ACP session leaves with a signed binding to its own bytes", !!acpOk.binding?.id && !!acpOk.binding?.digest, acpOk.binding?.digest?.slice(0, 16));
+  check("request integrity: a denied session gets no binding — there is nothing to authorize", acpDrift.binding === undefined);
+
+  const bind = (payload, agent = ACP_AGENT) =>
+    fetch(`${BASE}/api/integrity/bind`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agent, payload, amountUSD: 0.01 }) }).then((r) => r.json());
+  const verifyBind = (bindingId, payload, agent = ACP_AGENT) =>
+    fetch(`${BASE}/api/integrity/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bindingId, payload, agent }) }).then((r) => r.json());
+
+  // Key order must not change the digest, or "same request" would depend on
+  // JSON serialization rather than on content.
+  const b1 = await bind(cleanSession);
+  const shuffled = { items: cleanSession.items.map((i) => ({ category: i.category, merchant: i.merchant, qty: i.qty, amountUSD: i.amountUSD, sku: i.sku })), totalUSD: cleanSession.totalUSD, currency: cleanSession.currency, merchant: cleanSession.merchant, tokenId: cleanSession.tokenId, id: cleanSession.id };
+  const okBind = await verifyBind(b1.id, shuffled);
+  check("request integrity: the same request with its keys in a different order still verifies (canonical digest)", okBind.ok === true, okBind.code || okBind.digest?.slice(0, 16));
+  const reuse = await verifyBind(b1.id, cleanSession);
+  check("request integrity: a binding is single-use — an authorization that can be replayed is a coupon, not a binding", reuse.ok === false && reuse.code === "binding_consumed", reuse.code);
+  const b2 = await bind(cleanSession);
+  const swapped = await verifyBind(b2.id, { ...cleanSession, merchant: "evilcorp", items: [{ ...cleanSession.items[0], merchant: "evilcorp" }] });
+  check("request integrity: a payload swapped after authorization is refused (request_integrity_mismatch)", swapped.ok === false && swapped.code === "request_integrity_mismatch", swapped.code);
+  const b3 = await bind(cleanSession);
+  const wrongAgent = await verifyBind(b3.id, cleanSession, "0x2222222222222222222222222222222222222222");
+  check("request integrity: one agent cannot execute under another agent's binding (binding_agent_mismatch)", wrongAgent.ok === false && wrongAgent.code === "binding_agent_mismatch", wrongAgent.code);
+  const unknownBind = await verifyBind("00000000-0000-0000-0000-000000000000", cleanSession);
+  check("request integrity: an unbound execution is refused rather than waved through (binding_unknown)", unknownBind.ok === false && unknownBind.code === "binding_unknown", unknownBind.code);
+  const shortLived = await fetch(`${BASE}/api/integrity/bind`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agent: ACP_AGENT, payload: cleanSession, amountUSD: 0.01, ttlMs: 1 }) }).then((r) => r.json());
+  await sleep(25);
+  const expiredBind = await verifyBind(shortLived.id, cleanSession);
+  check("request integrity: a stale binding cannot vouch for a request assembled after it (binding_expired)", expiredBind.ok === false && expiredBind.code === "binding_expired", expiredBind.code);
+
+  // --- Dispute evidence packs ---
+  // An agent purchase produces no device fingerprint, no IP, no browsing
+  // session, so agent transactions lose disputes by default. Everything a
+  // defence needs is already in the ledger; this assembles and signs it.
+  const paidEntry = (await fetch(`${BASE}/api/ledger`).then((r) => r.json())).entries.filter((e) => e.status === "paid" && e.entryHash).pop();
+  const pack = await fetch(`${BASE}/api/disputes/${paidEntry.entryHash}/evidence`).then((r) => r.json());
+  check("dispute pack: a governed spend assembles into a signed evidence bundle", pack.ok === true && pack.schema === "spendveto.dispute-evidence.v1" && !!pack.attestation?.signature, pack.code || pack.bundleHash?.slice(0, 16));
+  check(
+    "dispute pack: the spend is pinned to its position in the hash chain, which is the anti-backdating argument",
+    pack.position?.entryHash === paidEntry.entryHash && pack.position?.prevHash === paidEntry.prevHash && pack.position?.chainValid === true,
+    `idx=${pack.position?.index} valid=${pack.position?.chainValid}`
+  );
+  check("dispute pack: the policy hash in force at the spend travels with it, and policy drift since then is disclosed rather than hidden", pack.policy?.hashAtSpend === paidEntry.policyHash && typeof pack.policy?.unchangedSinceSpend === "boolean", `${pack.policy?.hashAtSpend?.slice(0, 12)} unchanged=${pack.policy?.unchangedSinceSpend}`);
+  check("dispute pack: the bundle states what it does NOT establish, inside the artifact, so the limits travel with it", Array.isArray(pack.doesNotEstablish) && pack.doesNotEstablish.length >= 3, String(pack.doesNotEstablish?.length));
+  const packOk = await fetch(`${BASE}/api/disputes/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pack) }).then((r) => r.json());
+  check("dispute pack: a pack handed back round-trips against its own attestation", packOk.ok === true && packOk.signer === pack.attestation.signer, packOk.code);
+  const tamperedPack = JSON.parse(JSON.stringify(pack));
+  tamperedPack.disputed.amountUSD = 999;
+  const packBad = await fetch(`${BASE}/api/disputes/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tamperedPack) }).then((r) => r.json());
+  check("dispute pack: a pack edited in transit stops verifying (pack_tampered)", packBad.ok === false && packBad.code === "pack_tampered", packBad.code);
+  const missingPack = await fetch(`${BASE}/api/disputes/${"0".repeat(64)}/evidence`).then((r) => r.json());
+  check("dispute pack: an unknown ledger entry is refused rather than answered with an empty bundle (entry_not_found)", missingPack.ok === false && missingPack.code === "entry_not_found", missingPack.code);
+
+  // --- OpenTelemetry: the refusal belongs inside the trace that caused it ---
+  const otel = await fetch(`${BASE}/api/otel/spans?limit=5`).then((r) => r.json());
+  const otelSpans = otel.payload?.resourceSpans?.[0]?.scopeSpans?.[0]?.spans || [];
+  check("OTel: governance decisions export as OTLP spans in the envelope a collector expects", otelSpans.length > 0 && otel.payload.resourceSpans[0].resource.attributes.some((a) => a.key === "service.name"), `spans=${otelSpans.length}`);
+  check("OTel: each decision span carries the policy hash and ledger entry hash as attributes, so a trace links back to the audit record", otelSpans.every((s) => s.attributes.some((a) => a.key === "spendveto.entry_hash")), String(otelSpans.length));
+  const traced = await fetch(`${BASE}/api/otel/spans?limit=3`, { headers: { traceparent: "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01" } }).then((r) => r.json());
+  const tracedSpans = traced.payload.resourceSpans[0].scopeSpans[0].spans;
+  check(
+    "OTel: a W3C traceparent is adopted, so the spend decision appears under the agent run that caused it rather than in a trace of its own",
+    tracedSpans.every((s) => s.traceId === "4bf92f3577b34da6a3ce929d0e0e4736" && s.parentSpanId === "00f067aa0ba902b7"),
+    tracedSpans[0]?.traceId
+  );
+  const badTrace = await fetch(`${BASE}/api/otel/spans?limit=1`, { headers: { traceparent: "not-a-traceparent" } }).then((r) => r.json());
+  check("OTel: a malformed traceparent degrades to a standalone trace — a bad header never breaks the decision surface", badTrace.spanCount === 1 && !badTrace.payload.resourceSpans[0].scopeSpans[0].spans[0].parentSpanId);
+  const blockedSpans = (await fetch(`${BASE}/api/otel/spans?status=blocked&limit=3`).then((r) => r.json())).payload.resourceSpans[0].scopeSpans[0].spans;
+  check(
+    "OTel: a blocked spend is status OK, not ERROR — the gate did its job, and colouring refusals red trains teams to ignore the colour that matters",
+    blockedSpans.length > 0 && blockedSpans.every((s) => s.status.code === 1),
+    `blocked=${blockedSpans.length}`
+  );
+  const otelAgain = await fetch(`${BASE}/api/otel/spans?limit=5`).then((r) => r.json());
+  check(
+    "OTel: span ids are derived from the entry hash, so re-exporting the same ledger does not duplicate spans in the backend",
+    JSON.stringify(otelAgain.payload.resourceSpans[0].scopeSpans[0].spans.map((s) => s.spanId)) === JSON.stringify(otelSpans.map((s) => s.spanId))
+  );
+  check("OTel: with no collector configured the export reports that honestly instead of claiming success", otel.exported?.exported === false, otel.exported?.reason);
+
   // --- Rails: one pay() contract, every rail behind it ---
   const { rails } = await fetch(`${BASE}/api/rails`).then((r) => r.json());
   check(

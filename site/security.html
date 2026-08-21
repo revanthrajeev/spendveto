@@ -52,6 +52,9 @@
     <li><b>Server-authoritative enforcement.</b> The payment gate runs the full policy pipeline itself, server-side — so an agent holding its own key and running a hand-rolled client that skips its policy check still can't overspend: a validly-signed over-budget payment is refused at the gate, and above-threshold spends require a real, single-use approval record before settlement.</li>
     <li><b>Tamper-evident ledger.</b> Every ledger entry is hash-chained to the one before it, so editing, deleting, or reordering any historical row is detectable; a verify-chain endpoint reports the first broken row.</li>
     <li><b>Payee allowlisting.</b> Pin which recipient addresses an agent may pay at all — so even a compromised tool or a prompt-injected agent can't send money to an address that isn't on the list. Works globally and as a delegated scope that cascades through the budget tree.</li>
+    <li><b>Request integrity.</b> Every other control here answers "is this spend allowed?" — this one answers "is this the spend I <i>allowed</i>?". An authorization is bound to a canonical digest of the exact request it was granted for, so a payload changed between the decision and the execution is refused even though the payer, the price and the approval all still match. Bindings are single-use, time-bounded, and valid only for the agent they were issued to.</li>
+    <li><b>Token scope, not just token validity.</b> A shared payment token (ACP) or a signed intent (AP2) is minted for a purpose: an amount, a merchant, a window. The merchant validates the token; nobody validates the shopping. SpendVeto checks the session or cart against the credential that funds it — wrong merchant, out-of-scope category, a declared total its own line items don't add up to, or a ceiling quoted in a different currency than the charge.</li>
+    <li><b>Dispute evidence packs.</b> An agent purchase produces no device fingerprint, no IP, no browsing session — the evidence a chargeback is normally defended with simply doesn't exist, so agent transactions lose by default. Every governed spend can be assembled into a signed bundle: the entry pinned between its neighbouring hashes, the policy version in force with any later drift disclosed, the human approval, and the signed consents behind the delegation. Each pack also states what it does <i>not</i> establish — it never implies delivery or satisfaction.</li>
     <li><b>Authenticated admin surface.</b> The endpoints that change policy, freeze wallets, mint budgets, or register tools sit behind bearer keys with roles (viewer / approver / admin). The first key is minted on the trusted host, never over the API, so there's no way to bootstrap privilege from an unauthenticated request.</li>
   </ul>
 
@@ -60,7 +63,7 @@
 
   <h2>What's not yet true</h2>
   <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia. Neither mode has been through an external security audit yet, and mainnet settlement is not yet enabled. Treat this as pre-audit software: don't point it at funds you can't afford to lose until an audit has happened.</p>
-  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 237-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
+  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 267-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
 
   <h2>Reporting a vulnerability</h2>
   <p>If you find a way to bypass a policy check, forge a payment signature, or defeat an approval gate, please report it privately before any public disclosure — email <a href="mailto:security@spendveto.com" style="color:var(--green)">security@spendveto.com</a>. We'll acknowledge within 48 hours.</p>
@@ -69,7 +72,7 @@
 <footer>
   <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
   <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
-  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a>
+  <div class="links"><a href="https://github.com/revanthrajeev/spendveto" target="_blank" rel="noopener">GitHub</a><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a>
     <a href="./about.html">About</a>
     <a href="./security.html">Security</a>
     <a href="./contact.html">Contact</a>

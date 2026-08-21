@@ -8,7 +8,7 @@ which is stale — everything that prompt asked for has since been built.
 
 I'm building **SpendVeto**, an open-source (Apache-2.0) **spend-governance layer for AI agents that pay for things**. Payment rails move an agent's money; SpendVeto decides whether the agent is *allowed* to move it, before anything settles. Node.js/Express, x402 (HTTP 402 + USDC) and MCP native.
 
-**Stage, honestly:** solo founder, prototype in public, v0.18.0. Default "simulate" mode uses real ECDSA signatures + replay protection against a local ledger; "testnet" mode does real x402 settlement on Base Sepolia. **No mainnet, no external security audit, no paying customers, no hosted product yet.** Every public claim is backed by an assertion in an end-to-end suite (237 assertions today) — I don't ship claims I can't test.
+**Stage, honestly:** solo founder, prototype in public, v0.18.0. Default "simulate" mode uses real ECDSA signatures + replay protection against a local ledger; "testnet" mode does real x402 settlement on Base Sepolia. **No mainnet, no external security audit, no paying customers, no hosted product yet.** Every public claim is backed by an assertion in an end-to-end suite (267 assertions today) — I don't ship claims I can't test.
 
 ## Already built — do NOT re-suggest these
 

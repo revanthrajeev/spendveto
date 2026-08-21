@@ -551,7 +551,7 @@
   <canvas id="bg" aria-hidden="true"></canvas>
   <img class="hero-grip" src="./assets/hero-grip.jpg" alt="" aria-hidden="true" />
   <div class="hero-inner">
-    <div class="live-chip"><i></i><span id="live-stats">237 end-to-end checks · verified build</span></div>
+    <div class="live-chip"><i></i><span id="live-stats">267 end-to-end checks · verified build</span></div>
     <h1>Your agents can spend.<br /><span class="accent">SpendVeto decides.</span></h1>
     <p class="hero-sub">
       AI agents now pay for tools, APIs, and each other — autonomously, at machine speed.
@@ -662,7 +662,7 @@
   <div class="shell" data-num="02">
     <p class="counter reveal"><b>02 / 06</b> Product — working today, not a roadmap</p>
     <h2 class="reveal">Eight controls between your agent and its money.</h2>
-    <p class="lede reveal">Every one of them is exercised by a 237-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
+    <p class="lede reveal">Every one of them is exercised by a 267-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
     <div class="grid8">
       <div class="cell reveal">
         <span class="mini-chip">PRE-PAYMENT</span>
@@ -726,7 +726,7 @@
           <circle class="arc" cx="110" cy="110" r="100" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="471 628" />
         </svg>
         <div class="gauge-center">
-          <div class="gauge-num"><em>237</em>/237</div>
+          <div class="gauge-num"><em>267</em>/237</div>
           <div class="gauge-cap">end-to-end checks passing</div>
         </div>
       </div>
@@ -877,7 +877,7 @@
       <div><span class="p">$</span> npm run call -- summarize &nbsp;<span class="c"># go approve it</span></div>
       <div><span class="p">$</span> npm run delegate -- 0.03 "intern" --tools translate --chains base-sepolia</div>
       <div><span class="p">$</span> claude mcp add spendveto -- node mcp/server.js</div>
-      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 237 assertions, end to end</span></div>
+      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 267 assertions, end to end</span></div>
     </div>
   </div>
 </section>
@@ -887,7 +887,7 @@
     <p class="counter reveal"><b>FAQ</b> Straight answers</p>
     <h2 class="reveal">Asked before you had to ask.</h2>
     <div class="faq" style="margin-top: 1.5rem;">
-      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>237-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
+      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>267-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
       <details class="reveal"><summary>Does SpendVeto hold my keys?</summary><p>Your choice of two trust models, both self-hosted. <b>Library mode:</b> agents hold their own wallets and the governance pipeline runs inside their own call path. <b>Enforcement proxy:</b> agents are keyless — they POST spending intents, and the proxy’s custody wallet signs only after freeze, policy, caps, scopes, and approvals all pass. Keys never leave your machine either way.</p></details>
       <details class="reveal"><summary>Which chains work today?</summary><p>All seven registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
       <details class="reveal"><summary>What happens when an agent goes rogue?</summary><p>The burst detector freezes it <b>mid-loop</b> — by default, ten payment attempts inside ten seconds trips the freeze automatically. Every wallet also has a one-click manual kill switch. A frozen wallet is refused even when it presents a correctly signed payment (403, not a fresh challenge), and its trust score collapses to an F.</p></details>
@@ -915,7 +915,7 @@
 <footer>
   <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
   <span>Prototype in public — simulate mode by default, x402 testnet on Base Sepolia. Every claim on this page is covered by <span class="mono">npm run verify</span>.</span>
-  <div class="links">
+  <div class="links"><a href="https://github.com/revanthrajeev/spendveto" target="_blank" rel="noopener">GitHub</a>
     <a href="./about.html">About</a>
     <a href="./security.html">Security</a>
     <a href="./contact.html">Contact</a>

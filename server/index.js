@@ -31,6 +31,10 @@ import { toVerifiableCredential } from "./vc.js";
 import { normalizeReceipt } from "./receipts.js";
 import { checkCartAgainstIntent, reconcileHumanNotPresent } from "./ap2.js";
 import { toBazaarResources, governCatalog } from "./discovery.js";
+import { checkSessionAgainstToken } from "./acp.js";
+import { bindAuthorization, verifyBinding, getBinding, requestDigest } from "./integrity.js";
+import { buildEvidencePack, checkEvidencePack } from "./disputes.js";
+import { decisionSpans, toOtlpPayload, exportSpans } from "./otel.js";
 
 dotenv.config({ path: fileURLToPath(new URL("../.env.local", import.meta.url)), quiet: true });
 
@@ -858,6 +862,113 @@ app.post("/api/freezes/:id/unfreeze", requireAuth("admin"), (req, res) => {
   const record = unfreeze(req.params.id);
   if (!record) return res.status(409).json({ error: "not found or already unfrozen" });
   res.json(record);
+});
+
+// ACP (OpenAI/Stripe Agentic Commerce Protocol), buyer side. Same shape as the
+// AP2 mandate chain above, because it is the same failure: a scoped credential
+// (there, a signed intent; here, a Shared Payment Token) and an agent that
+// assembled the actual purchase somewhere else. The merchant validates the
+// token; nobody validates the shopping. See server/acp.js.
+app.post("/api/acp/checkout", async (req, res) => {
+  const { agent, token, session, chain } = req.body || {};
+  if (!/^0x[0-9a-fA-F]{40}$/.test(agent || "")) return res.status(400).json({ error: "agent must be a 0x-prefixed 20-byte address" });
+
+  const ts = new Date().toISOString();
+  const drift = checkSessionAgainstToken(token, session);
+
+  // Structural drift decided before policy, for the same reason as AP2: a
+  // session the token never authorized is not a budget question.
+  if (!drift.ok) {
+    const signed = await signDecision({ id: session?.id, agent, amountUSD: Number(session?.totalUSD) || 0, payee: null, verdict: "deny", ts });
+    return res.json({
+      decision: "deny",
+      stage: "spt_scope",
+      code: drift.code,
+      reason: drift.reason,
+      suggestion: drift.suggestion,
+      tokenId: token?.id ?? null,
+      sessionId: session?.id ?? null,
+      ts,
+      ...signed,
+    });
+  }
+
+  const payee = session.payee || drift.merchant || null;
+  const category = session.items.find((it) => it.category)?.category || null;
+  const verdict = await checkPolicy(agent, drift.totalUSD, "acp-checkout", chain || DEFAULT_CHAIN, category, payee);
+  const decision = verdict.allowed ? (verdict.requiresApproval ? "requires_approval" : "allow") : "deny";
+  const signed = await signDecision({ id: session.id, agent, amountUSD: drift.totalUSD, payee, verdict: decision, ts });
+
+  // An allowed session is bound to its own bytes before it leaves: the caller
+  // executes with this bindingId, and a session edited in between stops
+  // verifying. Denials get no binding — there is nothing to authorize.
+  const binding = decision === "allow" ? await bindAuthorization({ agent, payload: session, amountUSD: drift.totalUSD, payee }) : null;
+
+  res.json({
+    decision,
+    stage: "policy",
+    reason: verdict.reason || "session matches its token scope and is within policy",
+    ...(verdict.code ? { code: verdict.code } : {}),
+    ...(verdict.suggestion ? { suggestion: verdict.suggestion } : {}),
+    tokenId: token?.id ?? null,
+    sessionId: session.id ?? null,
+    totalUSD: drift.totalUSD,
+    merchant: drift.merchant,
+    currency: drift.currency,
+    itemCount: drift.itemCount,
+    ...(binding ? { binding: { id: binding.id, digest: binding.digest, expiresAt: binding.expiresAt } } : {}),
+    ts,
+    ...signed,
+  });
+});
+
+// Request integrity (server/integrity.js): bind an authorization to the exact
+// request it was granted for, then refuse at execution if the payload moved.
+app.post("/api/integrity/bind", async (req, res) => {
+  const { agent, payload, amountUSD, payee, ttlMs } = req.body || {};
+  if (!/^0x[0-9a-fA-F]{40}$/.test(agent || "")) return res.status(400).json({ error: "agent must be a 0x-prefixed 20-byte address" });
+  if (payload === undefined) return res.status(400).json({ error: "payload is required — there is nothing to bind an authorization to" });
+  const record = await bindAuthorization({ agent, payload, amountUSD, payee, ...(ttlMs ? { ttlMs: Number(ttlMs) } : {}) });
+  res.status(201).json({ id: record.id, digest: record.digest, agent: record.agent, expiresAt: record.expiresAt, message: record.message, signature: record.signature, signer: record.signer });
+});
+
+app.post("/api/integrity/verify", (req, res) => {
+  const { bindingId, payload, agent } = req.body || {};
+  if (!bindingId) return res.status(400).json({ error: "bindingId is required" });
+  const result = verifyBinding({ bindingId, payload, agent });
+  res.status(result.ok ? 200 : 409).json(result);
+});
+
+app.get("/api/integrity/digest", (req, res) => {
+  res.json({ digest: requestDigest(req.query.payload ? JSON.parse(req.query.payload) : null) });
+});
+
+app.get("/api/integrity/:id", (req, res) => {
+  const record = getBinding(req.params.id);
+  if (!record) return res.status(404).json({ error: "not found" });
+  res.json(record);
+});
+
+// Dispute evidence packs (server/disputes.js) — the agent-side defence file
+// that card-scheme evidence rules have no equivalent for yet.
+app.get("/api/disputes/:entryHash/evidence", async (req, res) => {
+  const pack = await buildEvidencePack(req.params.entryHash);
+  res.status(pack.ok ? 200 : 404).json(pack);
+});
+
+app.post("/api/disputes/verify", (req, res) => {
+  const result = checkEvidencePack(req.body?.pack ?? req.body);
+  res.status(result.ok ? 200 : 409).json(result);
+});
+
+// OpenTelemetry (server/otel.js): the same decisions as /api/events, shaped as
+// OTLP spans so a refusal lands inside the agent trace that caused it.
+app.get("/api/otel/spans", async (req, res) => {
+  const { since, until, status, address, limit, service } = req.query;
+  const spans = decisionSpans({ traceparent: req.get("traceparent"), since, until, status, address, limit });
+  const payload = toOtlpPayload(spans, service ? { serviceName: service } : {});
+  const exported = req.query.export === "1" ? await exportSpans(payload) : { exported: false, reason: "not requested" };
+  res.json({ spanCount: spans.length, traceparent: req.get("traceparent") || null, exported, payload });
 });
 
 app.listen(PORT, () => {

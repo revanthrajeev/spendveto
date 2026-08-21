@@ -60,7 +60,7 @@
 
   <article>
     <h1>Documentation</h1>
-    <p class="lede">SpendVeto is a governance gate in front of a catalog of paid (x402/USDC) endpoints, reachable three ways — CLI, delegated child agents, and any MCP client. Everything on this page is exercised by the 237-assertion suite in <code>npm run verify</code>.</p>
+    <p class="lede">SpendVeto is a governance gate in front of a catalog of paid (x402/USDC) endpoints, reachable three ways — CLI, delegated child agents, and any MCP client. Everything on this page is exercised by the 267-assertion suite in <code>npm run verify</code>.</p>
 
     <h2 id="quickstart">Quickstart</h2>
     <pre class="block"><span class="p">$</span> git clone &lt;repo&gt; &amp;&amp; cd spendveto &amp;&amp; npm install
@@ -80,7 +80,7 @@
         <tr><td><code>npm run proxy</code></td><td>Enforcement proxy (:8404): keyless agents POST intents; custody signs after governance</td></tr>
         <tr><td><code>npm run policy [-- apply &lt;pack&gt;]</code></td><td>List or apply policy packs (cautious / standard / production)</td></tr>
         <tr><td><code>npm run apikey -- [role] [label]</code></td><td>Mint an admin-surface API key (role: viewer / approver / admin). First key flips the server to auth-required.</td></tr>
-        <tr><td><code>npm run verify</code></td><td>237 end-to-end assertions, headless</td></tr>
+        <tr><td><code>npm run verify</code></td><td>267 end-to-end assertions, headless</td></tr>
         <tr><td><code>npm run site</code></td><td>Serve this marketing site (:8403)</td></tr>
       </tbody>
     </table></div>
@@ -173,6 +173,10 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
         <tr><td><code>GET/POST /api/delegations</code> · <code>POST /api/delegations/:id/revoke</code></td><td>Budget grants (caps + scopes)</td></tr>
         <tr><td><code>GET/POST /api/freezes</code> · <code>POST /api/freezes/:id/unfreeze</code></td><td>Kill switch</td></tr>
         <tr><td><code>GET /api/trust/:address</code></td><td>Agent trust score (0–100 + grade) from governance history</td></tr>
+        <tr><td><code>POST /api/acp/checkout</code></td><td>ACP: check a checkout session against the shared payment token that funds it — merchant, ceiling, category, currency, and whether the declared total matches its own line items</td></tr>
+        <tr><td><code>POST /api/integrity/bind</code> · <code>POST /api/integrity/verify</code></td><td>Request integrity: bind an authorization to a canonical digest of the request, then refuse at execution if the payload changed. Single-use, TTL-bounded, agent-scoped</td></tr>
+        <tr><td><code>GET /api/disputes/:entryHash/evidence</code> · <code>POST /api/disputes/verify</code></td><td>Dispute evidence pack: the spend pinned in its hash chain, the policy in force, the approval and the signed consents — one bundle, signed over its own digest</td></tr>
+        <tr><td><code>GET /api/otel/spans</code></td><td>Governance decisions as OTLP spans; pass a W3C <code>traceparent</code> and the refusal lands inside the agent trace that caused it</td></tr>
         <tr><td><code>GET /api/policy</code></td><td>Active policy</td></tr>
       </tbody>
     </table></div>
@@ -181,14 +185,14 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
     <p><b>simulate</b> (default): real keypairs, real signature verification, nonce replay protection, local settlement — zero setup. <b>testnet</b>: the real x402 v2 packages, facilitator-adaptive: the gate asks its facilitator what it can settle at boot and brings every supported registry chain live (multi-chain 402s, per-chain USDC). The public facilitator settles Base Sepolia — fund one wallet at faucet.circle.com and set <code>SPENDVETO_MODE=testnet</code>; a CDP facilitator key unlocks its mainnet chains with zero code changes.</p>
 
     <h2 id="verify">Verification</h2>
-    <p><code>npm run verify</code> boots everything headlessly and runs <b>237 assertions</b>: forged-signature rejection, all three approval outcomes, cascading caps, tool + chain scoping, chain-scoped signatures with per-chain balances, burst auto-freeze, manual freeze/unfreeze, signed-receipt verification, CSV export, per-chain analytics, webhook delivery to a live receiver, and a real MCP stdio JSON-RPC session.</p>
+    <p><code>npm run verify</code> boots everything headlessly and runs <b>267 assertions</b>: forged-signature rejection, all three approval outcomes, cascading caps, tool + chain scoping, chain-scoped signatures with per-chain balances, burst auto-freeze, manual freeze/unfreeze, signed-receipt verification, CSV export, per-chain analytics, webhook delivery to a live receiver, and a real MCP stdio JSON-RPC session.</p>
   </article>
 </div>
 
 <footer>
   <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
   <span>Apache-2.0. Prototype in public — every claim covered by <span class="mono">npm run verify</span>.</span>
-  <div class="links"><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./pitch.html">Pitch</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+  <div class="links"><a href="https://github.com/revanthrajeev/spendveto" target="_blank" rel="noopener">GitHub</a><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./pitch.html">Pitch</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
 </footer>
 
 </div>
