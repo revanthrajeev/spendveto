@@ -18,4 +18,4 @@ Rules:
 5. Touch nothing outside `site/assets/wallets/`. Do not edit any HTML/JS/MD — Claude does the wiring.
 6. Finish with a manifest: one line per file — filename, source URL, pixel size, bytes.
 
-**OPTIONAL, if you have time** (from `launch/ANTIGRAVITY_PROMPT.md` wave-2, still open): the social/OG image kit and the architecture SVG. Same rules: no invented claims, the number that appears anywhere is **237 verified checks**.
+**OPTIONAL, if you have time** (from `launch/ANTIGRAVITY_PROMPT.md` wave-2, still open): the social/OG image kit and the architecture SVG. Same rules: no invented claims, the number that appears anywhere is **267 verified checks**.

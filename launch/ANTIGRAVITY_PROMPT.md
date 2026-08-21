@@ -115,7 +115,7 @@ deck, 11 slides), `docs.html` (documentation). Same design system as above.
 > Using the established SpendVeto design system and the existing gripper render:
 > a) **GitHub social preview** 1280×640 PNG — dark #070a08, faint grid, gate
 >    logo + "SPENDVETO_" top-left, one-line "Spend governance for AI agents",
->    small mono footer "x402 + MCP · open source · 237 verified checks".
+>    small mono footer "x402 + MCP · open source · 267 verified checks".
 >    Save `site/assets/social/github.png`.
 > b) **X/Twitter banner** 1500×500 PNG — terrain render as the base, headline
 >    "Your agents can spend. SpendVeto decides." left-aligned.
@@ -162,7 +162,7 @@ deck, 11 slides), `docs.html` (documentation). Same design system as above.
 ## Hard constraints (repeat to the agent)
 
 - Fully local assets only — no CDN/external URLs anywhere in `site/`.
-- Don't change the verified copy/claims (237 checks, prices, market numbers).
+- Don't change the verified copy/claims (267 checks, prices, market numbers).
 - Keep `prefers-reduced-motion` fallbacks and the floating-chip mobile fallback.
 - Test with `npm run site` → http://localhost:8403 before finishing.
 - Leave changes staged (git add), never commit.
