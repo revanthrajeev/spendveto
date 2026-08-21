@@ -26,7 +26,7 @@ import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
-import { readdirSync, rmSync, statSync, existsSync, mkdirSync, renameSync } from "node:fs";
+import { readdirSync, rmSync, statSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SITE = "http://localhost:8403";
@@ -323,10 +323,24 @@ async function main() {
     // innerHeight and screenY to 0, which makes the rect below measure the
     // entire display instead of the page.
     await sleep(1800);
-    const fs = await page.evaluate(() => window.outerHeight === window.innerHeight && window.screenY === 0);
+    // Chrome restores the window state of the previous session, so a run that
+    // ended fullscreen makes the next one start there. Fullscreen collapses
+    // outerHeight to innerHeight and screenY to 0, which makes the content-rect
+    // measurement below select the whole display — tab strip, address bar and
+    // all. Force it back out rather than capturing that.
+    const isFs = () => page.evaluate(() => window.outerHeight === window.innerHeight && window.screenY === 0);
+    let fs = await isFs();
     if (fs) {
-      console.log("  ! window is fullscreen — leaving it, chrome would be captured");
+      const cdp = await page.context().newCDPSession(page);
+      const { windowId } = await cdp.send("Browser.getWindowForTarget");
+      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
+      await sleep(900);
+      await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "maximized" } });
+      await sleep(1200);
+      fs = await isFs();
+      console.log(`  exited fullscreen → ${fs ? "STILL FULLSCREEN" : "maximized"}`);
     }
+    if (fs) throw new Error("window is stuck fullscreen — the capture would include browser chrome");
     console.log(`  device scale ${DSF}, fullscreen=${fs}`);
 
     // Ask the page where it actually is. Browser chrome height varies with
@@ -404,6 +418,10 @@ async function main() {
       console.log(`  burning ${marks.length} captions…`);
       await burnCaptions(OUT, marks, Number(ss) < 0 ? 0 : 0.4);
     }
+
+    const marksPath = OUT.replace(/\.mp4$/, "") + ".marks.json";
+    writeFileSync(marksPath, JSON.stringify({ offset: 0.4, marks }, null, 2));
+    console.log(`  marks → ${marksPath}`);
 
     const mb = (statSync(OUT).size / 1e6).toFixed(1);
     console.log(`\n${"─".repeat(56)}`);
