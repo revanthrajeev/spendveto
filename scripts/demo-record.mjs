@@ -58,6 +58,10 @@ const LAYOUT = { width: 1728, height: 972 };
 // auto-frozen") out of frame and gave a 1.89 aspect against the reference
 // film's 1.735. Filling the screen height restores both.
 const SCREEN_H = Number(arg("screen-h", 1117));
+// The reference film is 3456x1992. Matching its proportions matters more than
+// filling the screen: at full width this display yields 2.19, which crops the
+// hero's lower chips out of frame.
+const DSF = Number(arg("dsf", 1.5));
 const CAPTURE = { width: 3456, height: 1944 };
 // Delivered at 1080p: downscaling 2x supersampled frames beats capturing at
 // 1080p directly, and keeps the file small enough to ship on the site.
@@ -221,12 +225,28 @@ async function burnCaptions(videoPath, marks, offset) {
   await new Promise((resolve, reject) => {
     const ff = spawn("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-i", videoPath, ...inputs,
       "-filter_complex", filter, "-map", "[vout]",
+      "-t", dur.toFixed(2), "-r", "30", "-fps_mode", "cfr",
       "-c:v", "libx264", "-preset", "slow", "-crf", "18",
       "-pix_fmt", "yuv420p", "-movflags", "+faststart", tmp], { stdio: "inherit" });
     ff.on("close", (c) => (c === 0 ? resolve() : reject(new Error(`caption pass exited ${c}`))));
   });
   renameSync(tmp, videoPath);
   rmSync(dir, { recursive: true, force: true });
+}
+
+// screencapture writes variable-frame-rate video; the container duration can
+// run far past the last frame it actually emitted.
+function lastFrameTime(path) {
+  return new Promise((resolve) => {
+    const pr = spawn("ffprobe", ["-v", "error", "-select_streams", "v:0",
+      "-show_entries", "frame=pts_time", "-of", "csv=p=0", "-read_intervals", "40%+#100000", path]);
+    let out = "";
+    pr.stdout.on("data", (d) => (out += d));
+    pr.on("close", () => {
+      const lines = out.trim().split("\n").filter(Boolean);
+      resolve(lines.length ? Number(lines[lines.length - 1]) || 0 : 0);
+    });
+  });
 }
 
 function videoDuration(path) {
@@ -299,6 +319,16 @@ async function main() {
     await page.goto(`${SITE}/`);
     await sleep(1500);
 
+    // Maximized, never fullscreen: fullscreen collapses outerHeight to
+    // innerHeight and screenY to 0, which makes the rect below measure the
+    // entire display instead of the page.
+    await sleep(1800);
+    const fs = await page.evaluate(() => window.outerHeight === window.innerHeight && window.screenY === 0);
+    if (fs) {
+      console.log("  ! window is fullscreen — leaving it, chrome would be captured");
+    }
+    console.log(`  device scale ${DSF}, fullscreen=${fs}`);
+
     // Ask the page where it actually is. Browser chrome height varies with
     // Chrome version and bookmark-bar state, so measuring beats assuming.
     const rect = await page.evaluate(() => ({
@@ -339,12 +369,16 @@ async function main() {
 
     // Trim to the tour itself, drop the menu bar, and downscale to 1920 wide
     // (aspect preserved — forcing 16:9 on a 3456x2234 display would stretch).
-    const ss = ((tourStart - capStart) / 1000 - 0.4).toFixed(2);
-    const dur = ((tourEnd - tourStart) / 1000 + 1.0).toFixed(2);
+    const ss = Math.max(0, (tourStart - capStart) / 1000 - 0.4);
+    const rawDur = await videoDuration(raw);
+    const want = (tourEnd - tourStart) / 1000 + 3.5;
+    const dur = Math.min(want, Math.max(0, rawDur - ss));
+    console.log(`  source ${rawDur.toFixed(1)}s · trimming ${ss.toFixed(2)}s → ${dur.toFixed(2)}s` +
+      (dur < want - 0.05 ? `  (clamped from ${want.toFixed(1)}s — capture was shorter than the tour)` : ""));
     console.log(`  encoding → ${OUT}`);
     await new Promise((resolve, reject) => {
       const ff = spawn("ffmpeg", ["-nostdin", "-loglevel", "error", "-y",
-        "-ss", ss, "-t", dur, "-i", raw,
+        "-accurate_seek", "-ss", ss.toFixed(2), "-t", dur.toFixed(2), "-i", raw,
         "-vf", CROP_TOP > 0
           ? `crop=in_w:in_h-${CROP_TOP}:0:${CROP_TOP},scale=1920:-2:flags=lanczos`
           : "scale=1920:-2:flags=lanczos",
@@ -353,6 +387,18 @@ async function main() {
       ff.on("close", (c) => (c === 0 ? resolve() : reject(new Error(`ffmpeg exited ${c}`))));
     });
     rmSync(raw, { force: true });
+
+    const lastTs = await lastFrameTime(OUT);
+    if (lastTs > 1) {
+      const trimmed = `${ROOT}.demo-trimmed.mp4`;
+      await new Promise((res, rej) => {
+        const ff = spawn("ffmpeg", ["-nostdin", "-loglevel", "error", "-y", "-i", OUT,
+          "-t", (lastTs + 0.4).toFixed(2), "-c", "copy", "-movflags", "+faststart", trimmed], { stdio: "inherit" });
+        ff.on("close", (c) => (c === 0 ? res() : rej(new Error(`tail trim exited ${c}`))));
+      });
+      renameSync(trimmed, OUT);
+      console.log(`  trimmed padded tail → ${(lastTs + 0.4).toFixed(1)}s of real frames`);
+    }
 
     if (!NOCAPS && marks.length) {
       console.log(`  burning ${marks.length} captions…`);
@@ -376,7 +422,7 @@ async function main() {
     const browser = await chromium.launch({
       headless: true,
       slowMo: 60,
-      args: ["--force-device-scale-factor=2", "--hide-scrollbars"],
+      args: [`--force-device-scale-factor=${DSF}`, "--start-maximized", "--hide-scrollbars"],
     });
     const ctx = await browser.newContext({
       viewport: LAYOUT,
