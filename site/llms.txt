@@ -1,0 +1,48 @@
+# SpendVeto
+
+> Buyer-side spend governance for AI agents that pay for things. Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it — before anything settles. Open source (Apache-2.0), x402 and MCP native.
+
+SpendVeto is a governance gate that sits between an AI agent and its wallet. Rails like x402, AP2, ACP and Stripe MPP all answer "how does the agent pay?". SpendVeto answers the question every team deploying agents asks first: "how do I stop it from overspending?"
+
+Every claim on this site is executed before it is published: 267 end-to-end assertions run headlessly on every change (`npm run verify`). If a claim is not a test, it does not ship. Features that cannot work locally yet are declared slots that refuse honestly, never stubs that pretend.
+
+## What it enforces
+
+- **Policy before payment** — per-call caps, hourly budgets, call-rate limits, category caps and trading-hours windows, checked against the live ledger before any signature is produced.
+- **Server-authoritative enforcement** — the payment gate runs the full pipeline itself, so an agent holding its own key and a hand-rolled client that skips its policy check still cannot overspend.
+- **Human-in-the-loop approvals** — spends above a threshold pause for a decision, and no answer within the timeout means denied, not allowed. Approvals are single-use and tied to settlement.
+- **Nested budget delegation** — a delegated child's spend counts against its own cap and every ancestor's. IAM for money.
+- **Payee allowlisting** — global and per-delegation, so a prompt-injected agent cannot pay an address that is not on the list.
+- **Runaway auto-freeze and a kill switch** — a wallet bursting past its rate threshold is frozen mid-loop without waiting for a human.
+- **Chain-scoped signatures** — the chain is inside the signed message, so an authorization signed for one chain is cryptographically invalid on another.
+- **Hash-chained tamper-evident ledger** — editing, deleting or reordering any historical row is detectable, and a verify-chain endpoint reports the first broken entry.
+- **Request integrity** — an authorization is bound to a canonical digest of the exact request it was granted for, so a payload swapped between the decision and the execution is refused even though payer, price and approval all still match.
+- **Token scope, not just token validity** — an ACP shared payment token or an AP2 intent mandate is minted for an amount, a merchant and a window. The merchant validates the token; nobody validates the shopping. SpendVeto checks the cart or session against the credential funding it.
+- **Dispute evidence packs** — agent purchases produce no device fingerprint, IP or browsing session, so they lose chargebacks by default. Every governed spend can be assembled into a signed bundle carrying the ledger entry pinned in its hash chain, the policy version in force, the human approval and the signed consents.
+- **OpenTelemetry decision spans** — a refusal appears as a span inside the agent trace that caused it, not in a separate system correlated by timestamp.
+
+## Key facts
+
+- **License**: Apache-2.0. Source: https://github.com/revanthrajeev/spendveto
+- **Verification**: 267 end-to-end assertions, all passing, re-run on every change.
+- **Modes**: `simulate` (default, zero setup, real secp256k1 keypairs and real ECDSA verification, local settlement) and `testnet` (real x402 v2, facilitator-adaptive multichain).
+- **Chains**: a 7-chain registry — Base Sepolia live via the public x402 facilitator today; Base, Ethereum, Polygon, Arbitrum, Optimism and Avalanche fully wired and settlement-ready, awaiting a facilitator key and a funded wallet.
+- **Interfaces**: CLI, Node SDK, MCP stdio server, enforcement proxy for keyless agents, LangChain and OpenAI Agents SDK adapters.
+- **Pricing**: self-host free forever; hosted Desk $49/mo, Team $199/mo plus 0.5% of governed spend, Money Path at 10–25 bps on governed volume.
+
+## Stated honestly
+
+- No external security audit yet, and no mainnet settlement yet — testnet and simulate only. This is pre-audit software.
+- No hosted multi-tenant platform yet; self-host is the only deployment today.
+- Solo-founder stage: no customers and no revenue yet.
+- SpendVeto is not a payment rail, not a wallet, and does not custody funds in its default mode. It is the decision in between.
+
+## Pages
+
+- [Home](https://spendveto.com/): the thesis, the pipeline, and live governance stats.
+- [Documentation](https://spendveto.com/docs.html): quickstart, commands, governance model, policy.json, delegation, MCP setup, HTTP API.
+- [Use cases](https://spendveto.com/use-cases.html): real 2026 agent-spend scenarios and the controls that stop each one.
+- [Playground](https://spendveto.com/playground.html): the real policy-decision logic running client-side — set a budget, fire agent spend, watch it pass, pause or block.
+- [Security](https://spendveto.com/security.html): what is enforced today, the custody model, what is not yet true, and how to report a vulnerability.
+- [Pricing](https://spendveto.com/pricing.html): self-host and hosted tiers.
+- [About](https://spendveto.com/about.html): why it exists and who builds it.
