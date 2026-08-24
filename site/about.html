@@ -36,6 +36,17 @@
   .fact { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem; background: var(--panel); }
   .fact b { display: block; font-family: "Space Grotesk", sans-serif; font-size: 1.4rem; color: var(--green); margin-bottom: 0.3rem; }
   .fact span { font-size: 0.8rem; color: var(--faint); }
+  /* The nav is sticky, so a #founder deep-link would otherwise drop the heading
+     behind it — this URL gets pasted into applications, so it has to land right. */
+  #founder { scroll-margin-top: 6.5rem; }
+  .founder { display: flex; gap: 1.5rem; align-items: flex-start; margin: 1.6rem 0 2rem; flex-wrap: wrap; }
+  .founder img { border-radius: 50%; border: 1px solid var(--line); flex: 0 0 auto; }
+  .founder h3 { font-size: 1.15rem; margin: 0 0 0.15rem; }
+  .founder .role { color: var(--green); font-size: 0.88rem; margin: 0 0 0.8rem; }
+  .founder > div { flex: 1 1 320px; min-width: 0; }
+  .founder-links { display: flex; gap: 1.1rem; flex-wrap: wrap; margin-top: 1rem; }
+  .founder-links a { color: var(--green); font-size: 0.9rem; font-weight: 600; }
+  @media (max-width: 560px) { .founder { gap: 1.1rem; } }
 </style>
 </head>
 <body>
@@ -71,8 +82,26 @@
   <h2>How we work</h2>
   <p>SpendVeto is built in public and verified in public. Every feature on the site is backed by an assertion in <span class="mono">npm run verify</span> — if a control isn't exercised by a real, running test, it doesn't ship as a claim. We'd rather under-promise on the marketing page than ship a control that only works in a demo.</p>
 
-  <h2>Who's behind it</h2>
-  <p>SpendVeto is built by a solo founder currently building in the open, prototyping fast, and shipping governance primitives (policy engine, nested budgets, kill switches, MCP middleware) ahead of most of the market's payment rails. Reach out via the <a href="./contact.html" style="color:var(--green)">contact page</a> — happy to talk to early design partners, security reviewers, or anyone thinking about the buyer side of agentic commerce.</p>
+  <h2 id="founder">Who's behind it</h2>
+
+  <div class="founder">
+    <img src="./assets/founder.jpg" alt="Revanth Rajeev, founder of SpendVeto" width="120" height="120" loading="lazy" />
+    <div>
+      <h3>Revanth Rajeev</h3>
+      <p class="role">Founder — builds and maintains SpendVeto</p>
+      <p>Data science at IIT Guwahati, management at IIM Bangalore. I've shipped 50+ mobile apps solo, to over 1.5 million installs, while studying — so the habit of getting something finished and in front of people predates this project.</p>
+      <p>I've been in crypto since I was 17: trading through the 2021–22 cycle first, then deploying my own contracts on BNB Chain and running staking and DeFi positions. That's the reason I'm building on the buyer side rather than the rail side — I've watched what automated systems do to a wallet when nothing is standing in the way.</p>
+      <p>SpendVeto is a solo project today. The whole codebase, the policy engine, the x402 gate, the MCP server, the SDK and the 271-assertion suite are mine, and that's the answer I'd rather give than an argument: the repo is public, so you can check whether one person can execute this.</p>
+      <p class="founder-links">
+        <a href="https://x.com/RevanthRajeev" target="_blank" rel="noopener">X</a>
+        <a href="https://www.linkedin.com/in/revanth-rajeev/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/revanthrajeev" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://calendly.com/revanthrajeev2004/30min" target="_blank" rel="noopener">Book 20 minutes</a>
+      </p>
+    </div>
+  </div>
+
+  <p>I'd genuinely like to hear from anyone running agent fleets that spend real money — design partners, security reviewers, or people who just think the buyer side of agentic commerce is being ignored. The <a href="./contact.html" style="color:var(--green)">contact page</a> has every route in.</p>
 </div>
 
 <footer>
