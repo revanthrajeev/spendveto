@@ -4,7 +4,7 @@ SpendVeto is the spend-governance layer for AI agents that pay for things (x402/
 
 ## The one rule that governs everything
 
-**Every public claim must be an assertion in `npm run verify`.** The count in README/site/PITCH must equal what **a fresh clone** produces — `npm run verify 2>&1 | grep -c "^PASS"` (currently **272**), not what this machine produces. Three further assertions cover the real cross-project Basis integration and only run when `../prediction-copilot` sits alongside this repo, which takes a maintainer checkout to 275. Publish 272: a reviewer who clones and counts must never find the site claiming more than they can reproduce. New feature → new assertion(s) → bump the count everywhere it appears (grep for the old number across `README.md PITCH.md site/*.html launch/*.md`). Never ship a fake control: features that can't work locally yet are *declared slots that refuse honestly* (see `rails/index.js` roadmap rails), never stubs that pretend.
+**Every public claim must be an assertion in `npm run verify`.** The count in README/site/PITCH must equal what **a fresh clone** produces — `npm run verify 2>&1 | grep -c "^PASS"` (currently **273**), not what this machine produces. Three further assertions cover the real cross-project Basis integration and only run when `../prediction-copilot` sits alongside this repo, which takes a maintainer checkout to 276. Publish 273: a reviewer who clones and counts must never find the site claiming more than they can reproduce. New feature → new assertion(s) → bump the count everywhere it appears (grep for the old number across `README.md PITCH.md site/*.html launch/*.md`). Never ship a fake control: features that can't work locally yet are *declared slots that refuse honestly* (see `rails/index.js` roadmap rails), never stubs that pretend.
 
 ## Commands & ports
 
@@ -16,7 +16,7 @@ npm run call -- <tool> [--child="label"] [--chain=id] [--dry-run]
 npm run delegate -- <cap> [label] [--parent x] [--tools a,b] [--chains c1,c2] [--ttl 10m]
 npm run policy [-- apply <pack>]
 npm run mcp        # stdio MCP server — stdout must stay protocol-clean (dotenv quiet:true)
-npm run verify     # 272 e2e assertions; takes 3–4 min (approval timeouts + TTL sleeps)
+npm run verify     # 273 e2e assertions; takes 3–4 min (approval timeouts + TTL sleeps)
 ```
 
 `SPENDVETO_MODE=simulate` (default, zero-setup, real ECDSA, local settlement) or `testnet` (real x402 v2; **facilitator-adaptive multichain** — the gate calls the facilitator's `GET /supported` at boot and registers every registry chain it names, one accepts entry per chain in every 402 with explicit per-chain USDC AssetAmounts (the `$` shorthand lacks defaults for ethereum/optimism/avalanche). Public facilitator = base-sepolia today; a CDP facilitator key + funded wallet flips its mainnets live with zero code changes. Rail id is `x402-live` (was x402-base-sepolia); `/api/chains` reports per-chain `settlement: live|ready|simulated`).

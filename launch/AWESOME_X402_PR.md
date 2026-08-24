@@ -15,7 +15,7 @@ section if it doesn't exist; that in itself makes the buyer-side gap visible):
 ```
 
 PR description: one paragraph, note that everything listed is covered by a
-272-assertion end-to-end suite (`npm run verify`).
+273-assertion end-to-end suite (`npm run verify`).
 
 ## MCP server registries
 

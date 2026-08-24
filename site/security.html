@@ -78,7 +78,7 @@
 
   <h2>What's not yet true</h2>
   <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia. Neither mode has been through an external security audit yet, and mainnet settlement is not yet enabled. Treat this as pre-audit software: don't point it at funds you can't afford to lose until an audit has happened.</p>
-  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 272-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
+  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 273-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
 
   <h2>Reporting a vulnerability</h2>
   <p>If you find a way to bypass a policy check, forge a payment signature, or defeat an approval gate, please report it privately before any public disclosure — email <a href="mailto:security@spendveto.com" style="color:var(--green)">security@spendveto.com</a>. We'll acknowledge within 48 hours.</p>

@@ -77,7 +77,12 @@ export function short(addr) {
 }
 
 // Static fallback for the chain picker when the local API isn't running
-// (e.g. the deployed static site). Mirrors shared-config.js CHAINS.
+// (e.g. the deployed static site — spendveto.com has no live /api/chains to
+// call). Mirrors shared-config.js CHAINS by hand since site/ is a
+// self-contained static bundle that can't import server-side config —
+// verify.mjs asserts this list's ids match the registry exactly, so an
+// unmirrored chain addition fails the suite instead of silently going stale
+// on the deployed site the way it did before this comment existed.
 export const FALLBACK_CHAINS = [
   { id: "base-sepolia", name: "Base Sepolia", status: "live" },
   { id: "base", name: "Base", status: "ready" },
@@ -86,6 +91,11 @@ export const FALLBACK_CHAINS = [
   { id: "arbitrum", name: "Arbitrum", status: "ready" },
   { id: "optimism", name: "Optimism", status: "ready" },
   { id: "avalanche", name: "Avalanche", status: "ready" },
+  { id: "solana-devnet", name: "Solana Devnet", status: "live" },
+  { id: "aptos-testnet", name: "Aptos Testnet", status: "live" },
+  { id: "stellar-testnet", name: "Stellar Testnet", status: "live" },
+  { id: "hedera-testnet", name: "Hedera Testnet", status: "live" },
+  { id: "xrpl", name: "XRPL", status: "live" },
 ];
 
 export async function loadChains() {

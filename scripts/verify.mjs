@@ -622,6 +622,22 @@ try {
     chains.every((c) => usdcShapeByFamily[c.family || "evm"].test(c.usdc || "") && (c.rpc || "").startsWith("https://")),
     chains.map((c) => `${c.id}:${(c.usdc || "").slice(0, 10)}`).join(" ")
   );
+  // The deployed static site (spendveto.com) has no live /api/chains to call,
+  // so site/wallet-connect.js keeps a hand-written FALLBACK_CHAINS list for
+  // the waitlist chain picker — the exact drift that shipped a stale
+  // 7-chain list to production after this registry grew to 12. Import the
+  // real module rather than re-parsing the file, so this catches drift the
+  // same way the code path that actually renders it would.
+  // wallet-connect.js reads `location.hostname` at module top-level (it's
+  // written for a browser); stub just enough for the import to resolve — we
+  // only need the exported constant, never loadChains() itself, here.
+  globalThis.location ??= { hostname: "verify" };
+  const { FALLBACK_CHAINS } = await import("../site/wallet-connect.js");
+  check(
+    "the deployed site's static chain-picker fallback stays mirrored to the live registry — it has no /api/chains to call",
+    JSON.stringify(FALLBACK_CHAINS.map((c) => c.id).sort()) === JSON.stringify(chains.map((c) => c.id).sort()),
+    `fallback=${FALLBACK_CHAINS.map((c) => c.id).join(",")}`
+  );
   check(
     "XRPL is flagged as settling RLUSD on mainnet, not USDC on a testnet — the one chain here where that distinction is a safety property, not trivia",
     chains.find((c) => c.id === "xrpl")?.stablecoin === "RLUSD" && chains.find((c) => c.id === "xrpl")?.caip2 === "xrpl:1",
