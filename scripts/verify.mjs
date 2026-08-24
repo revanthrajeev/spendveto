@@ -380,9 +380,20 @@ try {
 
   // --- Enforcement proxy: agents POST intents; keys never leave the proxy ---
   proxyProc = spawn("node", ["proxy/server.js"], { cwd: ROOT, env: { ...process.env, SPENDVETO_MODE: "simulate", PER_AGENT_CALLS_PER_MIN: "3" } });
-  await sleep(900);
   const PROXY = "http://localhost:8404";
-  const health = await fetch(`${PROXY}/proxy/health`).then((r) => r.json());
+  // A fixed sleep here isn't margin, it's a bet on machine speed — this rail's
+  // import chain now pulls in five extra SDKs (client/wallet.js's Aptos/
+  // Stellar/Hedera/XRPL/Solana signers), and a slower CI runner can lose that
+  // bet even though it never does locally. Poll instead: wait for the process
+  // to actually be listening, not for a fixed clock to run out.
+  let health;
+  for (let i = 0; i < 50 && !health; i++) {
+    await sleep(200);
+    try {
+      health = await fetch(`${PROXY}/proxy/health`).then((r) => r.json());
+    } catch {}
+  }
+  if (!health) throw new Error("proxy/server.js never came up on :8404 within 10s");
   check("proxy reports its custody wallet and catalog", health.ok && /^0x[0-9a-fA-F]{40}$/.test(health.custody) && health.tools.length === 3, health.custody);
 
   const proxyPaid = await fetch(`${PROXY}/proxy/call`, {
