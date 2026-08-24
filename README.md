@@ -2,7 +2,11 @@
 
 **The spend-governance layer for AI agents that pay for things.** Payment rails move an agent's money; SpendVeto decides whether the agent should be allowed to move it — policy checks, human approval, delegated budget caps, and a runaway-agent kill switch, enforced *before* any payment happens.
 
-Started as the "smallest real test" from the [web3 research brief](https://claude.ai/code/artifact/894ecd8b-f355-4c75-aa23-a77267345011); grown through two research-driven feature rounds (GPT deep-research + live market research) into a governed x402 + MCP stack. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
+[**Live site + playground**](https://spendveto.com) · [**Docs**](https://spendveto.com/docs.html) · Apache-2.0 · x402 + MCP native
+
+**Every claim in this README is executed before it ships.** `npm run verify` runs **264 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
+
+What *isn't* true yet is stated just as plainly: no external security audit, no mainnet settlement (testnet and simulate only), no customers. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
 
 ## What this actually is
 
