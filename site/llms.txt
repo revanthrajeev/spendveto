@@ -4,7 +4,7 @@
 
 SpendVeto is a governance gate that sits between an AI agent and its wallet. Rails like x402, AP2, ACP and Stripe MPP all answer "how does the agent pay?". SpendVeto answers the question every team deploying agents asks first: "how do I stop it from overspending?"
 
-Every claim on this site is executed before it is published: 264 end-to-end assertions run headlessly on every change (`npm run verify`). If a claim is not a test, it does not ship. Features that cannot work locally yet are declared slots that refuse honestly, never stubs that pretend.
+Every claim on this site is executed before it is published: 271 end-to-end assertions run headlessly on every change (`npm run verify`). If a claim is not a test, it does not ship. Features that cannot work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
 ## What it enforces
 
@@ -24,7 +24,7 @@ Every claim on this site is executed before it is published: 264 end-to-end asse
 ## Key facts
 
 - **License**: Apache-2.0. Source: https://github.com/revanthrajeev/spendveto
-- **Verification**: 264 end-to-end assertions, all passing, re-run on every change.
+- **Verification**: 271 end-to-end assertions, all passing, re-run on every change.
 - **Modes**: `simulate` (default, zero setup, real secp256k1 keypairs and real ECDSA verification, local settlement) and `testnet` (real x402 v2, facilitator-adaptive multichain).
 - **Chains**: a 7-chain registry — Base Sepolia live via the public x402 facilitator today; Base, Ethereum, Polygon, Arbitrum, Optimism and Avalanche fully wired and settlement-ready, awaiting a facilitator key and a funded wallet.
 - **Interfaces**: CLI, Node SDK, MCP stdio server, enforcement proxy for keyless agents, LangChain and OpenAI Agents SDK adapters.

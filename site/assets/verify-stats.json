@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-08-24T10:43:14.594Z",
+  "generatedAt": "2026-08-24T11:06:09.582Z",
   "paid": {
-    "count": 29,
-    "usd": 0.258103
+    "count": 30,
+    "usd": 0.263103
   },
   "blocked": {
-    "count": 22,
-    "usd": 0.275
+    "count": 23,
+    "usd": 0.285
   },
   "frozenWallets": 1,
-  "assertions": 264
+  "assertions": 271
 }

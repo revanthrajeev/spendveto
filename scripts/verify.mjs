@@ -18,6 +18,7 @@ import { checkPolicy } from "../client/policy.js";
 import { SpendVeto, SpendVetoDenialError } from "../sdk/index.js";
 import { createSpendVetoTools, createSpendVetoTool } from "../integrations/langchain.js";
 import { createSpendVetoFunctionTools } from "../integrations/openai-agents.js";
+import { createSpendVetoPlugin } from "../integrations/eliza.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PORT = 8402;
@@ -516,6 +517,62 @@ try {
     "LangChain tool throws with the denial code embedded for the agent to self-correct",
     lcDenialCaught instanceof Error && lcDenialCaught.code === "delegation_cap" && lcDenialCaught.message.includes("delegation_cap"),
     lcDenialCaught?.message
+  );
+
+  // --- ElizaOS plugin adapter: real Plugin/Action/Provider shapes ---
+  // ElizaOS agents already move money on-chain, so this is the population the
+  // whole project exists for. The plugin is duck-typed against ElizaOS's
+  // documented shapes and imports nothing from @elizaos/core.
+  const ez = await createSpendVetoPlugin({ proxyUrl: PROXY, serverUrl: BASE, child: "sdk test" });
+  check(
+    "ElizaOS adapter returns a Plugin with name, description, actions and providers",
+    ez.name === "spendveto" && typeof ez.description === "string" && Array.isArray(ez.actions) && Array.isArray(ez.providers),
+    `${ez.actions.length} actions, ${ez.providers.length} provider(s)`
+  );
+  check(
+    "every ElizaOS action carries the documented Action shape (name, similes, description, validate, handler, examples)",
+    ez.actions.length >= 3 &&
+      ez.actions.every((a) =>
+        typeof a.name === "string" && Array.isArray(a.similes) && typeof a.description === "string" &&
+        typeof a.validate === "function" && typeof a.handler === "function" && Array.isArray(a.examples)),
+    ez.actions.map((a) => a.name).join(", ")
+  );
+
+  const ezTranslate = ez.actions.find((a) => a.name === "SPENDVETO_TRANSLATE");
+  let ezCallbackText = null;
+  const ezResult = await ezTranslate.handler({}, {}, undefined, undefined, async (m) => { ezCallbackText = m.text; });
+  check(
+    "an allowed ElizaOS action settles and returns ActionResult{success:true} with the receipt id",
+    ezResult?.success === true && typeof ezResult.text === "string" && ezResult.data?.spendveto?.blocked === false && !!ezResult.data.spendveto.receiptId,
+    `receipt=${ezResult?.data?.spendveto?.receiptId?.slice(0, 8)} spent=$${ezResult?.values?.spentUSD}`
+  );
+  check("the ElizaOS handler also streams the result through the runtime callback", typeof ezCallbackText === "string" && ezCallbackText.length > 0, ezCallbackText?.slice(0, 50));
+
+  // A refusal must be a RESULT, not a throw: ElizaOS handlers return
+  // ActionResult, and a machine-readable code is what lets the next reasoning
+  // step pick a cheaper tool instead of retrying the same blocked call.
+  const ezBlocked = await createSpendVetoPlugin({ proxyUrl: PROXY, serverUrl: BASE, child: "race test" });
+  const ezDenied = await ezBlocked.actions.find((a) => a.name === "SPENDVETO_REVIEW").handler({}, {});
+  check(
+    "a blocked ElizaOS action returns success:false with the denial code, rather than throwing",
+    ezDenied?.success === false && ezDenied.data?.spendveto?.blocked === true && ezDenied.data.spendveto.code === "delegation_cap" && /Nothing was spent/.test(ezDenied.text),
+    `${ezDenied?.data?.spendveto?.code}: ${ezDenied?.text?.slice(0, 60)}`
+  );
+
+  // The provider is the half that changes behaviour instead of just refusing:
+  // the agent sees its remaining budget BEFORE it picks a tool.
+  const ezBudget = await ez.providers[0].get({}, {});
+  check(
+    "the ElizaOS budget provider injects live caps and remaining spend into agent context",
+    typeof ezBudget.text === "string" && /Per-call ceiling/.test(ezBudget.text) && typeof ezBudget.values?.spendvetoPerCallCapUSD === "number",
+    ezBudget.text?.slice(0, 80)
+  );
+  const ezOffline = await createSpendVetoPlugin({ proxyUrl: PROXY, serverUrl: "http://127.0.0.1:9", child: "sdk test" })
+    .catch(() => null);
+  check(
+    "with SpendVeto unreachable the provider says spending is restricted rather than implying it is unlimited",
+    ezOffline === null || /restricted|unavailable/i.test((await ezOffline.providers[0].get({}, {})).text),
+    "fails safe"
   );
 
   // --- Trust scores: the ledger as an agent credit file ---
@@ -1414,8 +1471,8 @@ try {
   // --- Stats: blocked-spend dollars, the governance headline number ---
   const stats = await fetch(`${BASE}/api/stats`).then((r) => r.json());
   check(
-    "stats: $0.275 of spend blocked across 22 stopped attempts (crypto + API rails + concurrency race)",
-    stats.blocked.count === 22 && Math.abs(stats.blocked.usd - 0.275) < 1e-9,
+    "stats: $0.285 of spend blocked across 23 stopped attempts (crypto + API rails + concurrency race + ElizaOS)",
+    stats.blocked.count === 23 && Math.abs(stats.blocked.usd - 0.285) < 1e-9,
     `blocked=${JSON.stringify(stats.blocked)}`
   );
   check("stats: exactly the runaway wallet is still frozen", stats.frozenWallets === 1, `frozenWallets=${stats.frozenWallets}`);
@@ -1440,15 +1497,15 @@ try {
   // call above actually ran; the count only ever moves in that one direction, gated by the
   // same `basisOk` check that skipped the call itself. +4 for the per-agent rate-limit test's
   // 3 successful calls under the limit plus the 1 successful call after manual unfreeze.
-  const expectedPaid = (basisOk ? 26 : 25) + 4;
+  const expectedPaid = (basisOk ? 26 : 25) + 5; // +1: the ElizaOS action settles a real call
   check(
     `ledger has ${expectedPaid} paid entries (incl. marketplace haiku, allowance refills, metered LLM, authed desk bot, SDK + LangChain calls, agent rate-limit test calls${basisOk ? ", Basis cross-project call" : ""})`,
     paid.length === expectedPaid,
     `found ${paid.length}`
   );
   check(
-    "ledger has 22 blocked entries (incl. chain governance, allowance window, category cap, trading hours, 2× LLM, concurrency race)",
-    blocked.length === 22,
+    "ledger has 23 blocked entries (incl. chain governance, allowance window, category cap, trading hours, 2× LLM, concurrency race, ElizaOS refusal)",
+    blocked.length === 23,
     `found ${blocked.length}`
   );
   check(

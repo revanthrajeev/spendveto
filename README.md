@@ -4,7 +4,7 @@
 
 [**Live site + playground**](https://spendveto.com) · [**Docs**](https://spendveto.com/docs.html) · Apache-2.0 · x402 + MCP native
 
-**Every claim in this README is executed before it ships.** `npm run verify` runs **264 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
+**Every claim in this README is executed before it ships.** `npm run verify` runs **271 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
 What *isn't* true yet is stated just as plainly: no external security audit, no mainnet settlement (testnet and simulate only), no customers. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
 
@@ -32,9 +32,9 @@ npm run call -- summarize      # $0.02 — above the approval line: go approve/d
 npm run call -- translate      # $0.005
 ```
 
-`npm run verify` runs the whole thing headlessly — **264 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
+`npm run verify` runs the whole thing headlessly — **271 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
 
-> **On the number:** a fresh clone runs **264** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 264 anyone can reproduce.
+> **On the number:** a fresh clone runs **271** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 264 anyone can reproduce.
 
 **Marketing site**: `npm run site` serves the deploy-ready landing page (Three.js hero, animated product walkthrough) at http://localhost:8403 — `site/` is fully static and self-contained, drop it on Vercel/Netlify as-is. Includes an **interactive playground** (`site/playground.html`) that runs the real policy-decision logic client-side — set a budget, fire agent spend, watch it pass/pause/block — and a **use-cases** page grounded in real 2026 agent-spend scenarios.
 
@@ -164,6 +164,21 @@ The buyer side got crowded fast: Fireblocks joined the x402 Foundation and is co
 - **Dispute evidence packs** (`server/disputes.js`, `GET /api/disputes/:entryHash/evidence`) — when a human disputes a charge, the merchant defends it with device fingerprint, IP, browsing session, delivery confirmation. An agent purchase produces none of those, so agent transactions lose by default and the merchant pays. Visa TAP, Mastercard Agent Pay, AP2 and Amex's agent protections all describe *authorization*; none yet define the after-the-fact defence file. SpendVeto is already sitting on it — nothing new is captured. A pack assembles the ledger entry pinned between its neighbouring hashes (the anti-backdating argument), the policy hash in force with any drift since then **disclosed rather than hidden**, the human approval record, and the signed consents for the delegation the payer spent under — then signs the bundle over its own digest, so a pack edited in transit stops verifying (`pack_tampered`). Every pack carries a `doesNotEstablish` list *inside the artifact*: it never implies delivery, satisfaction, or that the policy was a good one — only that it was in force and was applied.
 - **OpenTelemetry decision spans** (`server/otel.js`, `GET /api/otel/spans`) — agent teams already trace prompts, tool calls and sub-agents, and the requirement that keeps appearing in agent-governance evaluations is OTel-native visibility: the spend decision has to appear *as a span inside the trace that caused it*, not in a second system someone correlates by timestamp at 3am. OTLP/HTTP is JSON over POST, so this is dependency-free — pulling the OpenTelemetry SDK into the one component whose job is refusing to trust things would add a supply-chain surface for no gain. Pass a W3C `traceparent` and the refusal lands under the agent run that tried to spend; span ids derive from the entry hash so re-export doesn't duplicate spans in the backend; a malformed header degrades to a standalone trace rather than breaking the decision surface. **A blocked spend is status OK, not ERROR** — the gate did its job, and colouring refusals red trains a team to ignore the colour that matters.
 
+## ElizaOS: governance for agents that already move money
+
+`integrations/eliza.js` is a real ElizaOS plugin — dependency-free, so it imports nothing from `@elizaos/core` and forces an install on nobody. ElizaOS agents already do Solana transfers and swaps, which makes "the agent decided to spend" a live problem there rather than a hypothetical one.
+
+```js
+import { createSpendVetoPlugin } from "./integrations/eliza.js";
+const plugin = await createSpendVetoPlugin({ agentToken: "tg_..." });
+// add `plugin` to your character's plugins array
+```
+
+Two halves, and the second matters more:
+
+- **Actions** — one per catalog tool, each running the full governed pipeline through the enforcement proxy before anything is signed. A refusal comes back as `ActionResult{ success: false }` carrying the denial code, **not** as a throw: ElizaOS handlers return results, and a machine-readable code is what lets the next reasoning step pick a cheaper tool instead of retrying the same blocked call.
+- **A budget provider** — injects the wallet's live remaining spend, per-call ceiling and approval threshold into the agent's context *before* it decides anything. Blocking a spend after the model has committed to it produces a retry loop, because the model never learns it was near a limit. Telling it up front lets it choose the affordable option. If SpendVeto is unreachable the provider says spending is restricted rather than staying silent — a governance layer that fails open by omission isn't one.
+
 ## Marketplace + allowances: the two-sided flywheel
 
 **Anyone can list a paid tool behind the gate** — the catalog is supply, not a fixed demo:
@@ -282,7 +297,7 @@ scripts/
   gen-wallets.mjs           one-time testnet wallet generation
   policy.mjs                list/apply policy packs
   site.mjs                  serves the marketing site on :8403
-  verify.mjs                264 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
+  verify.mjs                271 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
 data/
   policy.json               editable spend rules incl. anomaly burst threshold + alertWebhookUrl
   policy-packs/             importable governance presets (cautious/standard/production)
