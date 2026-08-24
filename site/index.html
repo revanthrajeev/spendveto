@@ -70,6 +70,17 @@
   .chain-chip b { font-size: 0.6rem; letter-spacing: 0.16em; color: var(--faint); font-weight: 700; }
   .chain-chip.live { border-color: var(--green-deep); color: var(--ink); }
   .chain-chip.live b { color: var(--green); }
+  /* chain logo marquee */
+  .logo-marquee { position: relative; margin: 0 0 2rem; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .logo-track { display: flex; align-items: center; gap: clamp(2.2rem, 5vw, 3.6rem); width: max-content; animation: logo-scroll 32s linear infinite; }
+  .logo-marquee:hover .logo-track { animation-play-state: paused; }
+  .logo-item { display: flex; align-items: center; gap: 0.6rem; flex: none; opacity: 0.68; filter: grayscale(0.25); transition: opacity 0.25s ease, filter 0.25s ease, transform 0.25s ease; }
+  .logo-item:hover { opacity: 1; filter: grayscale(0); transform: translateY(-2px); }
+  .logo-item svg { width: 26px; height: 26px; flex: none; }
+  .logo-item span { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.82rem; letter-spacing: 0.03em; color: var(--dim); white-space: nowrap; }
+  .logo-item:hover span { color: var(--ink); }
+  @keyframes logo-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .logo-track { animation: none; } }
   /* faq */
   .faq { max-width: 46rem; }
   .faq details { border-bottom: 1px dashed var(--line); }
@@ -655,7 +666,7 @@
           "name": "Which chains work today?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "All seven registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. On-chain settlement is live on Base Sepolia via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry."
+            "text": "All eight registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. On-chain settlement is live on Base Sepolia and Solana devnet via x402’s public facilitator — two different signature schemes, not just two chains; the remaining EVM mainnets go live the moment a CDP facilitator key is configured, zero code changes needed. Every chain’s canonical USDC contract is already in the registry."
           }
         },
         {
@@ -770,7 +781,7 @@
     <span><b>$3–5T</b> agentic commerce by 2030 — McKinsey</span>
     <span><b>0</b> dollars move without a policy decision</span>
     <span><b>MCP</b> · governance the model can't opt out of</span>
-    <span><b>Multi-chain</b> · 7 chains governed · chain-scoped signatures · per-chain balances · Base Sepolia live on-chain</span>
+    <span><b>Multi-chain</b> · 8 chains governed · chain-scoped signatures · per-chain balances · Base Sepolia live on-chain</span>
   </div>
 </div>
 
@@ -1006,7 +1017,25 @@
 
 <section id="chains" style="border-top: 1px solid var(--line);">
   <div class="shell" style="padding-top: 4.5rem; padding-bottom: 4.5rem;">
-    <p class="counter reveal"><b>RAILS</b> Governed on seven chains</p>
+    <p class="counter reveal"><b>RAILS</b> Governed on eight chains</p>
+    <div class="logo-marquee reveal" aria-hidden="true">
+      <div class="logo-track">
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#0052FF"/></svg><span>Base</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3L6 17l10 6 10-6L16 3z" fill="#C0C7C2"/><path d="M16 25l-10-8 10 15 10-15-10 8z" fill="#8B948C"/></svg><span>Ethereum</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><defs><linearGradient id="solg1" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/></linearGradient></defs><path d="M6 22l3-3h17l-3 3H6z" fill="url(#solg1)"/><path d="M6 14l3-3h17l-3 3H6z" fill="url(#solg1)"/><path d="M26 18l-3-3H6l3 3h17z" fill="url(#solg1)"/></svg><span>Solana</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32" fill="none" stroke="#8247E5" stroke-width="2.4" stroke-linejoin="round"><path d="M16 4l10 5.8v11.4L16 27 6 21.2V9.8L16 4z"/><path d="M16 12l4 2.3v4.6l-4 2.3-4-2.3v-4.6L16 12z" fill="#8247E5" stroke="none"/></svg><span>Polygon</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#28A0F0" stroke-width="2.2"/><path d="M16 9l6 12h-4.5L16 15l-1.5 6H10L16 9z" fill="#28A0F0"/></svg><span>Arbitrum</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FF0420"/><rect x="8.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/><rect x="17.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/></svg><span>Optimism</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5l11 20H5L16 5z" fill="#E84142"/><path d="M13 25l3-6 3 6h-6z" fill="#0e130f"/></svg><span>Avalanche</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#0052FF"/></svg><span>Base</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3L6 17l10 6 10-6L16 3z" fill="#C0C7C2"/><path d="M16 25l-10-8 10 15 10-15-10 8z" fill="#8B948C"/></svg><span>Ethereum</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><defs><linearGradient id="solg2" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/></linearGradient></defs><path d="M6 22l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M6 14l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M26 18l-3-3H6l3 3h17z" fill="url(#solg2)"/></svg><span>Solana</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32" fill="none" stroke="#8247E5" stroke-width="2.4" stroke-linejoin="round"><path d="M16 4l10 5.8v11.4L16 27 6 21.2V9.8L16 4z"/><path d="M16 12l4 2.3v4.6l-4 2.3-4-2.3v-4.6L16 12z" fill="#8247E5" stroke="none"/></svg><span>Polygon</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#28A0F0" stroke-width="2.2"/><path d="M16 9l6 12h-4.5L16 15l-1.5 6H10L16 9z" fill="#28A0F0"/></svg><span>Arbitrum</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FF0420"/><rect x="8.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/><rect x="17.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/></svg><span>Optimism</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5l11 20H5L16 5z" fill="#E84142"/><path d="M13 25l3-6 3 6h-6z" fill="#0e130f"/></svg><span>Avalanche</span></span>
+      </div>
+    </div>
     <div class="chainband reveal">
       <span class="chain-chip live"><i>●</i> Base Sepolia <b>LIVE</b></span>
       <span class="chain-chip">Base <b>READY</b></span>
@@ -1015,8 +1044,9 @@
       <span class="chain-chip">Arbitrum <b>READY</b></span>
       <span class="chain-chip">Optimism <b>READY</b></span>
       <span class="chain-chip">Avalanche <b>READY</b></span>
+      <span class="chain-chip live"><i>●</i> Solana Devnet <b>LIVE</b></span>
     </div>
-    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live on Base Sepolia via the public x402 facilitator. The other six are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical USDC contracts all wired (tested against a mock facilitator advertising all seven). Pointing at a CDP facilitator with an API key and a funded wallet flips its mainnets on with zero code changes. All seven run the identical governed pipeline in simulate mode today.</p>
+    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live on Base Sepolia via the public x402 facilitator. On-chain settlement is also live on Solana devnet — a genuinely different signature scheme (ed25519), not another EVM chain. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical USDC contracts all wired (tested against a mock facilitator advertising all eight). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes.</p>
   </div>
 </section>
 
@@ -1060,7 +1090,7 @@
     <div class="faq" style="margin-top: 1.5rem;">
       <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>271-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
       <details class="reveal"><summary>Does SpendVeto hold my keys?</summary><p>Your choice of two trust models, both self-hosted. <b>Library mode:</b> agents hold their own wallets and the governance pipeline runs inside their own call path. <b>Enforcement proxy:</b> agents are keyless — they POST spending intents, and the proxy’s custody wallet signs only after freeze, policy, caps, scopes, and approvals all pass. Keys never leave your machine either way.</p></details>
-      <details class="reveal"><summary>Which chains work today?</summary><p>All seven registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
+      <details class="reveal"><summary>Which chains work today?</summary><p>All eight registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
       <details class="reveal"><summary>What happens when an agent goes rogue?</summary><p>The burst detector freezes it <b>mid-loop</b> — by default, ten payment attempts inside ten seconds trips the freeze automatically. Every wallet also has a one-click manual kill switch. A frozen wallet is refused even when it presents a correctly signed payment (403, not a fresh challenge), and its trust score collapses to an F.</p></details>
       <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 271 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
       <details class="reveal"><summary>What will the hosted platform add?</summary><p>The parts a company needs to run this for a fleet: a managed custody proxy on the money path, orgs and SSO, a Postgres audit trail, alert routing, and mainnet settlement. Join the waitlist — the chains people pick literally decide which adapters we build first.</p></details>
