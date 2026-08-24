@@ -121,7 +121,7 @@
   "allowedPayees": ["0xVendorA…", "0xVendorB…"],   <span class="c">// optional</span>
   "alertWebhookUrl": "https://hooks.slack.com/…"   <span class="c">// optional</span>
 }</pre>
-    <p>Lives at <code>data/policy.json</code>. <b>anomaly</b>: a wallet exceeding <code>burstAttempts</code> ledger events inside <code>burstWindowSeconds</code> is frozen automatically. <b>alertWebhookUrl</b>: freezes, blocked calls, and pending approvals POST there in real time. <b>allowedChains</b> (optional): pins which chains agents may settle on — omit it to allow all seven registered chains. <b>allowedPayees</b> (optional): pins which recipient addresses agents may pay at all — a payment to any other address is refused before it's signed, so a compromised or prompt-injected agent can't reach an attacker's wallet.</p>
+    <p>Lives at <code>data/policy.json</code>. <b>anomaly</b>: a wallet exceeding <code>burstAttempts</code> ledger events inside <code>burstWindowSeconds</code> is frozen automatically. <b>alertWebhookUrl</b>: freezes, blocked calls, and pending approvals POST there in real time. <b>allowedChains</b> (optional): pins which chains agents may settle on — omit it to allow all eight registered chains. <b>allowedPayees</b> (optional): pins which recipient addresses agents may pay at all — a payment to any other address is refused before it's signed, so a compromised or prompt-injected agent can't reach an attacker's wallet.</p>
 
     <h2 id="delegation">Delegation &amp; scoping</h2>
     <pre class="block"><span class="p">$</span> npm run delegate -- 0.015 "team lead"
@@ -172,7 +172,7 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
         <tr><td><code>GET /api/ledger</code> · <code>POST /api/ledger/event</code></td><td>Full ledger; client-side event logging</td></tr>
         <tr><td><code>GET /api/stats</code> · <code>GET /api/analytics</code></td><td>Paid/blocked totals; per-tool, per-wallet + per-chain rollups</td></tr>
         <tr><td><code>GET /metrics</code></td><td>Same numbers as <code>/api/stats</code>, in Prometheus text-exposition format</td></tr>
-        <tr><td><code>GET /api/chains</code></td><td>7-chain registry: status, canonical USDC contract, RPC</td></tr>
+        <tr><td><code>GET /api/chains</code></td><td>8-chain registry: status, canonical USDC contract, RPC</td></tr>
         <tr><td><code>GET /api/rails</code></td><td>Rail adapter registry — one pay() contract; x402 live, AP2/ACP/MPP/Safe-AllowanceModule slots (see <code>docs/safe-allowance.md</code> in the repo)</td></tr>
         <tr><td><code>GET /api/receipts/:id</code> · <code>POST /api/receipts/verify</code></td><td>Receipt lookup + independent ECDSA verification</td></tr>
         <tr><td><code>GET /api/ledger/verify-chain</code></td><td>Tamper-evidence: confirm the ledger hash-chain is intact; reports the first broken row</td></tr>

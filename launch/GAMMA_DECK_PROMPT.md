@@ -48,7 +48,7 @@ Below the diagram, a grid of ~8 capability tiles, each one short phrase:
 - Runaway auto-freeze + manual kill switch
 - Hash-chained tamper-evident audit ledger + signed receipts
 - Trust graph + counterparty reputation bureau
-- Multi-chain, facilitator-adaptive live settlement (7 chains registry-wired)
+- Multi-chain, facilitator-adaptive live settlement (8 chains registry-wired — EVM + Solana)
 - SDK, LangChain adapter, OpenAI Agents SDK adapter, MCP server, enforcement proxy
 Below the tiles, a proof callout box: "271 end-to-end assertions, all passing, re-run on every code change. If a claim isn't a test, it doesn't ship." Real ECDSA cryptography, real x402 settlement, no mocking.
 

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { ExactSvmScheme } from "@x402/svm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { MODE, PORT, TOOLS, CHAINS, FACILITATOR_URL, findChain, DEFAULT_CHAIN } from "../shared-config.js";
 import { randomUUID } from "node:crypto";
@@ -85,15 +86,21 @@ if (MODE === "testnet") {
   console.log(`[testnet] live settlement chains via ${FACILITATOR_URL}: ${liveSettlementChains.join(", ")}`);
 
   let resourceServer = new x402ResourceServer(facilitatorClient);
-  for (const id of liveSettlementChains) resourceServer = resourceServer.register(findChain(id).caip2, new ExactEvmScheme());
+  for (const id of liveSettlementChains) {
+    const c = findChain(id);
+    resourceServer = resourceServer.register(c.caip2, c.family === "svm" ? new ExactSvmScheme() : new ExactEvmScheme());
+  }
   // Price as an explicit AssetAmount per chain (atomic USDC units + the
   // registry's canonical USDC contract) rather than the "$0.01" shorthand —
   // the shorthand needs the package's built-in default-asset table, which
-  // doesn't cover every chain we do (ethereum/optimism/avalanche).
-  const usdcAmount = (tool, id) => ({
-    amount: String(Math.round(Number(tool.price) * 1e6)),
-    asset: { address: findChain(id).usdc, name: "USDC", version: "2", decimals: 6 },
-  });
+  // doesn't cover every chain we do (ethereum/optimism/avalanche), and SVM's
+  // default table keys off a different asset shape than EVM's ERC-20 address.
+  const usdcAmount = (tool, id) => {
+    const c = findChain(id);
+    return c.family === "svm"
+      ? { amount: String(Math.round(Number(tool.price) * 1e6)), asset: c.usdc }
+      : { amount: String(Math.round(Number(tool.price) * 1e6)), asset: { address: c.usdc, name: "USDC", version: "2", decimals: 6 } };
+  };
   const routes = Object.fromEntries(
     TOOLS.map((tool) => [
       `GET ${tool.path}`,
@@ -207,7 +214,14 @@ app.get("/api/chains", (req, res) => {
   // live the moment the configured facilitator supports it).
   const chains = CHAINS.map((c) => ({
     ...c,
-    settlement: MODE === "testnet" ? (liveSettlementChains.includes(c.id) ? "live" : "ready") : "simulated",
+    settlement:
+      MODE === "testnet"
+        ? liveSettlementChains.includes(c.id)
+          ? "live"
+          : "ready"
+        : c.family === "svm"
+          ? "unsupported-in-simulate"
+          : "simulated",
   }));
   res.json({ chains, mode: MODE, liveSettlementChains });
 });

@@ -597,18 +597,23 @@ try {
   // --- Chains + waitlist: the hosted-platform funnel ---
   const { chains } = await fetch(`${BASE}/api/chains`).then((r) => r.json());
   check(
-    "chain registry lists 7 chains with Base Sepolia live",
-    chains.length === 7 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
+    "chain registry lists 8 chains with Base Sepolia live",
+    chains.length === 8 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
     chains.map((c) => c.id).join(", ")
   );
   check(
-    "every chain carries its CAIP-2 id for the x402 v2 stack",
-    chains.every((c) => /^eip155:\d+$/.test(c.caip2 || "")) && chains.find((c) => c.id === "base-sepolia")?.caip2 === "eip155:84532",
+    "every chain carries its CAIP-2 id for the x402 v2 stack, EVM or SVM",
+    chains.every((c) => /^(eip155:\d+|solana:[1-9A-HJ-NP-Za-km-z]+)$/.test(c.caip2 || "")) &&
+      chains.find((c) => c.id === "base-sepolia")?.caip2 === "eip155:84532" &&
+      chains.find((c) => c.id === "solana-devnet")?.family === "svm",
     chains.map((c) => c.caip2).join(" ")
   );
   check(
-    "every registered chain carries its canonical USDC contract and an RPC",
-    chains.every((c) => /^0x[0-9a-fA-F]{40}$/.test(c.usdc || "") && (c.rpc || "").startsWith("https://")),
+    "every registered chain carries its canonical USDC contract (per its signature family) and an RPC",
+    chains.every((c) =>
+      (c.family === "svm" ? /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(c.usdc || "") : /^0x[0-9a-fA-F]{40}$/.test(c.usdc || "")) &&
+      (c.rpc || "").startsWith("https://")
+    ),
     chains.map((c) => `${c.id}:${(c.usdc || "").slice(0, 8)}`).join(" ")
   );
   const wlPost = await fetch(`${BASE}/api/waitlist`, {
@@ -1978,8 +1983,8 @@ try {
   testnetProc = await bootTestnet();
   const tnChains = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "testnet gate asks the facilitator what it settles and brings every supported registry chain live (all 7 via mock)",
-    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 7 && tnChains.chains.every((c) => c.settlement === "live"),
+    "testnet gate asks the facilitator what it settles and brings every supported registry chain live (all 8 via mock, EVM + SVM)",
+    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 8 && tnChains.chains.every((c) => c.settlement === "live"),
     `live=${tnChains.liveSettlementChains?.join(",")}`
   );
   const tn402 = await fetch("http://localhost:8401/api/agent/translate");
@@ -1987,8 +1992,8 @@ try {
   const decoded402 = tn402Text.includes("eip155") ? tn402Text : Buffer.from(tn402.headers.get("PAYMENT-REQUIRED") || "", "base64").toString("utf8") + " " + tn402Text;
   const advertised = REG_CHAINS.filter((c) => decoded402.includes(c.caip2)).map((c) => c.id);
   check(
-    "a real x402 v2 402 advertises one payment option per live chain — all seven CAIP-2 networks in one challenge",
-    tn402.status === 402 && advertised.length === 7,
+    "a real x402 v2 402 advertises one payment option per live chain — all eight CAIP-2 networks (EVM + SVM) in one challenge",
+    tn402.status === 402 && advertised.length === 8,
     `status=${tn402.status} advertised=${advertised.join(",")}`
   );
   testnetProc.proc.kill();
@@ -2000,9 +2005,9 @@ try {
   testnetProc = await bootTestnet();
   const tnChains2 = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + six settlement-ready",
+    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + seven settlement-ready",
     tnChains2.liveSettlementChains?.length === 1 && tnChains2.liveSettlementChains[0] === "base-sepolia" &&
-      tnChains2.chains.filter((c) => c.settlement === "ready").length === 6,
+      tnChains2.chains.filter((c) => c.settlement === "ready").length === 7,
     `live=${tnChains2.liveSettlementChains?.join(",")} ready=${tnChains2.chains.filter((c) => c.settlement === "ready").length}`
   );
   testnetProc.proc.kill();

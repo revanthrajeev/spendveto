@@ -23,6 +23,13 @@ export const CHAINS = [
   { id: "arbitrum", caip2: "eip155:42161", name: "Arbitrum", chainIdHex: "0xa4b1", status: "ready", usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", rpc: "https://arb1.arbitrum.io/rpc", note: "" },
   { id: "optimism", caip2: "eip155:10", name: "Optimism", chainIdHex: "0xa", status: "ready", usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", rpc: "https://mainnet.optimism.io", note: "" },
   { id: "avalanche", caip2: "eip155:43114", name: "Avalanche", chainIdHex: "0xa86a", status: "ready", usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", rpc: "https://api.avax.network/ext/bc/C/rpc", note: "" },
+  // Solana is a different signature family (ed25519, base58 addresses) from
+  // every chain above (secp256k1, 0x addresses) — simulate mode's signing
+  // path is EVM-specific (see server/simulate.js), so this chain is real x402
+  // testnet settlement only, not a simulate-mode target. family lets callers
+  // that need to branch on signature scheme (rails/x402-testnet.js,
+  // server/index.js facilitator registration) do so without string-matching ids.
+  { id: "solana-devnet", caip2: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", name: "Solana Devnet", family: "svm", status: "live", usdc: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", rpc: "https://api.devnet.solana.com", note: "x402 settlement via the public facilitator — real second signature scheme, not just a second EVM chain" },
 ];
 
 export const DEFAULT_CHAIN = "base-sepolia";

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { createKeyPairSignerFromBytes, generateKeyPairSigner, getBase58Encoder } from "@solana/kit";
 
 // quiet: dotenv v17 prints an injection banner to stdout by default, which
 // would corrupt the MCP stdio protocol when this module is loaded by mcp/server.js.
@@ -15,6 +16,21 @@ const isEphemeral = !configuredKey;
 // this run (fine for simulate mode, useless for testnet since it'd never be funded).
 export const account = privateKeyToAccount(configuredKey || generatePrivateKey());
 export const walletIsEphemeral = isEphemeral;
+
+// Solana settlement is a different signature family (ed25519, not secp256k1)
+// so it needs its own keypair — but the governance identity (budgets, caps,
+// ledger keying) stays `account.address` throughout; this signer only ever
+// produces the on-chain SPL transfer signature for the solana-devnet rail.
+// Lazy + memoized: key generation is async and most runs never touch Solana.
+let svmSignerPromise;
+export function getSvmSigner() {
+  if (!svmSignerPromise) {
+    svmSignerPromise = process.env.CLIENT_SOLANA_PRIVATE_KEY
+      ? createKeyPairSignerFromBytes(getBase58Encoder().encode(process.env.CLIENT_SOLANA_PRIVATE_KEY))
+      : generateKeyPairSigner();
+  }
+  return svmSignerPromise;
+}
 
 const CHILDREN_PATH = fileURLToPath(new URL("../data/children.json", import.meta.url));
 

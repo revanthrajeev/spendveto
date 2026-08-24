@@ -223,7 +223,7 @@ Seven chains are registered in `shared-config.js` (each with its canonical USDC 
 - **Chain allowlists** — `"allowedChains": ["base-sepolia", "base"]` in `data/policy.json` blocks agents from settling anywhere else; the `cautious` and `production` packs ship with chains pinned.
 - **Chain-scoped delegation** — `--chains base-sepolia` pins a child's settlement chains, and (like caps and tool scopes) every ancestor's chain scope binds the whole subtree.
 - **Everywhere** — `npm run call -- review --chain=polygon`, proxy intents (`{"tool":"review","chain":"arbitrum"}`), per-chain rollups at `/api/analytics`, a chain column in the CSV export, chain tags on the dashboard ledger.
-- **Facilitator-adaptive live settlement** — in testnet mode the gate asks its configured facilitator what it can settle (`GET /supported`) at boot and brings **every registry chain the facilitator names** live: per-chain scheme registration and one accepts entry per chain in every 402, priced as explicit atomic-USDC amounts against each chain's canonical contract. Tested against a mock facilitator both ways: advertising all seven brings all seven live; advertising one brings exactly one, with the rest reporting `settlement: "ready"` on `/api/chains`. The public facilitator settles Base Sepolia today; pointing `SPENDVETO_FACILITATOR_URL` at a CDP facilitator (with an API key) and funding a wallet flips its mainnet chains live with **zero code changes** — the remaining gap to real mainnet spend is a key, funds, and a security audit, not engineering.
+- **Facilitator-adaptive live settlement** — in testnet mode the gate asks its configured facilitator what it can settle (`GET /supported`) at boot and brings **every registry chain the facilitator names** live: per-chain scheme registration and one accepts entry per chain in every 402, priced as explicit atomic-USDC amounts against each chain's canonical contract. Tested against a mock facilitator both ways: advertising all eight brings all eight live; advertising one brings exactly one, with the rest reporting `settlement: "ready"` on `/api/chains`. The public facilitator settles Base Sepolia and Solana devnet today — two signature schemes, ed25519 alongside secp256k1; pointing `SPENDVETO_FACILITATOR_URL` at a CDP facilitator (with an API key) and funding a wallet flips its mainnet chains live with **zero code changes** — the remaining gap to real mainnet spend is a key, funds, and a security audit, not engineering.
 
 On-chain settlement is live on Base Sepolia via x402 today; every registered chain runs the full pipeline in simulate mode (real chain-scoped signatures, local settlement). Per-chain facilitator adapters are the funded milestone — the governance layer is already chain-complete.
 
@@ -261,7 +261,7 @@ Nothing is faked to look real — simulate mode verifies genuine signatures and 
 ## Files
 
 ```
-shared-config.js         tool catalog (id/path/price), 7-chain registry (USDC contracts, RPCs), mode, port
+shared-config.js         tool catalog (id/path/price), 8-chain registry (USDC contracts, RPCs, EVM+SVM), mode, port
 server/
   index.js                Express app: catalog, ledger, stats, analytics, CSV export, policy, approvals, delegations, freezes APIs
   simulate.js              per-tool 402 gate factory: real signature verify, replay protection, freeze refusal, signed receipts
