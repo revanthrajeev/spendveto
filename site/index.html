@@ -650,7 +650,7 @@
           "name": "Is this a real product or a demo?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an 271-assertion end-to-end suite (npm run verify) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product."
+            "text": "Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an 272-assertion end-to-end suite (npm run verify) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product."
           }
         },
         {
@@ -682,7 +682,7 @@
           "name": "What does “simulate mode” actually simulate?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 271 tested assertions. Flip one env var for real x402 on Base Sepolia."
+            "text": "Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 272 tested assertions. Flip one env var for real x402 on Base Sepolia."
           }
         },
         {
@@ -733,7 +733,7 @@
   <canvas id="bg" aria-hidden="true"></canvas>
   <img class="hero-grip" src="./assets/hero-grip.jpg" alt="" aria-hidden="true" />
   <div class="hero-inner">
-    <div class="live-chip"><i></i><span id="live-stats">271 end-to-end checks · verified build</span></div>
+    <div class="live-chip"><i></i><span id="live-stats">272 end-to-end checks · verified build</span></div>
     <h1>Your agents can spend.<br /><span class="accent">SpendVeto decides.</span></h1>
     <p class="hero-sub">
       AI agents now pay for tools, APIs, and each other — autonomously, at machine speed.
@@ -781,7 +781,7 @@
     <span><b>$3–5T</b> agentic commerce by 2030 — McKinsey</span>
     <span><b>0</b> dollars move without a policy decision</span>
     <span><b>MCP</b> · governance the model can't opt out of</span>
-    <span><b>Multi-chain</b> · 8 chains governed · chain-scoped signatures · per-chain balances · Base Sepolia live on-chain</span>
+    <span><b>Multi-chain</b> · 12 chains governed, six signature families · chain-scoped signatures · per-chain balances · Base Sepolia + XRPL live on-chain</span>
   </div>
 </div>
 
@@ -844,7 +844,7 @@
   <div class="shell" data-num="02">
     <p class="counter reveal"><b>02 / 06</b> Product — working today, not a roadmap</p>
     <h2 class="reveal">Eight controls between your agent and its money.</h2>
-    <p class="lede reveal">Every one of them is exercised by a 271-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
+    <p class="lede reveal">Every one of them is exercised by a 272-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
     <div class="grid8">
       <div class="cell reveal">
         <span class="mini-chip">PRE-PAYMENT</span>
@@ -908,7 +908,7 @@
           <circle class="arc" cx="110" cy="110" r="100" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="471 628" />
         </svg>
         <div class="gauge-center">
-          <div class="gauge-num"><em>271</em>/271</div>
+          <div class="gauge-num"><em>272</em>/272</div>
           <div class="gauge-cap">end-to-end checks passing</div>
         </div>
       </div>
@@ -1017,7 +1017,7 @@
 
 <section id="chains" style="border-top: 1px solid var(--line);">
   <div class="shell" style="padding-top: 4.5rem; padding-bottom: 4.5rem;">
-    <p class="counter reveal"><b>RAILS</b> Governed on eight chains</p>
+    <p class="counter reveal"><b>RAILS</b> Governed on twelve chains, six signature families</p>
     <div class="logo-marquee reveal" aria-hidden="true">
       <div class="logo-track">
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#0052FF"/></svg><span>Base</span></span>
@@ -1027,6 +1027,10 @@
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#28A0F0" stroke-width="2.2"/><path d="M16 9l6 12h-4.5L16 15l-1.5 6H10L16 9z" fill="#28A0F0"/></svg><span>Arbitrum</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FF0420"/><rect x="8.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/><rect x="17.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/></svg><span>Optimism</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5l11 20H5L16 5z" fill="#E84142"/><path d="M13 25l3-6 3 6h-6z" fill="#0e130f"/></svg><span>Avalanche</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5L28 25H4L16 5z" fill="none" stroke="#00D2AB" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Aptos</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3l3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10z" fill="#7D00FF"/></svg><span>Stellar</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M9 6v20M23 6v20M9 14h14M9 18h14" stroke="#8259EF" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Hedera</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M6 6l20 20M26 6L6 26" stroke="#00AAE4" stroke-width="3.2" stroke-linecap="round"/></svg><span>XRPL</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#0052FF"/></svg><span>Base</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3L6 17l10 6 10-6L16 3z" fill="#C0C7C2"/><path d="M16 25l-10-8 10 15 10-15-10 8z" fill="#8B948C"/></svg><span>Ethereum</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><defs><linearGradient id="solg2" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/></linearGradient></defs><path d="M6 22l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M6 14l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M26 18l-3-3H6l3 3h17z" fill="url(#solg2)"/></svg><span>Solana</span></span>
@@ -1034,6 +1038,10 @@
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#28A0F0" stroke-width="2.2"/><path d="M16 9l6 12h-4.5L16 15l-1.5 6H10L16 9z" fill="#28A0F0"/></svg><span>Arbitrum</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FF0420"/><rect x="8.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/><rect x="17.5" y="13" width="6" height="6" rx="3" fill="#0e130f"/></svg><span>Optimism</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5l11 20H5L16 5z" fill="#E84142"/><path d="M13 25l3-6 3 6h-6z" fill="#0e130f"/></svg><span>Avalanche</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 5L28 25H4L16 5z" fill="none" stroke="#00D2AB" stroke-width="2.4" stroke-linejoin="round"/></svg><span>Aptos</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3l3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10z" fill="#7D00FF"/></svg><span>Stellar</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M9 6v20M23 6v20M9 14h14M9 18h14" stroke="#8259EF" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Hedera</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M6 6l20 20M26 6L6 26" stroke="#00AAE4" stroke-width="3.2" stroke-linecap="round"/></svg><span>XRPL</span></span>
       </div>
     </div>
     <div class="chainband reveal">
@@ -1045,8 +1053,12 @@
       <span class="chain-chip">Optimism <b>READY</b></span>
       <span class="chain-chip">Avalanche <b>READY</b></span>
       <span class="chain-chip live"><i>●</i> Solana Devnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Aptos Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Stellar Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Hedera Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> XRPL <b>LIVE (mainnet)</b></span>
     </div>
-    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live on Base Sepolia via the public x402 facilitator. On-chain settlement is also live on Solana devnet — a genuinely different signature scheme (ed25519), not another EVM chain. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical USDC contracts all wired (tested against a mock facilitator advertising all eight). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes.</p>
+    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live today on six signature schemes: Base Sepolia (secp256k1), Solana devnet (ed25519), Aptos testnet (Move), Stellar testnet, Hedera testnet (account-id addressing), and <b>XRPL mainnet</b> — the one chain here settling real money, in RLUSD rather than USDC. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical stablecoin addresses all wired (tested against a mock facilitator advertising all twelve). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes.</p>
   </div>
 </section>
 
@@ -1078,7 +1090,7 @@
       <div><span class="p">$</span> npm run call -- summarize &nbsp;<span class="c"># go approve it</span></div>
       <div><span class="p">$</span> npm run delegate -- 0.03 "intern" --tools translate --chains base-sepolia</div>
       <div><span class="p">$</span> claude mcp add spendveto -- node mcp/server.js</div>
-      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 271 assertions, end to end</span></div>
+      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 272 assertions, end to end</span></div>
     </div>
   </div>
 </section>
@@ -1088,11 +1100,11 @@
     <p class="counter reveal"><b>FAQ</b> Straight answers</p>
     <h2 class="reveal">Asked before you had to ask.</h2>
     <div class="faq" style="margin-top: 1.5rem;">
-      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>271-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
+      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>272-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
       <details class="reveal"><summary>Does SpendVeto hold my keys?</summary><p>Your choice of two trust models, both self-hosted. <b>Library mode:</b> agents hold their own wallets and the governance pipeline runs inside their own call path. <b>Enforcement proxy:</b> agents are keyless — they POST spending intents, and the proxy’s custody wallet signs only after freeze, policy, caps, scopes, and approvals all pass. Keys never leave your machine either way.</p></details>
       <details class="reveal"><summary>Which chains work today?</summary><p>All eight registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
       <details class="reveal"><summary>What happens when an agent goes rogue?</summary><p>The burst detector freezes it <b>mid-loop</b> — by default, ten payment attempts inside ten seconds trips the freeze automatically. Every wallet also has a one-click manual kill switch. A frozen wallet is refused even when it presents a correctly signed payment (403, not a fresh challenge), and its trust score collapses to an F.</p></details>
-      <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 271 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
+      <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 272 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
       <details class="reveal"><summary>What will the hosted platform add?</summary><p>The parts a company needs to run this for a fleet: a managed custody proxy on the money path, orgs and SSO, a Postgres audit trail, alert routing, and mainnet settlement. Join the waitlist — the chains people pick literally decide which adapters we build first.</p></details>
       <details class="reveal"><summary>Is there an SDK, or just the CLI?</summary><p>Both. A dependency-free Node SDK (<code class="mono">sdk/</code> — <code class="mono">.pay()</code>, <code class="mono">.dryRun()</code>, <code class="mono">.chat()</code>, throws a typed denial with the fix attached) and a LangChain adapter (<code class="mono">integrations/</code>) ship in the repo alongside the CLI and MCP server — same governed pipeline underneath all four. Code samples in the <a href="./docs.html#sdk">docs</a>.</p></details>
     </div>

@@ -17,7 +17,7 @@ Open the Console on **Overview**. Practice once.
 
 **0:00 — the hook (Console · Overview)**
 
-> "AI agents can pay for things now — x402 cleared 169 million payments in its first year. This is the layer that decides whether your agent is *allowed* to pay. Everything you'll see is real: real signatures, real settlement, 271 end-to-end tests."
+> "AI agents can pay for things now — x402 cleared 169 million payments in its first year. This is the layer that decides whether your agent is *allowed* to pay. Everything you'll see is real: real signatures, real settlement, 272 end-to-end tests."
 
 **0:10 — a governed payment**
 
@@ -70,7 +70,7 @@ curl -s -X POST localhost:8404/proxy/call -H 'Content-Type: application/json' \
 
 **1:20 — close (Console · Chains, then Trust)**
 
-> "Chain-scoped signatures across eight chains — two signature schemes, EVM and Solana — live on Base Sepolia and Solana devnet via x402 — with Google AP2, OpenAI ACP, Stripe MPP, and Safe{Wallet}'s AllowanceModule as adapter slots behind the same pay() contract. Every wallet's history compresses into a trust score: the ledger becomes an agent credit file. Open source, Apache-2.0. `npm run verify` — 271 assertions, no mocks. The rails move the money. SpendVeto decides whether it should move."
+> "Chain-scoped signatures across twelve chains — six signature schemes, EVM through XRPL — live on Base Sepolia, Solana devnet, and XRPL mainnet via x402 — with Google AP2, OpenAI ACP, Stripe MPP, and Safe{Wallet}'s AllowanceModule as adapter slots behind the same pay() contract. Every wallet's history compresses into a trust score: the ledger becomes an agent credit file. Open source, Apache-2.0. `npm run verify` — 272 assertions, no mocks. The rails move the money. SpendVeto decides whether it should move."
 
 ---
 

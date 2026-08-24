@@ -30,6 +30,14 @@ export const CHAINS = [
   // that need to branch on signature scheme (rails/x402-testnet.js,
   // server/index.js facilitator registration) do so without string-matching ids.
   { id: "solana-devnet", caip2: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", name: "Solana Devnet", family: "svm", status: "live", usdc: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", rpc: "https://api.devnet.solana.com", note: "x402 settlement via the public facilitator — real second signature scheme, not just a second EVM chain" },
+  // Four more signature families the public facilitator settles today (checked
+  // live against its /supported endpoint) — each with its own account model,
+  // so each needs its own client signer (see client/wallet.js) and its own
+  // branch in rails/x402-testnet.js and server/index.js's scheme registration.
+  { id: "aptos-testnet", caip2: "aptos:2", name: "Aptos Testnet", family: "aptos", status: "live", usdc: "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832", rpc: "https://api.testnet.aptoslabs.com/v1", note: "x402 settlement via the public facilitator — Move account model, third signature family" },
+  { id: "stellar-testnet", caip2: "stellar:testnet", name: "Stellar Testnet", family: "stellar", status: "live", usdc: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA", rpc: "https://horizon-testnet.stellar.org", note: "x402 settlement via the public facilitator — fees sponsored by the facilitator itself" },
+  { id: "hedera-testnet", caip2: "hedera:testnet", name: "Hedera Testnet", family: "hedera", status: "live", usdc: "0.0.429274", rpc: "https://testnet.mirrornode.hedera.com/api/v1", note: "x402 settlement via the public facilitator — account-id addressing (0.0.x), not a keypair-derived address; needs a real registered testnet account, an ephemeral keypair alone can't settle" },
+  { id: "xrpl", caip2: "xrpl:1", name: "XRPL", family: "xrpl", status: "live", usdc: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De", stablecoin: "RLUSD", rpc: "https://s1.ripple.com:51234", note: "x402 settlement via the public facilitator — MAINNET, not a testnet: the only chain on this list settling real money today. Settles in RLUSD, not USDC — XRPL has no canonical USDC deployment" },
 ];
 
 export const DEFAULT_CHAIN = "base-sepolia";

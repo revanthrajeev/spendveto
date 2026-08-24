@@ -7,7 +7,7 @@ Card-by-card content box. That region is exactly 10 slides separated by
 and tone notes are folded into Slide 1 and Slide 10 below so they don't each
 become their own extra card.)
 
-Source-accurate to `PITCH.md` in this repo as of v0.21.0 (271 verified
+Source-accurate to `PITCH.md` in this repo as of v0.21.0 (272 verified
 end-to-end assertions); every number is cited so Gamma doesn't need to invent
 anything.
 
@@ -48,9 +48,9 @@ Below the diagram, a grid of ~8 capability tiles, each one short phrase:
 - Runaway auto-freeze + manual kill switch
 - Hash-chained tamper-evident audit ledger + signed receipts
 - Trust graph + counterparty reputation bureau
-- Multi-chain, facilitator-adaptive live settlement (8 chains registry-wired — EVM + Solana)
+- Multi-chain, facilitator-adaptive live settlement (12 chains registry-wired — six signature families, EVM through XRPL)
 - SDK, LangChain adapter, OpenAI Agents SDK adapter, MCP server, enforcement proxy
-Below the tiles, a proof callout box: "271 end-to-end assertions, all passing, re-run on every code change. If a claim isn't a test, it doesn't ship." Real ECDSA cryptography, real x402 settlement, no mocking.
+Below the tiles, a proof callout box: "272 end-to-end assertions, all passing, re-run on every code change. If a claim isn't a test, it doesn't ship." Real ECDSA cryptography, real x402 settlement, no mocking.
 
 ---
 
@@ -107,7 +107,7 @@ Caption: "Every gap above is a funded next milestone, not a hidden flaw."
 
 **Slide 10 — Ask / close**
 Headline: "Open source is the distribution. The hosted platform is the business."
-State the ask generically (adjust the number before presenting — this deck is not accelerator-specific): seeking pre-seed capital to fund a security audit, the hosted platform build, and initial design-partner rollout. Repo: github.com/revanthrajeev/spendveto — open source, Apache-2.0, browse the code and the 271-assertion verify suite directly.
+State the ask generically (adjust the number before presenting — this deck is not accelerator-specific): seeking pre-seed capital to fund a security audit, the hosted platform build, and initial design-partner rollout. Repo: github.com/revanthrajeev/spendveto — open source, Apache-2.0, browse the code and the 272-assertion verify suite directly.
 Tone note for this whole deck: confident but evidence-first — every claim should read as backed by something specific (a test count, a dollar figure with a source, a competitor's actual funding round), never a generic superlative like "revolutionary" or "game-changing." This is a technical infrastructure product; the deck should read like it was built by an engineer, not a marketer.
 
 === COPY TO HERE ===

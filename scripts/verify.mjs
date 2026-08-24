@@ -597,24 +597,35 @@ try {
   // --- Chains + waitlist: the hosted-platform funnel ---
   const { chains } = await fetch(`${BASE}/api/chains`).then((r) => r.json());
   check(
-    "chain registry lists 8 chains with Base Sepolia live",
-    chains.length === 8 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
+    "chain registry lists 12 chains across six signature families, Base Sepolia live",
+    chains.length === 12 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
     chains.map((c) => c.id).join(", ")
   );
   check(
-    "every chain carries its CAIP-2 id for the x402 v2 stack, EVM or SVM",
-    chains.every((c) => /^(eip155:\d+|solana:[1-9A-HJ-NP-Za-km-z]+)$/.test(c.caip2 || "")) &&
+    "every chain carries its CAIP-2 id for the x402 v2 stack, across every registered signature family",
+    chains.every((c) => /^(eip155:\d+|solana:|aptos:|stellar:|hedera:|xrpl:)/.test(c.caip2 || "")) &&
       chains.find((c) => c.id === "base-sepolia")?.caip2 === "eip155:84532" &&
-      chains.find((c) => c.id === "solana-devnet")?.family === "svm",
+      chains.find((c) => c.id === "solana-devnet")?.family === "svm" &&
+      new Set(chains.map((c) => c.family || "evm")).size === 6,
     chains.map((c) => c.caip2).join(" ")
   );
+  const usdcShapeByFamily = {
+    evm: /^0x[0-9a-fA-F]{40}$/,
+    svm: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
+    aptos: /^0x[0-9a-fA-F]{64}$/,
+    stellar: /^C[A-Z2-7]{55}$/,
+    hedera: /^0\.0\.\d+$/,
+    xrpl: /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/,
+  };
   check(
-    "every registered chain carries its canonical USDC contract (per its signature family) and an RPC",
-    chains.every((c) =>
-      (c.family === "svm" ? /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(c.usdc || "") : /^0x[0-9a-fA-F]{40}$/.test(c.usdc || "")) &&
-      (c.rpc || "").startsWith("https://")
-    ),
-    chains.map((c) => `${c.id}:${(c.usdc || "").slice(0, 8)}`).join(" ")
+    "every registered chain carries its canonical stablecoin address (shaped per its signature family) and an RPC",
+    chains.every((c) => usdcShapeByFamily[c.family || "evm"].test(c.usdc || "") && (c.rpc || "").startsWith("https://")),
+    chains.map((c) => `${c.id}:${(c.usdc || "").slice(0, 10)}`).join(" ")
+  );
+  check(
+    "XRPL is flagged as settling RLUSD on mainnet, not USDC on a testnet — the one chain here where that distinction is a safety property, not trivia",
+    chains.find((c) => c.id === "xrpl")?.stablecoin === "RLUSD" && chains.find((c) => c.id === "xrpl")?.caip2 === "xrpl:1",
+    JSON.stringify(chains.find((c) => c.id === "xrpl"))
   );
   const wlPost = await fetch(`${BASE}/api/waitlist`, {
     method: "POST",
@@ -1964,6 +1975,16 @@ try {
         PORT: "8401",
         SPENDVETO_FACILITATOR_URL: "http://localhost:8498",
         SERVER_PAYOUT_ADDRESS: privateKeyToAccount(generatePrivateKey()).address,
+        // Every non-EVM family needs its own payout address (see
+        // server/index.js payToFor) or it never enters liveSettlementChains
+        // however much the mock facilitator claims to support — placeholder
+        // shapes are fine here since this boot only inspects the 402
+        // challenge, it never actually verifies/settles a real payment.
+        SERVER_PAYOUT_ADDRESS_SVM: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        SERVER_PAYOUT_ADDRESS_APTOS: "0x1111111111111111111111111111111111111111111111111111111111111111",
+        SERVER_PAYOUT_ADDRESS_STELLAR: "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVSGZ",
+        SERVER_PAYOUT_ADDRESS_HEDERA: "0.0.1111111",
+        SERVER_PAYOUT_ADDRESS_XRPL: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -1983,8 +2004,8 @@ try {
   testnetProc = await bootTestnet();
   const tnChains = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "testnet gate asks the facilitator what it settles and brings every supported registry chain live (all 8 via mock, EVM + SVM)",
-    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 8 && tnChains.chains.every((c) => c.settlement === "live"),
+    "testnet gate asks the facilitator what it settles and brings every supported registry chain live (all 12 via mock, six signature families)",
+    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 12 && tnChains.chains.every((c) => c.settlement === "live"),
     `live=${tnChains.liveSettlementChains?.join(",")}`
   );
   const tn402 = await fetch("http://localhost:8401/api/agent/translate");
@@ -1992,22 +2013,22 @@ try {
   const decoded402 = tn402Text.includes("eip155") ? tn402Text : Buffer.from(tn402.headers.get("PAYMENT-REQUIRED") || "", "base64").toString("utf8") + " " + tn402Text;
   const advertised = REG_CHAINS.filter((c) => decoded402.includes(c.caip2)).map((c) => c.id);
   check(
-    "a real x402 v2 402 advertises one payment option per live chain — all eight CAIP-2 networks (EVM + SVM) in one challenge",
-    tn402.status === 402 && advertised.length === 8,
+    "a real x402 v2 402 advertises one payment option per live chain — all twelve CAIP-2 networks in one challenge",
+    tn402.status === 402 && advertised.length === 12,
     `status=${tn402.status} advertised=${advertised.join(",")}`
   );
   testnetProc.proc.kill();
   await sleep(300);
 
   // Adaptive the other way: the facilitator now claims only base-sepolia, so
-  // only base-sepolia may go live — the other six report settlement-ready.
+  // only base-sepolia may go live — the other eleven report settlement-ready.
   mockSupportedCaip2 = [REG_CHAINS.find((c) => c.id === "base-sepolia").caip2];
   testnetProc = await bootTestnet();
   const tnChains2 = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + seven settlement-ready",
+    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + eleven settlement-ready",
     tnChains2.liveSettlementChains?.length === 1 && tnChains2.liveSettlementChains[0] === "base-sepolia" &&
-      tnChains2.chains.filter((c) => c.settlement === "ready").length === 7,
+      tnChains2.chains.filter((c) => c.settlement === "ready").length === 11,
     `live=${tnChains2.liveSettlementChains?.join(",")} ready=${tnChains2.chains.filter((c) => c.settlement === "ready").length}`
   );
   testnetProc.proc.kill();

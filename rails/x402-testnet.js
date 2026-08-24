@@ -1,8 +1,12 @@
 import { ExactEvmScheme } from "@x402/evm";
 import { ExactSvmScheme } from "@x402/svm";
+import { ExactAptosScheme } from "@x402/aptos";
+import { ExactStellarScheme } from "@x402/stellar";
+import { ExactHederaScheme } from "@x402/hedera";
+import { ExactXrplScheme } from "@x402/xrpl";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { findChain } from "../shared-config.js";
-import { getSvmSigner } from "../client/wallet.js";
+import { getSvmSigner, getAptosSigner, getStellarSigner, getHederaSigner, getXrplSigner } from "../client/wallet.js";
 
 // x402 v2 live settlement — registry-driven, not hardcoded to one chain. The
 // client side signs for whichever registry chain the call asks for; whether
@@ -17,7 +21,7 @@ export default {
   id: "x402-live",
   name: "x402 v2 — live settlement",
   status: "live",
-  note: "real on-chain USDC settlement on every registry chain the configured facilitator supports (public facilitator: base-sepolia + solana-devnet today; CDP facilitator key unlocks EVM mainnets)",
+  note: "real on-chain USDC/stablecoin settlement on every registry chain the configured facilitator supports (public facilitator: base-sepolia, solana-devnet, aptos-testnet, stellar-testnet, hedera-testnet, and XRPL mainnet today; CDP facilitator key unlocks EVM mainnets)",
   async pay({ tool, account, chain, baseUrl, query }) {
     const c = findChain(chain);
     if (!c?.caip2) {
@@ -25,9 +29,28 @@ export default {
     }
     // Governance identity (budgets, caps, ledger keying) is always
     // `account.address` — the secp256k1 wallet — regardless of which chain
-    // settles. Solana needs its own ed25519 keypair purely to produce the
-    // on-chain transfer signature, resolved only when this branch runs.
-    const client = c.family === "svm" ? new ExactSvmScheme(await getSvmSigner()) : new ExactEvmScheme(account);
+    // settles. Every non-EVM family needs its own keypair purely to produce
+    // the on-chain transfer signature, resolved only when its branch runs.
+    let client;
+    switch (c.family) {
+      case "svm":
+        client = new ExactSvmScheme(await getSvmSigner());
+        break;
+      case "aptos":
+        client = new ExactAptosScheme(await getAptosSigner());
+        break;
+      case "stellar":
+        client = new ExactStellarScheme(await getStellarSigner());
+        break;
+      case "hedera":
+        client = new ExactHederaScheme(await getHederaSigner());
+        break;
+      case "xrpl":
+        client = new ExactXrplScheme(await getXrplSigner());
+        break;
+      default:
+        client = new ExactEvmScheme(account);
+    }
     const fetchWithPay = wrapFetchWithPaymentFromConfig(fetch, {
       schemes: [{ network: c.caip2, client }],
     });

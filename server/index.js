@@ -5,6 +5,10 @@ import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { ExactSvmScheme } from "@x402/svm/exact/server";
+import { ExactAptosScheme } from "@x402/aptos/exact/server";
+import { ExactStellarScheme } from "@x402/stellar/exact/server";
+import { ExactHederaScheme } from "@x402/hedera/exact/server";
+import { ExactXrplScheme } from "@x402/xrpl/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { MODE, PORT, TOOLS, CHAINS, FACILITATOR_URL, findChain, DEFAULT_CHAIN } from "../shared-config.js";
 import { randomUUID } from "node:crypto";
@@ -64,6 +68,20 @@ if (MODE === "testnet") {
     console.error("SPENDVETO_MODE=testnet requires SERVER_PAYOUT_ADDRESS in .env.local — run `npm run gen-wallets` first, then fund CLIENT_PRIVATE_KEY's address via https://faucet.circle.com (Base Sepolia).");
     process.exit(1);
   }
+  // Every non-EVM family has its own address shape (an EVM 0x address is
+  // meaningless as an XRPL r-address or a Hedera 0.0.x account), so each gets
+  // its own optional payout address. A family with none configured simply
+  // never enters liveSettlementChains below — a chain the facilitator
+  // supports but we have nowhere of our own to receive it on stays "ready",
+  // never advertised in a 402 with a payTo that would misroute funds.
+  const payToFor = {
+    undefined: payTo,
+    svm: process.env.SERVER_PAYOUT_ADDRESS_SVM,
+    aptos: process.env.SERVER_PAYOUT_ADDRESS_APTOS,
+    stellar: process.env.SERVER_PAYOUT_ADDRESS_STELLAR,
+    hedera: process.env.SERVER_PAYOUT_ADDRESS_HEDERA,
+    xrpl: process.env.SERVER_PAYOUT_ADDRESS_XRPL,
+  };
   // x402 v2, registry-driven: ask the configured facilitator what it can
   // actually settle (GET /supported) and bring every registry chain it names
   // live — schemes registered and 402s advertising one accepts entry per live
@@ -81,31 +99,60 @@ if (MODE === "testnet") {
     console.error(`[testnet] facilitator /supported unreachable (${err.message}) — falling back to base-sepolia only`);
     supportedNetworks = new Set([findChain("base-sepolia").caip2]);
   }
-  liveSettlementChains = CHAINS.filter((c) => supportedNetworks.has(c.caip2)).map((c) => c.id);
+  liveSettlementChains = CHAINS.filter((c) => supportedNetworks.has(c.caip2) && payToFor[c.family] != null).map((c) => c.id);
   if (liveSettlementChains.length === 0) liveSettlementChains = ["base-sepolia"];
   console.log(`[testnet] live settlement chains via ${FACILITATOR_URL}: ${liveSettlementChains.join(", ")}`);
 
+  const schemeFor = (c) => {
+    switch (c.family) {
+      case "svm":
+        return new ExactSvmScheme();
+      case "aptos":
+        return new ExactAptosScheme();
+      case "stellar":
+        return new ExactStellarScheme();
+      case "hedera":
+        return new ExactHederaScheme();
+      case "xrpl":
+        return new ExactXrplScheme();
+      default:
+        return new ExactEvmScheme();
+    }
+  };
   let resourceServer = new x402ResourceServer(facilitatorClient);
-  for (const id of liveSettlementChains) {
-    const c = findChain(id);
-    resourceServer = resourceServer.register(c.caip2, c.family === "svm" ? new ExactSvmScheme() : new ExactEvmScheme());
-  }
-  // Price as an explicit AssetAmount per chain (atomic USDC units + the
-  // registry's canonical USDC contract) rather than the "$0.01" shorthand —
-  // the shorthand needs the package's built-in default-asset table, which
-  // doesn't cover every chain we do (ethereum/optimism/avalanche), and SVM's
-  // default table keys off a different asset shape than EVM's ERC-20 address.
+  for (const id of liveSettlementChains) resourceServer = resourceServer.register(findChain(id).caip2, schemeFor(findChain(id)));
+  // Price as an explicit AssetAmount per chain (atomic units + the registry's
+  // canonical stablecoin contract/token id) rather than the "$0.01" shorthand
+  // — the shorthand needs each package's built-in default-asset table, which
+  // doesn't cover every chain we register, and every non-EVM family has its
+  // own atomic-unit convention (decimals) and asset-address shape. XRPL is
+  // the one exception: it has no atomic USDC unit at all (IOU amounts are
+  // decimal ledger values), so it gets a plain decimal Money string and the
+  // scheme's own default conversion prices it in RLUSD.
   const usdcAmount = (tool, id) => {
     const c = findChain(id);
-    return c.family === "svm"
-      ? { amount: String(Math.round(Number(tool.price) * 1e6)), asset: c.usdc }
-      : { amount: String(Math.round(Number(tool.price) * 1e6)), asset: { address: c.usdc, name: "USDC", version: "2", decimals: 6 } };
+    const atomic = (decimals) => ({ amount: String(Math.round(Number(tool.price) * 10 ** decimals)), asset: c.usdc });
+    switch (c.family) {
+      case "svm":
+      case "aptos":
+      case "hedera":
+        return atomic(6);
+      case "stellar":
+        return atomic(7);
+      case "xrpl":
+        return String(tool.price);
+      default:
+        return { amount: String(Math.round(Number(tool.price) * 1e6)), asset: { address: c.usdc, name: "USDC", version: "2", decimals: 6 } };
+    }
   };
   const routes = Object.fromEntries(
     TOOLS.map((tool) => [
       `GET ${tool.path}`,
       {
-        accepts: liveSettlementChains.map((id) => ({ scheme: "exact", price: usdcAmount(tool, id), network: findChain(id).caip2, payTo })),
+        accepts: liveSettlementChains.map((id) => {
+          const c = findChain(id);
+          return { scheme: "exact", price: usdcAmount(tool, id), network: c.caip2, payTo: payToFor[c.family] };
+        }),
         description: `SpendVeto demo — ${tool.label}`,
       },
     ])
@@ -219,7 +266,7 @@ app.get("/api/chains", (req, res) => {
         ? liveSettlementChains.includes(c.id)
           ? "live"
           : "ready"
-        : c.family === "svm"
+        : c.family
           ? "unsupported-in-simulate"
           : "simulated",
   }));
