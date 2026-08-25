@@ -4,23 +4,41 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="dark" />
-<title>SpendVeto — Security</title>
-<meta name="description" content="How SpendVeto protects agent wallets: policy enforcement before payment, signed receipts, custody model, and how to report a vulnerability." />
+<title>x402 Security — How SpendVeto Protects AI Agent Wallets From Overspending</title>
+<meta name="description" content="Every SpendVeto control that guards AI agent wallets: policy enforcement before payment, chain-scoped signatures, request-integrity binding, tamper-evident ledger, and how to report an x402 or AI agent payment vulnerability." />
+<meta name="keywords" content="x402 security, AI agent security, AI agent wallet security, prevent AI agent overspending, x402 vulnerability, AI agent payment risk" />
 <link rel="canonical" href="https://spendveto.com/security.html" />
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="SpendVeto" />
 <meta property="og:locale" content="en_US" />
 <meta property="og:url" content="https://spendveto.com/security.html" />
-<meta property="og:title" content="SpendVeto — Security" />
-<meta property="og:description" content="How SpendVeto protects agent wallets: policy enforcement before payment, signed receipts, custody model, and how to report a vulnerability." />
+<meta property="og:title" content="x402 Security — How SpendVeto Protects AI Agent Wallets From Overspending" />
+<meta property="og:description" content="Every SpendVeto control that guards AI agent wallets: policy enforcement before payment, chain-scoped signatures, request-integrity binding, tamper-evident ledger, and how to report an x402 or AI agent payment vulnerability." />
 <meta property="og:image" content="https://spendveto.com/assets/generated/og-default.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="SpendVeto — Security" />
-<meta name="twitter:description" content="How SpendVeto protects agent wallets: policy enforcement before payment, signed receipts, custody model, and how to report a vulnerability." />
+<meta name="twitter:title" content="x402 Security — How SpendVeto Protects AI Agent Wallets From Overspending" />
+<meta name="twitter:description" content="Every SpendVeto control that guards AI agent wallets: policy enforcement before payment, chain-scoped signatures, request-integrity binding, tamper-evident ledger, and how to report an x402 or AI agent payment vulnerability." />
 <meta name="twitter:image" content="https://spendveto.com/assets/generated/og-default.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "SpendVeto", "item": "https://spendveto.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Security", "item": "https://spendveto.com/security.html" }
+    ] },
+    { "@type": "FAQPage", "mainEntity": [
+      { "@type": "Question", "name": "How does SpendVeto secure x402 AI agent payments?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Policy caps, human approvals, and payee allowlists are checked against the live ledger before any payment signature is produced. Chain-scoped signatures make an authorization signed for one chain cryptographically invalid on another. Request-integrity binding ties an authorization to a canonical digest of the exact request it was granted for, so a payload swapped between decision and execution is refused even when the payer, price, and approval all still match." } },
+      { "@type": "Question", "name": "Has SpendVeto been through an external security audit?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. SpendVeto is pre-audit software: simulate mode uses real ECDSA against a local ledger with no real funds moving, and testnet mode settles real x402 transactions on public testnets and, for XRPL, mainnet. Treat it as pre-audit software until an audit has happened." } }
+    ] }
+  ]
+}
+</script>
 <link rel="icon" href="./assets/favicon.svg" />
 <link rel="stylesheet" href="./pages.css" />
 <style>
@@ -77,7 +95,7 @@
   <p>SpendVeto can run in two modes. In the default mode, the agent's own keypair signs payments locally after the policy pipeline approves — SpendVeto never holds funds. In the <b>keyless / proxy</b> mode, an enforcement proxy holds custody and signs on the agent's behalf only after governance passes, so an agent can operate without ever touching a private key. In both modes, no payment is possible without a policy decision.</p>
 
   <h2>What's not yet true</h2>
-  <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia. Neither mode has been through an external security audit yet, and mainnet settlement is not yet enabled. Treat this as pre-audit software: don't point it at funds you can't afford to lose until an audit has happened.</p>
+  <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia, Solana devnet, Aptos testnet, Stellar testnet, and Hedera testnet — plus <b>XRPL mainnet</b>, the one chain in the registry settling real money today (in RLUSD, since XRPL has no canonical USDC). None of this has been through an external security audit yet. Treat this as pre-audit software: don't point it at funds you can't afford to lose, XRPL included, until an audit has happened.</p>
   <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 273-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
 
   <h2>Reporting a vulnerability</h2>

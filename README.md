@@ -6,7 +6,7 @@
 
 **Every claim in this README is executed before it ships.** `npm run verify` runs **273 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
-What *isn't* true yet is stated just as plainly: no external security audit, no mainnet settlement (testnet and simulate only), no customers. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
+What *isn't* true yet is stated just as plainly: no external security audit, no customers. Settlement is testnet and simulate only for EVM/Solana/Aptos/Stellar/Hedera — the one exception is XRPL, which settles on mainnet, real money, in RLUSD. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
 
 ## What this actually is
 

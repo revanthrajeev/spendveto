@@ -1,10 +1,10 @@
 # SpendVeto
 
-> Buyer-side spend governance for AI agents that pay for things. Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it — before anything settles. Open source (Apache-2.0), x402 and MCP native.
+> Buyer-side spend governance for AI agents that pay for things over x402 and MCP. Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it — before anything settles. Open source (Apache-2.0), x402 and MCP native.
 
-SpendVeto is a governance gate that sits between an AI agent and its wallet. Rails like x402, AP2, ACP and Stripe MPP all answer "how does the agent pay?". SpendVeto answers the question every team deploying agents asks first: "how do I stop it from overspending?"
+SpendVeto is the answer to "how do I stop my AI agent from overspending?" — a governance gate that sits between an AI agent and its wallet. Payment rails like x402, AP2, ACP and Stripe MPP all answer "how does the agent pay?" SpendVeto answers the question every team deploying agents asks first, and the one most agent-payment security incidents trace back to: nothing was checking whether the agent *should* spend before it *could*.
 
-Every claim on this site is executed before it is published: 271 end-to-end assertions run headlessly on every change (`npm run verify`). If a claim is not a test, it does not ship. Features that cannot work locally yet are declared slots that refuse honestly, never stubs that pretend.
+Every claim on this site is executed before it is published: 273 end-to-end assertions run headlessly on every change (`npm run verify`). If a claim is not a test, it does not ship. Features that cannot work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
 ## What it enforces
 
@@ -24,15 +24,22 @@ Every claim on this site is executed before it is published: 271 end-to-end asse
 ## Key facts
 
 - **License**: Apache-2.0. Source: https://github.com/revanthrajeev/spendveto
-- **Verification**: 271 end-to-end assertions, all passing, re-run on every change.
+- **Verification**: 273 end-to-end assertions, all passing, re-run on every change.
 - **Modes**: `simulate` (default, zero setup, real secp256k1 keypairs and real ECDSA verification, local settlement) and `testnet` (real x402 v2, facilitator-adaptive multichain).
-- **Chains**: a 7-chain registry — Base Sepolia live via the public x402 facilitator today; Base, Ethereum, Polygon, Arbitrum, Optimism and Avalanche fully wired and settlement-ready, awaiting a facilitator key and a funded wallet.
-- **Interfaces**: CLI, Node SDK, MCP stdio server, enforcement proxy for keyless agents, LangChain and OpenAI Agents SDK adapters.
+- **Chains**: a 12-chain registry across six signature families — Base Sepolia (secp256k1), Solana devnet (ed25519), Aptos testnet (Move), Stellar testnet, Hedera testnet (account-id addressing) and XRPL are live via the public x402 facilitator today; Base, Ethereum, Polygon, Arbitrum, Optimism and Avalanche are fully wired and settlement-ready, awaiting a facilitator key and a funded wallet. XRPL settlement is on **mainnet**, in RLUSD (XRPL has no canonical USDC deployment) — the one chain here settling real money today.
+- **Interfaces**: CLI, Node SDK, MCP stdio server, enforcement proxy for keyless agents, LangChain, OpenAI Agents SDK and ElizaOS adapters.
 - **Pricing**: self-host free forever; hosted Desk $49/mo, Team $199/mo plus 0.5% of governed spend, Money Path at 10–25 bps on governed volume.
+
+## Frequently asked
+
+- **What is x402 security / how do you secure x402 payments?** Policy caps, human approvals and payee allowlists are checked before a payment signature is produced; chain-scoped signatures and request-integrity binding stop a swapped payload or a replayed authorization from settling even when the price and approval still match.
+- **How do I stop an AI agent from overspending?** Give it a policy (per-call cap, hourly budget, rate limit) instead of a blank-check wallet, and let SpendVeto's server-authoritative gate enforce it before every payment — not after, and not optionally.
+- **Is SpendVeto a wallet or a payment rail?** Neither. It does not custody funds in its default mode and does not move money itself; x402/AP2/ACP move the money, SpendVeto decides whether the agent is allowed to.
+- **What is AI agent spend governance?** The layer that answers "should this agent be allowed to make this specific payment right now," as distinct from "can this agent technically sign a payment" — caps, approvals, delegation, and audit trail, enforced before settlement rather than reconciled after.
 
 ## Stated honestly
 
-- No external security audit yet, and no mainnet settlement yet — testnet and simulate only. This is pre-audit software.
+- No external security audit yet. This is pre-audit software — treat it accordingly, including the one chain (XRPL) settling real money today.
 - No hosted multi-tenant platform yet; self-host is the only deployment today.
 - Solo-founder stage: no customers and no revenue yet.
 - SpendVeto is not a payment rail, not a wallet, and does not custody funds in its default mode. It is the decision in between.

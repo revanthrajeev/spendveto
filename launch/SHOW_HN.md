@@ -94,6 +94,6 @@ gate re-runs the full policy pipeline and consumes single-use approvals itself, 
 agent holding its own key and running a hand-rolled client that skips the library still
 can't overspend (there's an assertion for exactly that). If you'd rather agents never
 hold keys at all, the enforcement proxy takes custody and signs only after the pipeline
-passes. No external security audit yet and no mainnet settlement — testnet and simulate
-only, and the site says so. The hosted multi-tenant platform is the funded milestone. Happy to go
-deep on any of this.
+passes. No external security audit yet — testnet and simulate for most chains, except
+XRPL, which settles on mainnet, and the site says so. The hosted multi-tenant platform is
+the funded milestone. Happy to go deep on any of this.
