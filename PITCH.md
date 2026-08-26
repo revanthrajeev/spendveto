@@ -20,7 +20,7 @@ Every newly-paid tool makes the **buyer side** — the agent doing the spending 
 
 ## Product (working today, not a plan)
 
-Open-source (Apache-2.0) Node.js stack, every claim below covered by a 273-assertion end-to-end verification suite:
+Open-source (Apache-2.0) Node.js stack, every claim below covered by a 277-assertion end-to-end verification suite:
 
 1. **Payment rails** — real x402 (HTTP 402 + USDC) gating a catalog of priced tools; runs against the live Base Sepolia facilitator, plus a zero-setup simulate mode with real ECDSA signing and replay protection.
 2. **Policy engine** — the agent's own rules, enforced *before* payment: per-call cap, hourly budget, call-rate limit, checked against live spend history.

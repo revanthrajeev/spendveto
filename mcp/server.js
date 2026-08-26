@@ -6,18 +6,31 @@
 //
 // This is the buyer-side counterpart to seller-side MCP monetization
 // (Cloudflare Monetization Gateway, Stripe MPP, Nevermined): they help tools
-// charge — this governs what YOUR agent is allowed to spend.
+// charge — this governs what YOUR agent is allowed to spend. The catalog this
+// server exposes is NOT limited to SpendVeto's own demo tools: it's fetched
+// from /api/catalog at boot, which is the built-in tools plus anyone's
+// marketplace listing registered via POST /api/catalog/tools (own payTo,
+// own price) — so a third party's tool is payable and governed here too,
+// with settlement crediting THEIR payTo, not SpendVeto's.
 //
 // Register with Claude Code:  claude mcp add spendveto -- node <abs-path>/mcp/server.js
 // (stdio protocol lives on stdout — all logging here goes to stderr.)
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { MODE, PORT, TOOLS } from "../shared-config.js";
+import { MODE, PORT } from "../shared-config.js";
 import { account } from "../client/wallet.js";
 import { governedCall } from "../client/pay.js";
 
 const BASE_URL = `http://localhost:${PORT}`;
 const server = new McpServer({ name: "spendveto", version: "0.4.0" });
+
+let TOOLS;
+try {
+  ({ tools: TOOLS } = await fetch(`${BASE_URL}/api/catalog`).then((r) => r.json()));
+} catch {
+  console.error(`[spendveto] cannot reach ${BASE_URL} — start the server with \`npm run server\` before the MCP server`);
+  process.exit(1);
+}
 
 for (const tool of TOOLS) {
   server.registerTool(

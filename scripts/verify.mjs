@@ -256,6 +256,18 @@ try {
   check("grandchild call #2 is blocked by the ANCESTOR's cap", gCode2 !== 0, `exit=${gCode2}`);
   check("grandchild block cites the ancestor grant", gOut2().includes("granted to ancestor"), gOut2().split("\n").find((l) => l.includes("BLOCKED")));
 
+  // --- MCP-Pay: a third party's own marketplace tool, with its own payTo,
+  // must be exposed through the SAME MCP catalog SpendVeto's own tools use —
+  // proving MCP-Pay is real seller-side monetization, not just SpendVeto's
+  // demo tools wrapped in MCP.
+  const sellerAccount = privateKeyToAccount(generatePrivateKey());
+  const sellerReg = await fetch(`${BASE}/api/catalog/tools`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: "mcp-seller-demo", price: 0.005, label: "Third-party MCP tool", description: "verify: seller-side MCP-Pay", payTo: sellerAccount.address }),
+  });
+  check("a third-party tool with its own payTo registers into the catalog", sellerReg.status === 201, sellerReg.status);
+
   // --- MCP server: real stdio JSON-RPC round trip ---
   mcp = new McpStdio();
   const init = await mcp.request(1, "initialize", {
@@ -268,8 +280,9 @@ try {
 
   const toolsList = await mcp.request(2, "tools/list");
   const toolNames = (toolsList.result?.tools || []).map((t) => t.name).sort();
-  check("MCP lists 4 tools (3 paid + status)", toolNames.length === 4, toolNames.join(", "));
+  check("MCP lists 5 tools (3 built-in paid + 1 marketplace paid + status)", toolNames.length === 5, toolNames.join(", "));
   check("MCP paid tool description declares the price", (toolsList.result?.tools || []).some((t) => t.description?.includes("$0.01 USDC")));
+  check("MCP exposes the third-party marketplace tool too", toolNames.includes("mcp-seller-demo"));
 
   const status = await mcp.request(3, "tools/call", { name: "spendveto_status", arguments: {} });
   check("MCP spendveto_status reports policy", status.result?.content?.[0]?.text?.includes("Policy:"), status.result?.content?.[0]?.text?.split("\n")[0]);
@@ -278,6 +291,13 @@ try {
   const mcpCall = await mcp.request(4, "tools/call", { name: "review", arguments: {} }, 30000);
   const mcpText = mcpCall.result?.content?.[0]?.text || "";
   check("MCP paid tool call succeeds through the governed pipeline", !mcpCall.result?.isError && mcpText.includes("SpendVeto receipt"), mcpText.split("\n")[0]);
+
+  const mcpSellerCall = await mcp.request(5, "tools/call", { name: "mcp-seller-demo", arguments: {} }, 30000);
+  const mcpSellerText = mcpSellerCall.result?.content?.[0]?.text || "";
+  check("MCP call to the third-party tool settles through the same governed pipeline", !mcpSellerCall.result?.isError && mcpSellerText.includes("SpendVeto receipt"), mcpSellerText.split("\n")[0]);
+  const sellerLedger = (await fetch(`${BASE}/api/ledger`).then((r) => r.json())).entries;
+  const sellerPaidEntry = sellerLedger.find((e) => e.resource === "/api/agent/mcp-seller-demo" && e.status === "paid");
+  check("MCP-Pay settlement credits the SELLER's own payTo, not SpendVeto's payout address", sellerPaidEntry?.payTo?.toLowerCase() === sellerAccount.address.toLowerCase(), sellerPaidEntry?.payTo);
 
   // --- Anomaly detection: a runaway burst gets the wallet auto-frozen ---
   // A synthetic wallet fires 25 payment attempts back-to-back — far faster
@@ -899,7 +919,7 @@ try {
   });
   check("duplicate tool ids are refused", dupRes.status === 409, `got ${dupRes.status}`);
   const liveCatalog = await fetch(`${BASE}/api/catalog`).then((r) => r.json());
-  check("catalog serves static + marketplace tools together", liveCatalog.tools.length === 4 && liveCatalog.tools.some((t) => t.id === "haiku" && t.dynamic), `${liveCatalog.tools.length} tools`);
+  check("catalog serves static + marketplace tools together", liveCatalog.tools.length === 5 && liveCatalog.tools.some((t) => t.id === "haiku" && t.dynamic), `${liveCatalog.tools.length} tools`);
   const { child: mk1, getOut: mkOut1 } = runClient("haiku");
   const mkCode1 = await waitForClose(mk1);
   check("the CLI pays a marketplace tool through the full governed pipeline", mkCode1 === 0 && mkOut1().includes("Paid $0.008"), mkOut1().split("\n").slice(-2).join(" / "));
@@ -1540,9 +1560,9 @@ try {
   // call above actually ran; the count only ever moves in that one direction, gated by the
   // same `basisOk` check that skipped the call itself. +4 for the per-agent rate-limit test's
   // 3 successful calls under the limit plus the 1 successful call after manual unfreeze.
-  const expectedPaid = (basisOk ? 26 : 25) + 5; // +1: the ElizaOS action settles a real call
+  const expectedPaid = (basisOk ? 27 : 26) + 5; // +1: the ElizaOS action settles a real call, +1: the MCP-Pay third-party tool call
   check(
-    `ledger has ${expectedPaid} paid entries (incl. marketplace haiku, allowance refills, metered LLM, authed desk bot, SDK + LangChain calls, agent rate-limit test calls${basisOk ? ", Basis cross-project call" : ""})`,
+    `ledger has ${expectedPaid} paid entries (incl. marketplace haiku, MCP-Pay third-party tool, allowance refills, metered LLM, authed desk bot, SDK + LangChain calls, agent rate-limit test calls${basisOk ? ", Basis cross-project call" : ""})`,
     paid.length === expectedPaid,
     `found ${paid.length}`
   );

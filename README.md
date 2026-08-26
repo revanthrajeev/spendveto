@@ -4,7 +4,7 @@
 
 [**Live site + playground**](https://spendveto.com) · [**Docs**](https://spendveto.com/docs.html) · Apache-2.0 · x402 + MCP native
 
-**Every claim in this README is executed before it ships.** `npm run verify` runs **273 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
+**Every claim in this README is executed before it ships.** `npm run verify` runs **277 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
 What *isn't* true yet is stated just as plainly: no external security audit, no customers. Settlement is testnet and simulate only for EVM/Solana/Aptos/Stellar/Hedera — the one exception is XRPL, which settles on mainnet, real money, in RLUSD. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
 
@@ -32,9 +32,9 @@ npm run call -- summarize      # $0.02 — above the approval line: go approve/d
 npm run call -- translate      # $0.005
 ```
 
-`npm run verify` runs the whole thing headlessly — **273 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
+`npm run verify` runs the whole thing headlessly — **277 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
 
-> **On the number:** a fresh clone runs **273** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 273 anyone can reproduce.
+> **On the number:** a fresh clone runs **277** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 277 anyone can reproduce.
 
 **Marketing site**: `npm run site` serves the deploy-ready landing page (Three.js hero, animated product walkthrough) at http://localhost:8403 — `site/` is fully static and self-contained, drop it on Vercel/Netlify as-is. Includes an **interactive playground** (`site/playground.html`) that runs the real policy-decision logic client-side — set a budget, fire agent spend, watch it pass/pause/block — and a **use-cases** page grounded in real 2026 agent-spend scenarios.
 
@@ -62,6 +62,19 @@ Or in Claude Desktop's config:
 ```json
 { "mcpServers": { "spendveto": { "command": "node", "args": ["/Users/you/Desktop/spendveto/mcp/server.js"] } } }
 ```
+
+### MCP-Pay: the seller side of the same server
+
+That's buyer-side governance. The same server also does seller-side monetization: `POST /api/catalog/tools` lets **anyone** register their own MCP tool behind the identical x402 gate, with their own `payTo` — no code changes to `mcp/server.js`, no separate seller infra. It shows up in `tools/list` next to the built-in tools, and a call to it runs through the exact same policy → approval → payment pipeline, but settlement credits the *seller's* address, not SpendVeto's.
+
+```bash
+curl -X POST localhost:8402/api/catalog/tools -H 'Content-Type: application/json' -d '{
+  "id": "my-tool", "price": 0.01, "payTo": "0xYourAddress...",
+  "label": "My paid tool", "description": "what it does"
+}'
+```
+
+One server, both sides of the market: buyers get governed spend, sellers get a payable, discoverable MCP tool with zero new infrastructure.
 
 Four tools appear: `review`, `summarize`, `translate` (each priced in its description) and `spendveto_status` (free — wallet, balance, policy, last-hour spend, pending approvals, delegated budgets). Ask Claude *"what's my agent's budget status?"* then *"run the paid summarize tool"* and watch the approval appear on the dashboard.
 
@@ -297,7 +310,7 @@ scripts/
   gen-wallets.mjs           one-time testnet wallet generation
   policy.mjs                list/apply policy packs
   site.mjs                  serves the marketing site on :8403
-  verify.mjs                273 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
+  verify.mjs                277 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
 data/
   policy.json               editable spend rules incl. anomaly burst threshold + alertWebhookUrl
   policy-packs/             importable governance presets (cautious/standard/production)
