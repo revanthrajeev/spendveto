@@ -186,7 +186,10 @@ walletOpen.addEventListener("click", () =>
 
 const chainGrid = document.getElementById("chain-grid");
 const chains = await loadChains();
-for (const c of chains) {
+// LIVE chains first, READY after — grouped, not interleaved, so the eye
+// doesn't have to hunt for which ones actually settle today.
+const sortedChains = [...chains].sort((a, b) => (a.status === "live" ? 0 : 1) - (b.status === "live" ? 0 : 1));
+for (const c of sortedChains) {
   const pill = document.createElement("label");
   pill.className = "chain-pill" + (c.status === "live" ? " on" : "");
   pill.innerHTML = `<input type="checkbox" value="${c.id}" ${c.status === "live" ? "checked" : ""} />${c.name} <span class="${c.status === "live" ? "live-tag" : "soon-tag"}">${c.status === "live" ? "LIVE" : "READY"}</span>`;

@@ -1047,17 +1047,17 @@
     </div>
     <div class="chainband reveal">
       <span class="chain-chip live"><i>●</i> Base Sepolia <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Solana Devnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Aptos Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Stellar Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> Hedera Testnet <b>LIVE</b></span>
+      <span class="chain-chip live"><i>●</i> XRPL <b>LIVE (mainnet)</b></span>
       <span class="chain-chip">Base <b>READY</b></span>
       <span class="chain-chip">Ethereum <b>READY</b></span>
       <span class="chain-chip">Polygon <b>READY</b></span>
       <span class="chain-chip">Arbitrum <b>READY</b></span>
       <span class="chain-chip">Optimism <b>READY</b></span>
       <span class="chain-chip">Avalanche <b>READY</b></span>
-      <span class="chain-chip live"><i>●</i> Solana Devnet <b>LIVE</b></span>
-      <span class="chain-chip live"><i>●</i> Aptos Testnet <b>LIVE</b></span>
-      <span class="chain-chip live"><i>●</i> Stellar Testnet <b>LIVE</b></span>
-      <span class="chain-chip live"><i>●</i> Hedera Testnet <b>LIVE</b></span>
-      <span class="chain-chip live"><i>●</i> XRPL <b>LIVE (mainnet)</b></span>
     </div>
     <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live today on six signature schemes: Base Sepolia (secp256k1), Solana devnet (ed25519), Aptos testnet (Move), Stellar testnet, Hedera testnet (account-id addressing), and <b>XRPL mainnet</b> — the one chain here settling real money, in RLUSD rather than USDC. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical stablecoin addresses all wired (tested against a mock facilitator advertising all twelve). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes.</p>
   </div>
