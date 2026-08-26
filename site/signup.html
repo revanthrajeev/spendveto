@@ -123,9 +123,11 @@
            so offer the thing that IS available first: a conversation. -->
       <p class="sub" style="margin-top:.9rem">Want it sooner? <a href="https://calendly.com/revanthrajeev2004/30min" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">Book a 30-minute call</a> — I'm working directly with a handful of design partners, free, while the hosted platform is built.</p>
 
-      <form id="wl-form">
+      <form id="wl-form" name="waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="waitlist" />
+        <p style="position:absolute; left:-9999px" aria-hidden="true"><label>Leave this empty: <input name="bot-field" /></label></p>
         <label for="email">Work email</label>
-        <input type="email" id="email" placeholder="you@company.com" autocomplete="email" />
+        <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" />
 
         <label>Wallet <span style="text-transform:none;letter-spacing:0">(optional — connect any installed wallet)</span></label>
         <div class="wallet-row" id="wallet-row">
@@ -158,7 +160,7 @@
 </div>
 
 <script type="module">
-import { discoverWallets, connectWallet, loadChains, joinWaitlist, short } from "./wallet-connect.js";
+import { discoverWallets, connectWallet, loadChains, short } from "./wallet-connect.js";
 import { openWalletModal } from "./wallet-modal.js";
 
 let connection = null;
@@ -207,14 +209,25 @@ form.addEventListener("submit", async (e) => {
   const picked = [...chainGrid.querySelectorAll("input:checked")].map((i) => i.value);
   submitBtn.disabled = true;
   try {
-    const res = await joinWaitlist({ email, wallet, chains: picked, notes: document.getElementById("notes").value.trim() });
+    // Netlify Forms: a plain POST of the static form (name="waitlist") to "/" —
+    // Netlify's build-time bot detects the form in this page's raw HTML and
+    // wires up the endpoint; no backend of our own to host or keep alive.
+    const body = new URLSearchParams({
+      "form-name": "waitlist",
+      email,
+      wallet: wallet || "",
+      chains: picked.join(","),
+      notes: document.getElementById("notes").value.trim(),
+    });
+    const res = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    if (!res.ok) throw new Error(`netlify forms responded ${res.status}`);
     result.className = "result ok";
-    result.innerHTML = `You're <b>#${res.position}</b> on the waitlist. We'll reach out in cohort order — and star the repo to follow the build in public.`;
+    result.innerHTML = `You're on the waitlist — we'll reach out in cohort order. Star the repo to follow the build in public.`;
     form.querySelectorAll("input, textarea, button").forEach((el) => (el.disabled = true));
   } catch {
     submitBtn.disabled = false;
     result.className = "result err";
-    result.innerHTML = `The hosted platform isn't live yet — the open-source core is, today. <a href="https://calendly.com/revanthrajeev2004/30min" target="_blank" rel="noopener" style="color:var(--green)"><b>Book a 30-minute call</b></a> and I'll walk through your agent's spend path with you, or <a href="./docs.html#quickstart" style="color:var(--green)">run it yourself in 60 seconds</a>.`;
+    result.innerHTML = `Something went wrong submitting the form. <a href="https://calendly.com/revanthrajeev2004/30min" target="_blank" rel="noopener" style="color:var(--green)"><b>Book a 30-minute call</b></a> instead, or <a href="./docs.html#quickstart" style="color:var(--green)">run it yourself in 60 seconds</a>.`;
   }
 });
 </script>
