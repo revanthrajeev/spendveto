@@ -96,7 +96,7 @@
 
   <h2>What's not yet true</h2>
   <p>SpendVeto is a prototype in public. <b>Simulate mode</b> (the default) is real ECDSA against a local ledger — no real funds move. <b>Testnet mode</b> settles real x402 transactions on Base Sepolia, Solana devnet, Aptos testnet, Stellar testnet, and Hedera testnet — plus <b>XRPL mainnet</b>, the one chain in the registry settling real money today (in RLUSD, since XRPL has no canonical USDC). None of this has been through an external security audit yet. Treat this as pre-audit software: don't point it at funds you can't afford to lose, XRPL included, until an audit has happened.</p>
-  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 277-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
+  <div class="callout"><b>Verification, not marketing:</b> every control above is exercised by an assertion in the 280-check suite (<span class="mono">npm run verify</span>) on every change to the codebase — see <a href="./docs.html#verify" style="color:var(--ink)">the verification docs</a>.</div>
 
   <h2>Reporting a vulnerability</h2>
   <p>If you find a way to bypass a policy check, forge a payment signature, or defeat an approval gate, please report it privately before any public disclosure — email <a href="mailto:security@spendveto.com" style="color:var(--green)">security@spendveto.com</a>. We'll acknowledge within 48 hours.</p>

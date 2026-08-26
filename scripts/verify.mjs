@@ -1812,6 +1812,47 @@ try {
   });
   check("removing all keys returns the server to open mode", reopened.status === 200, `got ${reopened.status}`);
 
+  // --- World ID gate on human approvals (control #33): a policy can require
+  // proof-of-personhood on every APPROVAL (never on a deny — a deny never
+  // authorizes spend). Without WORLD_APP_ID configured in this environment,
+  // the gate must refuse honestly rather than silently accepting an
+  // unverified click as "a human approved this."
+  await fetch(`${BASE}/api/policy`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requireWorldIdForApproval: true }),
+  });
+  const widAccount = privateKeyToAccount(generatePrivateKey());
+  const widApproval = await fetch(`${BASE}/api/approvals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address: widAccount.address, resource: "/api/agent/summarize", price: "0.02" }),
+  }).then((r) => r.json());
+  const widDecide = await fetch(`${BASE}/api/approvals/${widApproval.id}/decide`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decision: "approved" }),
+  });
+  const widBody = await widDecide.json();
+  check(
+    "an approval is refused without World ID when the policy requires it, instead of silently accepting an unverified click (world_id_not_configured)",
+    widDecide.status === 403 && widBody.error === "world_id_not_configured",
+    JSON.stringify(widBody)
+  );
+  const widStillPending = await fetch(`${BASE}/api/approvals/${widApproval.id}`).then((r) => r.json());
+  check("the refused approval stays pending — a failed World ID check never silently authorizes the spend", widStillPending.status === "pending", widStillPending.status);
+  const widDeny = await fetch(`${BASE}/api/approvals/${widApproval.id}/decide`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decision: "denied" }),
+  });
+  check("a DENY is never gated by World ID — denying never authorizes spend, so it needs no proof-of-personhood", widDeny.status === 200, `got ${widDeny.status}`);
+  await fetch(`${BASE}/api/policy`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requireWorldIdForApproval: false }),
+  });
+
   // --- Cross-org trust graph + advanced anomaly models ---
   // Scale the flat per-wallet governance score out into (1) a graph — wallets
   // are nodes, delegations are edges, each root is an "org" with a blended

@@ -20,6 +20,7 @@ import { verifyMessage } from "viem";
 import { runTool } from "./agent.js";
 import { getLedger, getBalances, appendLedgerEntry, creditSimBalance, verifyLedgerChain } from "./ledger.js";
 import { createApproval, getApproval, decideApproval, listApprovals } from "./approvals.js";
+import { worldIdConfigured, verifyWorldIdProof } from "./worldid.js";
 import { listDelegations, createDelegation, revokeDelegation } from "./delegations.js";
 import { listFreezes, findActiveFreeze, createFreeze, unfreeze } from "./freezes.js";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -659,6 +660,7 @@ app.put("/api/policy", requireAuth("admin"), (req, res) => {
   if (b.anomaly?.burstAttempts > 0 && b.anomaly?.burstWindowSeconds > 0) next.anomaly = { burstAttempts: Number(b.anomaly.burstAttempts), burstWindowSeconds: Number(b.anomaly.burstWindowSeconds) };
   if (typeof b.alertWebhookUrl === "string") next.alertWebhookUrl = b.alertWebhookUrl || undefined;
   if (next.alertWebhookUrl === undefined) delete next.alertWebhookUrl;
+  if (typeof b.requireWorldIdForApproval === "boolean") next.requireWorldIdForApproval = b.requireWorldIdForApproval;
   writeFileSync(POLICY_FILE, JSON.stringify(next, null, 2));
   res.json(next);
 });
@@ -763,6 +765,15 @@ function readPolicyRequiredApprovals() {
   }
 }
 
+function readPolicyRequiresWorldId() {
+  try {
+    const p = JSON.parse(readFileSync(POLICY_FILE, "utf8"));
+    return Boolean(p.requireWorldIdForApproval);
+  } catch {
+    return false;
+  }
+}
+
 app.get("/api/approvals", (req, res) => {
   res.json({ approvals: listApprovals() });
 });
@@ -783,9 +794,22 @@ app.get("/api/approvals/:id/decide", (req, res) => {
   res.send(`<body style="font-family:system-ui;background:#0b0f0c;color:#eef3ed;display:grid;place-items:center;height:100vh"><div style="text-align:center"><h2>${decision === "approved" ? "✅ Approved" : "⛔ Denied"}</h2><p style="color:#93a094">${record.resource} · $${record.price} — recorded. You can close this tab.</p></div></body>`);
 });
 
-app.post("/api/approvals/:id/decide", requireAuth("approver"), (req, res) => {
-  const { decision } = req.body || {};
+app.post("/api/approvals/:id/decide", requireAuth("approver"), async (req, res) => {
+  const { decision, worldIdProof } = req.body || {};
   if (decision !== "approved" && decision !== "denied") return res.status(400).json({ error: "decision must be 'approved' or 'denied'" });
+  // World ID gate (control #33): only an APPROVAL needs proof-of-personhood —
+  // a deny never authorizes spend, so it's never gated. When the policy
+  // requires it, "approved" must carry a real, independently verified human
+  // proof, not just a click from whoever holds an approver key.
+  if (decision === "approved" && readPolicyRequiresWorldId()) {
+    if (!worldIdConfigured()) {
+      return res.status(403).json({ error: "world_id_not_configured", reason: "this policy requires World ID verification on every approval, but WORLD_APP_ID is not set — refusing rather than accepting an unverified approval" });
+    }
+    const verdict = await verifyWorldIdProof(worldIdProof);
+    if (!verdict.verified) {
+      return res.status(403).json({ error: "world_id_verification_failed", reason: verdict.reason });
+    }
+  }
   const record = decideApproval(req.params.id, decision, readPolicyRequiredApprovals());
   if (!record) return res.status(409).json({ error: "not pending (already decided, or unknown id)" });
   res.json(record);

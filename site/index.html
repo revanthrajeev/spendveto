@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="dark" />
 <title>SpendVeto — AI Agent Payment Governance for x402 (Open Source)</title>
-<meta name="description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 277 assertions." />
+<meta name="description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 280 assertions." />
 <meta name="keywords" content="x402, AI agent payments, AI agent governance, AI agent security, spend governance, agentic commerce, MCP, AI agent spend control, x402 security" />
 <link rel="canonical" href="https://spendveto.com/" />
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
@@ -14,13 +14,13 @@
 <meta property="og:locale" content="en_US" />
 <meta property="og:url" content="https://spendveto.com/" />
 <meta property="og:title" content="SpendVeto — AI Agent Payment Governance for x402 (Open Source)" />
-<meta property="og:description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 277 assertions." />
+<meta property="og:description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 280 assertions." />
 <meta property="og:image" content="https://spendveto.com/assets/generated/og-default.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="SpendVeto — AI Agent Payment Governance for x402 (Open Source)" />
-<meta name="twitter:description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 277 assertions." />
+<meta name="twitter:description" content="SpendVeto stops AI agents from overspending on x402 and MCP payments. Policy caps, human approvals, nested budgets, and a kill switch enforced before any payment settles. Open source, Apache-2.0, 280 assertions." />
 <meta name="twitter:image" content="https://spendveto.com/assets/generated/og-default.png" />
 <link rel="icon" href="./assets/favicon.svg" />
 <style>
@@ -651,7 +651,7 @@
           "name": "Is this a real product or a demo?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an 277-assertion end-to-end suite (npm run verify) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product."
+            "text": "Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an 280-assertion end-to-end suite (npm run verify) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product."
           }
         },
         {
@@ -683,7 +683,7 @@
           "name": "What does “simulate mode” actually simulate?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 277 tested assertions. Flip one env var for real x402 on Base Sepolia."
+            "text": "Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 280 tested assertions. Flip one env var for real x402 on Base Sepolia."
           }
         },
         {
@@ -734,7 +734,7 @@
   <canvas id="bg" aria-hidden="true"></canvas>
   <img class="hero-grip" src="./assets/hero-grip.jpg" alt="" aria-hidden="true" />
   <div class="hero-inner">
-    <div class="live-chip"><i></i><span id="live-stats">277 end-to-end checks · verified build</span></div>
+    <div class="live-chip"><i></i><span id="live-stats">280 end-to-end checks · verified build</span></div>
     <h1>Your agents can spend.<br /><span class="accent">SpendVeto decides.</span></h1>
     <p class="hero-sub">
       AI agents now pay for tools, APIs, and each other — autonomously, at machine speed.
@@ -845,7 +845,7 @@
   <div class="shell" data-num="02">
     <p class="counter reveal"><b>02 / 06</b> Product — working today, not a roadmap</p>
     <h2 class="reveal">Eight controls between your agent and its money.</h2>
-    <p class="lede reveal">Every one of them is exercised by a 277-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
+    <p class="lede reveal">Every one of them is exercised by a 280-assertion end-to-end verification suite on every change — real payments, real signatures, real JSON-RPC. Nothing below is a mockup.</p>
     <div class="grid8">
       <div class="cell reveal">
         <span class="mini-chip">PRE-PAYMENT</span>
@@ -909,7 +909,7 @@
           <circle class="arc" cx="110" cy="110" r="100" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="471 628" />
         </svg>
         <div class="gauge-center">
-          <div class="gauge-num"><em>277</em>/277</div>
+          <div class="gauge-num"><em>280</em>/280</div>
           <div class="gauge-cap">end-to-end checks passing</div>
         </div>
       </div>
@@ -1091,7 +1091,7 @@
       <div><span class="p">$</span> npm run call -- summarize &nbsp;<span class="c"># go approve it</span></div>
       <div><span class="p">$</span> npm run delegate -- 0.03 "intern" --tools translate --chains base-sepolia</div>
       <div><span class="p">$</span> claude mcp add spendveto -- node mcp/server.js</div>
-      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 277 assertions, end to end</span></div>
+      <div><span class="p">$</span> npm run verify &nbsp;<span class="c"># 280 assertions, end to end</span></div>
     </div>
   </div>
 </section>
@@ -1101,11 +1101,11 @@
     <p class="counter reveal"><b>FAQ</b> Straight answers</p>
     <h2 class="reveal">Asked before you had to ask.</h2>
     <div class="faq" style="margin-top: 1.5rem;">
-      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>277-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
+      <details class="reveal"><summary>Is this a real product or a demo?</summary><p>Real and open source (Apache-2.0). It runs on your machine today: real ECDSA signatures, real x402 settlement on Base Sepolia, and an <b>280-assertion end-to-end suite</b> (<span class="mono">npm run verify</span>) that exercises every claim on this page. The hosted platform — managed custody, orgs, SSO — is a waitlist today, not yet a live product.</p></details>
       <details class="reveal"><summary>Does SpendVeto hold my keys?</summary><p>Your choice of two trust models, both self-hosted. <b>Library mode:</b> agents hold their own wallets and the governance pipeline runs inside their own call path. <b>Enforcement proxy:</b> agents are keyless — they POST spending intents, and the proxy’s custody wallet signs only after freeze, policy, caps, scopes, and approvals all pass. Keys never leave your machine either way.</p></details>
       <details class="reveal"><summary>Which chains work today?</summary><p>All eight registered chains run the full governed pipeline end to end — chain-scoped signatures, per-chain balances, chain allowlists — with settlement simulated locally. <b>On-chain settlement is live on Base Sepolia</b> via x402’s public facilitator; per-chain facilitator adapters are the next funded milestone. Every chain’s canonical USDC contract is already in the registry.</p></details>
       <details class="reveal"><summary>What happens when an agent goes rogue?</summary><p>The burst detector freezes it <b>mid-loop</b> — by default, ten payment attempts inside ten seconds trips the freeze automatically. Every wallet also has a one-click manual kill switch. A frozen wallet is refused even when it presents a correctly signed payment (403, not a fresh challenge), and its trust score collapses to an F.</p></details>
-      <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 277 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
+      <details class="reveal"><summary>What does “simulate mode” actually simulate?</summary><p>Only the settlement. Keypairs, ECDSA signing and verification, nonce replay protection, signed receipts — all real cryptography; balances just settle in a local file instead of on-chain. Forged signatures are rejected, and that rejection is one of the 280 tested assertions. Flip one env var for real x402 on Base Sepolia.</p></details>
       <details class="reveal"><summary>What will the hosted platform add?</summary><p>The parts a company needs to run this for a fleet: a managed custody proxy on the money path, orgs and SSO, a Postgres audit trail, alert routing, and mainnet settlement. Join the waitlist — the chains people pick literally decide which adapters we build first.</p></details>
       <details class="reveal"><summary>Is there an SDK, or just the CLI?</summary><p>Both. A dependency-free Node SDK (<code class="mono">sdk/</code> — <code class="mono">.pay()</code>, <code class="mono">.dryRun()</code>, <code class="mono">.chat()</code>, throws a typed denial with the fix attached) and a LangChain adapter (<code class="mono">integrations/</code>) ship in the repo alongside the CLI and MCP server — same governed pipeline underneath all four. Code samples in the <a href="./docs.html#sdk">docs</a>.</p></details>
     </div>
