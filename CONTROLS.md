@@ -2,7 +2,7 @@
 
 **What this is:** every governance control SpendVeto enforces, mapped to the runtime expectations that appear in current AI-governance frameworks (EU AI Act, NIST AI RMF) and enterprise agent-deployment checklists — with, for each control, the `npm run verify` assertion that exercises it end-to-end on every change.
 
-**What this is not:** a certification. SpendVeto has **no SOC 2, no ISO 27001, no external security audit** — pre-mainnet for every chain except XRPL, which settles real money on mainnet today. This document is a self-assessment whose factual claims are machine-checked by the suite (280 assertions), nothing more. Framework references describe *which expectation a control addresses*, not conformity with the framework.
+**What this is not:** a certification. SpendVeto has **no SOC 2, no ISO 27001, no external security audit** — pre-mainnet for every chain by default. XRPL mainnet settlement is wired but disabled unless an operator explicitly opts in, entirely at their own risk; we do not run or control anyone's deployment. This document is a self-assessment whose factual claims are machine-checked by the suite (280 assertions), nothing more. Framework references describe *which expectation a control addresses*, not conformity with the framework.
 
 ## How to read the table
 

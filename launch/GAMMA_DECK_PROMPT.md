@@ -95,7 +95,7 @@ Caption: "The ceiling is set by penetration of a trillion-scale flow, not by sea
 **Slide 9 — Honest gaps and the plan to close them**
 Headline: "What's not true yet — stated plainly, with the fix."
 Left column, "Not true yet":
-- No external security audit yet; settlement is testnet/simulate only except XRPL, which is mainnet — pre-audit software throughout.
+- No external security audit yet; settlement is testnet/simulate only by default — pre-audit software throughout. XRPL mainnet settlement is wired but disabled unless an operator explicitly opts in, entirely at their own risk.
 - No hosted multi-tenant platform yet (self-host only today).
 - Solo-founder stage, no customers, no revenue yet.
 Right column, "The plan (next 30–60 days and beyond)":
