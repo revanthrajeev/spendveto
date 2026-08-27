@@ -137,7 +137,7 @@ Every payment rail plugs in behind the same four-line contract — `{ id, name, 
 
 Two code-level integration surfaces beside the CLI and MCP server, both dependency-free and both exercised end-to-end in `npm run verify`, not just parsed:
 
-- **`sdk/`** — a Node client (`SpendVeto` class): `.pay()`, `.dryRun()`, `.chat()` (governed LLM/API spend), `.registerAgent()`, `.catalog()`. A blocked call throws a typed `SpendVetoDenialError{code, suggestion, stage}` instead of silently no-oping.
+- **[`spendveto-sdk`](https://www.npmjs.com/package/spendveto-sdk)** (`npm install spendveto-sdk`, source in `sdk/`) — a Node client (`SpendVeto` class): `.pay()`, `.dryRun()`, `.chat()` (governed LLM/API spend), `.registerAgent()`, `.catalog()`. A blocked call throws a typed `SpendVetoDenialError{code, suggestion, stage}` instead of silently no-oping.
 - **`integrations/langchain.js`** — catalog tools exposed as LangChain-shaped `{ name, description, func }` objects, zero hard dependency on `@langchain/core`. Denials throw with the structured code embedded so an agent's next reasoning step can self-correct.
 - **`integrations/openai-agents.js`** — the same governed catalog as OpenAI Agents SDK-shaped `{ name, description, parameters, execute }` tools (the `tool()` helper's contract), zero hard dependency on `@openai/agents`; it reshapes the LangChain adapter, so both run one pipeline.
 
