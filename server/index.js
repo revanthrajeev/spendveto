@@ -143,7 +143,7 @@ if (MODE === "testnet") {
       case "xrpl":
         return String(tool.price);
       default:
-        return { amount: String(Math.round(Number(tool.price) * 1e6)), asset: { address: c.usdc, name: "USDC", version: "2", decimals: 6 } };
+        return { amount: String(Math.round(Number(tool.price) * 1e6)), asset: c.usdc, extra: { name: "USDC", version: "2" } };
     }
   };
   const routes = Object.fromEntries(
