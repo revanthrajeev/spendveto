@@ -23,6 +23,14 @@ export const CHAINS = [
   { id: "arbitrum", caip2: "eip155:42161", name: "Arbitrum", chainIdHex: "0xa4b1", status: "ready", usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", rpc: "https://arb1.arbitrum.io/rpc", note: "" },
   { id: "optimism", caip2: "eip155:10", name: "Optimism", chainIdHex: "0xa", status: "ready", usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", rpc: "https://mainnet.optimism.io", note: "" },
   { id: "avalanche", caip2: "eip155:43114", name: "Avalanche", chainIdHex: "0xa86a", status: "ready", usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", rpc: "https://api.avax.network/ext/bc/C/rpc", note: "" },
+  // Circle's own USDC-native L1. Registered as an EVM chain because it is one
+  // (chain id 5042002, verified live against its RPC), but it inverts an
+  // assumption the rest of this list shares: USDC is the GAS token, not an
+  // ERC-20 sitting on top of one. The address below is the optional ERC-20
+  // interface over that native balance — 6 decimals, while the native gas
+  // balance underneath uses 18. Everything here prices in the 6-decimal view,
+  // which is the one an x402 AssetAmount is denominated in.
+  { id: "arc-testnet", caip2: "eip155:5042002", name: "Arc Testnet", chainIdHex: "0x4cef52", status: "ready", usdc: "0x3600000000000000000000000000000000000000", rpc: "https://rpc.testnet.arc.network", note: "Circle's USDC-native L1 — USDC is the gas token; this address is its ERC-20 interface (6 decimals over an 18-decimal native balance). Full v2 wiring; goes live when a configured facilitator names eip155:5042002" },
   // Solana is a different signature family (ed25519, base58 addresses) from
   // every chain above (secp256k1, 0x addresses) — simulate mode's signing
   // path is EVM-specific (see server/simulate.js), so this chain is real x402
@@ -37,6 +45,17 @@ export const CHAINS = [
   { id: "aptos-testnet", caip2: "aptos:2", name: "Aptos Testnet", family: "aptos", status: "live", usdc: "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832", rpc: "https://api.testnet.aptoslabs.com/v1", note: "x402 settlement via the public facilitator — Move account model, third signature family" },
   { id: "stellar-testnet", caip2: "stellar:testnet", name: "Stellar Testnet", family: "stellar", status: "live", usdc: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA", rpc: "https://horizon-testnet.stellar.org", note: "x402 settlement via the public facilitator — fees sponsored by the facilitator itself" },
   { id: "hedera-testnet", caip2: "hedera:testnet", name: "Hedera Testnet", family: "hedera", status: "live", usdc: "0.0.429274", rpc: "https://testnet.mirrornode.hedera.com/api/v1", note: "x402 settlement via the public facilitator — account-id addressing (0.0.x), not a keypair-derived address; needs a real registered testnet account, an ephemeral keypair alone can't settle" },
+  // Algorand is the newest network the public facilitator settles (it appeared
+  // in GET /supported alongside the `upto` and `batch-settlement` schemes) and
+  // it is registered here honestly rather than optimistically: the facilitator
+  // can settle it and sponsors the fee itself, but no `@x402/algorand` client
+  // scheme package exists on npm yet, so THIS instance can govern an Algorand
+  // payment — chain allowlists, delegated chain scope, per-chain ledger — and
+  // cannot sign one. That is why the family has no entry in server/index.js's
+  // payToFor map: it can never enter liveSettlementChains by accident, and
+  // schemeFor throws rather than quietly signing it with the EVM scheme.
+  // USDC on Algorand is an ASA, addressed by integer asset id, not a contract.
+  { id: "algorand-testnet", caip2: "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe", name: "Algorand Testnet", family: "algorand", status: "ready", usdc: "10458941", rpc: "https://testnet-api.algonode.cloud", note: "the public facilitator settles this network and sponsors the fee, but no @x402/algorand client scheme package is published yet — governed here, not signable here" },
   { id: "xrpl", caip2: "xrpl:1", name: "XRPL", family: "xrpl", status: "ready", usdc: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De", stablecoin: "RLUSD", rpc: "https://s1.ripple.com:51234", note: "x402 v2 wiring is real, but mainnet settlement is DISABLED by default — simulate mode (the default) never touches it, and testnet mode requires an operator to explicitly set SERVER_PAYOUT_ADDRESS_XRPL to enable it. This is real mainnet, real money, RLUSD not USDC (XRPL has no canonical USDC deployment) — an operator who enables it does so entirely at their own risk; we do not run, control, or monitor anyone's deployment" },
 ];
 

@@ -127,6 +127,24 @@ export async function checkPolicy(address, proposedPriceUSD, toolId, chain, cate
       "start the SpendVeto server (`npm run server`) and retry", { policy });
   }
 
+  // Money authorized but not yet settled is money already at risk. The x402
+  // `upto` scheme lets a buyer sign for a ceiling and the seller charge less,
+  // later — so between signature and settlement the ledger shows $0 while the
+  // wallet is exposed for the whole ceiling. Counting only settled spend here
+  // would let an agent sign ten $50 authorizations under a $60/hour cap and
+  // break none of them. Open ceilings are held against the budget the way a
+  // card pre-auth holds against a balance, and released on settlement or
+  // expiry (see server/upto.js).
+  let heldUSD = 0;
+  try {
+    const held = await fetch(`http://localhost:${PORT}/api/upto/holds/${address}`).then((r) => r.json());
+    heldUSD = Number(held.heldUSD) || 0;
+  } catch {
+    // Older server without the endpoint, or a transient failure: fall back to
+    // settled-spend-only accounting rather than blocking every call. The gate
+    // re-runs this check server-side, where the endpoint is always local.
+  }
+
   // Delegation caps, cascading: if this wallet is a delegated child, walk the
   // grant chain up to the root. At every level, the whole subtree's lifetime
   // spend plus this call must fit that level's cap — a grandchild's spending
@@ -242,11 +260,13 @@ export async function checkPolicy(address, proposedPriceUSD, toolId, chain, cate
     return deny("hourly_rate_cap", `would exceed maxCallsPerHour (${policy.maxCallsPerHour})`,
       "wait for the hourly window to roll over before retrying, or have a human raise maxCallsPerHour", { policy, recent });
   }
-  if (recent.totalUSD + price > policy.maxPerHourUSD) {
-    return deny("hourly_usd_cap", `would exceed maxPerHourUSD $${policy.maxPerHourUSD} (spent $${recent.totalUSD.toFixed(4)} so far)`,
-      `only $${Math.max(0, policy.maxPerHourUSD - recent.totalUSD).toFixed(4)} remains in this hour's budget — wait for the window to roll over, or pick a cheaper tool`, { policy, recent });
+  const committedUSD = recent.totalUSD + heldUSD;
+  if (committedUSD + price > policy.maxPerHourUSD) {
+    const heldNote = heldUSD > 0 ? `, $${heldUSD.toFixed(4)} held by open upto authorizations` : "";
+    return deny("hourly_usd_cap", `would exceed maxPerHourUSD $${policy.maxPerHourUSD} (spent $${recent.totalUSD.toFixed(4)} so far${heldNote})`,
+      `only $${Math.max(0, policy.maxPerHourUSD - committedUSD).toFixed(4)} remains in this hour's budget — wait for the window to roll over${heldUSD > 0 ? ", settle or void an open authorization to release its hold" : ""}, or pick a cheaper tool`, { policy, recent, heldUSD });
   }
 
   const requiresApproval = price > policy.requireApprovalAboveUSD;
-  return { allowed: true, requiresApproval, policy, recent, delegation };
+  return { allowed: true, requiresApproval, policy, recent, delegation, heldUSD };
 }

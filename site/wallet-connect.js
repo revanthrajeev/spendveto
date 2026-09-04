@@ -91,11 +91,15 @@ export const FALLBACK_CHAINS = [
   { id: "arbitrum", name: "Arbitrum", status: "ready" },
   { id: "optimism", name: "Optimism", status: "ready" },
   { id: "avalanche", name: "Avalanche", status: "ready" },
+  { id: "arc-testnet", name: "Arc Testnet", status: "ready" },
   { id: "solana-devnet", name: "Solana Devnet", status: "live" },
   { id: "aptos-testnet", name: "Aptos Testnet", status: "live" },
   { id: "stellar-testnet", name: "Stellar Testnet", status: "live" },
   { id: "hedera-testnet", name: "Hedera Testnet", status: "live" },
-  { id: "xrpl", name: "XRPL", status: "live" },
+  { id: "algorand-testnet", name: "Algorand Testnet", status: "ready" },
+  // "ready", matching the registry: XRPL settlement is real mainnet and is
+  // disabled unless an operator explicitly opts in (see shared-config.js).
+  { id: "xrpl", name: "XRPL", status: "ready" },
 ];
 
 export async function loadChains() {

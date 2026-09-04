@@ -89,7 +89,7 @@
 
   <article>
     <h1>Documentation</h1>
-    <p class="lede">SpendVeto is a governance gate in front of a catalog of paid (x402/USDC) endpoints, reachable three ways — CLI, delegated child agents, and any MCP client. Everything on this page is exercised by the 280-assertion suite in <code>npm run verify</code>.</p>
+    <p class="lede">SpendVeto is a governance gate in front of a catalog of paid (x402/USDC) endpoints, reachable three ways — CLI, delegated child agents, and any MCP client. Everything on this page is exercised by the 291-assertion suite in <code>npm run verify</code>.</p>
 
     <h2 id="quickstart">Quickstart</h2>
     <pre class="block"><span class="p">$</span> git clone https://github.com/revanthrajeev/spendveto.git &amp;&amp; cd spendveto &amp;&amp; npm install
@@ -109,7 +109,7 @@
         <tr><td><code>npm run proxy</code></td><td>Enforcement proxy (:8404): keyless agents POST intents; custody signs after governance</td></tr>
         <tr><td><code>npm run policy [-- apply &lt;pack&gt;]</code></td><td>List or apply policy packs (cautious / standard / production)</td></tr>
         <tr><td><code>npm run apikey -- [role] [label]</code></td><td>Mint an admin-surface API key (role: viewer / approver / admin). First key flips the server to auth-required.</td></tr>
-        <tr><td><code>npm run verify</code></td><td>280 end-to-end assertions, headless</td></tr>
+        <tr><td><code>npm run verify</code></td><td>291 end-to-end assertions, headless</td></tr>
         <tr><td><code>npm run site</code></td><td>Serve this marketing site (:8403)</td></tr>
       </tbody>
     </table></div>
@@ -135,7 +135,7 @@
   "allowedPayees": ["0xVendorA…", "0xVendorB…"],   <span class="c">// optional</span>
   "alertWebhookUrl": "https://hooks.slack.com/…"   <span class="c">// optional</span>
 }</pre>
-    <p>Lives at <code>data/policy.json</code>. <b>anomaly</b>: a wallet exceeding <code>burstAttempts</code> ledger events inside <code>burstWindowSeconds</code> is frozen automatically. <b>alertWebhookUrl</b>: freezes, blocked calls, and pending approvals POST there in real time. <b>allowedChains</b> (optional): pins which chains agents may settle on — omit it to allow all twelve registered chains. <b>allowedPayees</b> (optional): pins which recipient addresses agents may pay at all — a payment to any other address is refused before it's signed, so a compromised or prompt-injected agent can't reach an attacker's wallet.</p>
+    <p>Lives at <code>data/policy.json</code>. <b>anomaly</b>: a wallet exceeding <code>burstAttempts</code> ledger events inside <code>burstWindowSeconds</code> is frozen automatically. <b>alertWebhookUrl</b>: freezes, blocked calls, and pending approvals POST there in real time. <b>allowedChains</b> (optional): pins which chains agents may settle on — omit it to allow all fourteen registered chains. <b>allowedPayees</b> (optional): pins which recipient addresses agents may pay at all — a payment to any other address is refused before it's signed, so a compromised or prompt-injected agent can't reach an attacker's wallet.</p>
 
     <h2 id="delegation">Delegation &amp; scoping</h2>
     <pre class="block"><span class="p">$</span> npm run delegate -- 0.015 "team lead"
@@ -186,7 +186,7 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
         <tr><td><code>GET /api/ledger</code> · <code>POST /api/ledger/event</code></td><td>Full ledger; client-side event logging</td></tr>
         <tr><td><code>GET /api/stats</code> · <code>GET /api/analytics</code></td><td>Paid/blocked totals; per-tool, per-wallet + per-chain rollups</td></tr>
         <tr><td><code>GET /metrics</code></td><td>Same numbers as <code>/api/stats</code>, in Prometheus text-exposition format</td></tr>
-        <tr><td><code>GET /api/chains</code></td><td>12-chain registry: status, canonical stablecoin address, RPC</td></tr>
+        <tr><td><code>GET /api/chains</code></td><td>14-chain registry across seven signature families: status, per-chain settlement (live / ready / simulated), canonical stablecoin address, RPC</td></tr>
         <tr><td><code>GET /api/rails</code></td><td>Rail adapter registry — one pay() contract; x402 live, AP2/ACP/MPP/Safe-AllowanceModule slots (see <code>docs/safe-allowance.md</code> in the repo)</td></tr>
         <tr><td><code>GET /api/receipts/:id</code> · <code>POST /api/receipts/verify</code></td><td>Receipt lookup + independent ECDSA verification</td></tr>
         <tr><td><code>GET /api/ledger/verify-chain</code></td><td>Tamper-evidence: confirm the ledger hash-chain is intact; reports the first broken row</td></tr>
@@ -205,6 +205,9 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
         <tr><td><code>POST /api/acp/checkout</code></td><td>ACP: check a checkout session against the shared payment token that funds it — merchant, ceiling, category, currency, and whether the declared total matches its own line items</td></tr>
         <tr><td><code>POST /api/integrity/bind</code> · <code>POST /api/integrity/verify</code></td><td>Request integrity: bind an authorization to a canonical digest of the request, then refuse at execution if the payload changed. Single-use, TTL-bounded, agent-scoped</td></tr>
         <tr><td><code>GET /api/disputes/:entryHash/evidence</code> · <code>POST /api/disputes/verify</code></td><td>Dispute evidence pack: the spend pinned in its hash chain, the policy in force, the approval and the signed consents — one bundle, signed over its own digest</td></tr>
+        <tr><td><code>POST /api/upto/authorize</code></td><td>x402 <code>upto</code> scheme: record a variable-amount authorization. Policy decides on <code>maxUSD</code> — the ceiling the signature permits — not the price the seller quoted, and the open ceiling is held against the budget until it resolves</td></tr>
+        <tr><td><code>POST /api/upto/settle</code> · <code>POST /api/upto/void</code></td><td>Settle the amount actually charged (releasing the unused headroom back to the budget) or cancel the authorization. Settling above the maximum, twice, or after the deadline is refused: <code>upto_over_settlement</code>, <code>upto_already_settled</code>, <code>upto_expired</code></td></tr>
+        <tr><td><code>GET /api/upto</code> · <code>GET /api/upto/holds/:address</code></td><td>Open authorizations, released headroom, and seller utilisation — plus the single number the budget check folds in: how much this wallet has signed away but not yet spent</td></tr>
         <tr><td><code>GET /api/otel/spans</code></td><td>Governance decisions as OTLP spans; pass a W3C <code>traceparent</code> and the refusal lands inside the agent trace that caused it</td></tr>
         <tr><td><code>GET /api/policy</code></td><td>Active policy</td></tr>
       </tbody>
@@ -214,7 +217,7 @@ const tools = await createSpendVetoTools({ agentToken: "tg_…" });
     <p><b>simulate</b> (default): real keypairs, real signature verification, nonce replay protection, local settlement — zero setup. <b>testnet</b>: the real x402 v2 packages, facilitator-adaptive: the gate asks its facilitator what it can settle at boot and brings every supported registry chain live (multi-chain 402s, per-chain USDC). The public facilitator settles Base Sepolia — fund one wallet at faucet.circle.com and set <code>SPENDVETO_MODE=testnet</code>; a CDP facilitator key unlocks its mainnet chains with zero code changes.</p>
 
     <h2 id="verify">Verification</h2>
-    <p><code>npm run verify</code> boots everything headlessly and runs <b>280 assertions</b>: forged-signature rejection, all three approval outcomes, cascading caps, tool + chain scoping, chain-scoped signatures with per-chain balances, burst auto-freeze, manual freeze/unfreeze, signed-receipt verification, CSV export, per-chain analytics, webhook delivery to a live receiver, and a real MCP stdio JSON-RPC session.</p>
+    <p><code>npm run verify</code> boots everything headlessly and runs <b>291 assertions</b>: forged-signature rejection, all three approval outcomes, cascading caps, tool + chain scoping, chain-scoped signatures with per-chain balances, burst auto-freeze, manual freeze/unfreeze, signed-receipt verification, CSV export, per-chain analytics, webhook delivery to a live receiver, and a real MCP stdio JSON-RPC session.</p>
   </article>
 </div>
 

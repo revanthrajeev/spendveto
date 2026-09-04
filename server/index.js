@@ -38,6 +38,7 @@ import { normalizeReceipt } from "./receipts.js";
 import { checkCartAgainstIntent, reconcileHumanNotPresent } from "./ap2.js";
 import { toBazaarResources, governCatalog } from "./discovery.js";
 import { checkSessionAgainstToken } from "./acp.js";
+import { authorize as uptoAuthorize, settleAuthorization, voidAuthorization, getAuthorizations, openHoldUSD, uptoSummary } from "./upto.js";
 import { bindAuthorization, verifyBinding, getBinding, requestDigest } from "./integrity.js";
 import { buildEvidencePack, checkEvidencePack } from "./disputes.js";
 import { decisionSpans, toOtlpPayload, exportSpans } from "./otel.js";
@@ -116,6 +117,14 @@ if (MODE === "testnet") {
         return new ExactHederaScheme();
       case "xrpl":
         return new ExactXrplScheme();
+      // A registered family with no published client scheme package (algorand
+      // today) must never fall through to the EVM scheme: signing an Algorand
+      // payment with a secp256k1 EVM signature would produce a signature the
+      // facilitator rejects at best, and at worst one that means something
+      // else. payToFor has no entry for it either, so this is unreachable
+      // unless someone adds one — which is exactly when it should throw.
+      case "algorand":
+        throw new Error(`no x402 client scheme package published for family "${c.family}" (${c.id}) — the facilitator settles it, this instance cannot sign it`);
       default:
         return new ExactEvmScheme();
     }
@@ -1005,6 +1014,80 @@ app.post("/api/acp/checkout", async (req, res) => {
     ts,
     ...signed,
   });
+});
+
+// x402 `upto` scheme, buyer side (server/upto.js). The scheme lets a buyer
+// sign for a ceiling and the seller charge less, later — so the number to
+// govern is the ceiling, and the gap between ceiling and charge has to be held
+// against the budget until it resolves. Policy decides on maxUSD here for
+// exactly that reason: the signature exposes the buyer to the maximum the
+// moment it exists, whatever the seller quoted.
+app.post("/api/upto/authorize", async (req, res) => {
+  const { address, maxUSD, quotedUSD, payee, toolId, chain, category, validAfter, deadline } = req.body || {};
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address || "")) return res.status(400).json({ error: "address must be a 0x-prefixed 20-byte address" });
+  if (!(Number(maxUSD) > 0)) return res.status(400).json({ error: "maxUSD must be a positive number — the ceiling the authorization permits" });
+
+  const ts = new Date().toISOString();
+  const verdict = await checkPolicy(address, Number(maxUSD), toolId, chain || DEFAULT_CHAIN, category, payee);
+  if (!verdict.allowed) {
+    // A refused authorization is a blocked spend at the ceiling, not at the
+    // quote — recorded that way so the ledger shows the exposure that was
+    // actually prevented.
+    appendLedgerEntry({
+      address, resource: toolId ? `upto:${toolId}` : "upto", amount: Number(maxUSD), chain: chain || DEFAULT_CHAIN,
+      ...(category ? { category } : {}), ...(payee ? { payTo: payee } : {}),
+      status: "blocked", mode: "upto", reason: `upto authorization: ${verdict.reason}`, policyHash: policyHash(),
+    });
+    return res.status(403).json({ decision: "deny", stage: "policy", code: verdict.code, reason: verdict.reason, suggestion: verdict.suggestion, maxUSD: Number(maxUSD), ts });
+  }
+  if (verdict.requiresApproval) {
+    return res.status(403).json({
+      decision: "requires_approval", stage: "policy", code: "requires_approval",
+      reason: `an upto ceiling of $${Number(maxUSD)} is above requireApprovalAboveUSD $${verdict.policy.requireApprovalAboveUSD} — a human signs off on the ceiling, not the eventual charge`,
+      suggestion: "request approval for this ceiling before signing the authorization, or lower the maximum",
+      maxUSD: Number(maxUSD), ts,
+    });
+  }
+
+  const result = uptoAuthorize({ address, maxUSD, quotedUSD, payee, toolId, chain: chain || DEFAULT_CHAIN, category, validAfter, deadline });
+  if (!result.ok) return res.status(400).json({ decision: "deny", stage: "scheme", code: result.code, reason: result.reason, suggestion: result.suggestion, ts });
+  res.status(201).json({ decision: "allow", stage: "policy", authorization: result.authorization, heldUSD: openHoldUSD(address), ts });
+});
+
+// Settlement: the seller reports what it actually charged. Over-settlement,
+// replay, and post-deadline settlement are refused here — on the buyer's side,
+// because the buyer is the party who pays for the facilitator being wrong.
+app.post("/api/upto/settle", (req, res) => {
+  const { id, settledUSD } = req.body || {};
+  const result = settleAuthorization(id, settledUSD);
+  if (!result.ok) return res.status(409).json({ decision: "deny", code: result.code, reason: result.reason, suggestion: result.suggestion });
+  const a = result.authorization;
+  // The settled amount — never the ceiling — is what enters the spend record:
+  // held money that was released was never spent.
+  appendLedgerEntry({
+    address: a.address, resource: a.toolId ? `upto:${a.toolId}` : "upto", amount: a.settledUSD, chain: a.chain || DEFAULT_CHAIN,
+    ...(a.category ? { category: a.category } : {}), ...(a.payee ? { payTo: a.payee } : {}),
+    status: "paid", mode: "upto", authorizationId: a.id, maxUSD: a.maxUSD, releasedUSD: a.releasedUSD, policyHash: policyHash(),
+  });
+  res.json({ decision: "settled", authorization: a, settledUSD: a.settledUSD, releasedUSD: a.releasedUSD, heldUSD: openHoldUSD(a.address) });
+});
+
+app.post("/api/upto/void", (req, res) => {
+  const { id, reason } = req.body || {};
+  const result = voidAuthorization(id, reason);
+  if (!result.ok) return res.status(409).json({ decision: "deny", code: result.code, reason: result.reason, suggestion: result.suggestion });
+  res.json({ decision: "voided", authorization: result.authorization, releasedUSD: result.releasedUSD, heldUSD: openHoldUSD(result.authorization.address) });
+});
+
+// The hold number client/policy.js folds into the hourly budget.
+app.get("/api/upto/holds/:address", (req, res) => {
+  res.json({ address: req.params.address, heldUSD: openHoldUSD(req.params.address) });
+});
+
+app.get("/api/upto", (req, res) => {
+  const { address } = req.query;
+  const authorizations = getAuthorizations().filter((a) => !address || String(a.address).toLowerCase() === String(address).toLowerCase());
+  res.json({ authorizations, summary: uptoSummary(address) });
 });
 
 // Request integrity (server/integrity.js): bind an authorization to the exact

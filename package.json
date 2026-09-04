@@ -1,6 +1,6 @@
 {
   "name": "spendveto",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": true,
   "type": "module",
   "description": "Agent payment rails + spend governance — an x402-metered endpoint in front of an AI agent call, with a policy engine and dashboard.",

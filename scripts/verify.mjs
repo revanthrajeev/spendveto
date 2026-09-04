@@ -104,7 +104,7 @@ class McpStdio {
 }
 
 // Fresh state for a deterministic run.
-for (const f of ["data/ledger.json", "data/balances.json", "data/delegations.json", "data/children.json", "data/freezes.json", "data/waitlist.json", "data/tools.json", "data/agents.json", "data/shadow-policy.json", "data/shadow-log.json", "data/api-keys.json", "data/consents.json"]) {
+for (const f of ["data/ledger.json", "data/balances.json", "data/delegations.json", "data/children.json", "data/freezes.json", "data/waitlist.json", "data/tools.json", "data/agents.json", "data/shadow-policy.json", "data/shadow-log.json", "data/api-keys.json", "data/consents.json", "data/upto.json"]) {
   const p = `${ROOT}${f}`;
   if (existsSync(p)) unlinkSync(p);
 }
@@ -628,16 +628,16 @@ try {
   // --- Chains + waitlist: the hosted-platform funnel ---
   const { chains } = await fetch(`${BASE}/api/chains`).then((r) => r.json());
   check(
-    "chain registry lists 12 chains across six signature families, Base Sepolia live",
-    chains.length === 12 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
+    "chain registry lists 14 chains across seven signature families, Base Sepolia live",
+    chains.length === 14 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
     chains.map((c) => c.id).join(", ")
   );
   check(
     "every chain carries its CAIP-2 id for the x402 v2 stack, across every registered signature family",
-    chains.every((c) => /^(eip155:\d+|solana:|aptos:|stellar:|hedera:|xrpl:)/.test(c.caip2 || "")) &&
+    chains.every((c) => /^(eip155:\d+|solana:|aptos:|stellar:|hedera:|algorand:|xrpl:)/.test(c.caip2 || "")) &&
       chains.find((c) => c.id === "base-sepolia")?.caip2 === "eip155:84532" &&
       chains.find((c) => c.id === "solana-devnet")?.family === "svm" &&
-      new Set(chains.map((c) => c.family || "evm")).size === 6,
+      new Set(chains.map((c) => c.family || "evm")).size === 7,
     chains.map((c) => c.caip2).join(" ")
   );
   const usdcShapeByFamily = {
@@ -646,6 +646,9 @@ try {
     aptos: /^0x[0-9a-fA-F]{64}$/,
     stellar: /^C[A-Z2-7]{55}$/,
     hedera: /^0\.0\.\d+$/,
+    // USDC on Algorand is an ASA, addressed by integer asset id — not a
+    // contract address, the same way Hedera addresses by account id.
+    algorand: /^\d+$/,
     xrpl: /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/,
   };
   check(
@@ -674,6 +677,26 @@ try {
     chains.find((c) => c.id === "xrpl")?.stablecoin === "RLUSD" && chains.find((c) => c.id === "xrpl")?.caip2 === "xrpl:1",
     JSON.stringify(chains.find((c) => c.id === "xrpl"))
   );
+  const arc = chains.find((c) => c.id === "arc-testnet");
+  check(
+    "Arc is registered as Circle's USDC-native L1 at its real chain id, priced through the 6-decimal ERC-20 view of a gas token",
+    arc?.caip2 === "eip155:5042002" && arc?.chainIdHex === "0x4cef52" && arc?.usdc === "0x3600000000000000000000000000000000000000",
+    JSON.stringify(arc)
+  );
+  // The honesty rule applied to a chain: the public facilitator settles
+  // Algorand and sponsors its fee, but no @x402/algorand client scheme package
+  // is published, so this instance can govern an Algorand payment and cannot
+  // sign one. A chain in that state must be declared, never advertised — and
+  // must be structurally incapable of being signed with the wrong scheme.
+  const algo = chains.find((c) => c.id === "algorand-testnet");
+  const { CHAINS: registryChains } = await import("../shared-config.js");
+  check(
+    "Algorand is declared as governed-but-not-signable — the facilitator settles it, this instance has no scheme package for it",
+    algo?.family === "algorand" && algo?.status === "ready" && /no @x402\/algorand client scheme package/.test(algo?.note || "") &&
+      registryChains.filter((c) => c.family === "algorand").length === 1,
+    `${algo?.caip2} settlement=${algo?.settlement}`
+  );
+
   const wlPost = await fetch(`${BASE}/api/waitlist`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1923,6 +1946,104 @@ try {
   );
   writeFileSync(`${ROOT}data/policy.json`, JSON.stringify(LOOSE_POLICY, null, 2));
 
+  // --- x402 `upto` scheme: govern the ceiling, hold it, settle the actual ---
+  // The scheme lets a seller decide the charge after the buyer has signed for
+  // a maximum, so every number the rest of this suite governs is the wrong one
+  // here. Tail-appended: fresh wallets, and only settlements (never ceilings)
+  // reach the ledger, after every exact-count assertion above has run.
+  const uptoPost = (path, body) =>
+    fetch(`${BASE}/api/upto/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(async (r) => ({ status: r.status, body: await r.json() }));
+  const inTenMin = () => new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  // LOOSE_POLICY: $1/hour budget, approval above $0.015. A $0.002 quote behind
+  // a $0.5 ceiling is a $0.5 decision — the whole point of the scheme's risk.
+  const uptoWallet = privateKeyToAccount(generatePrivateKey()).address;
+  const ceilingCall = await uptoPost("authorize", { address: uptoWallet, maxUSD: 0.5, quotedUSD: 0.002, toolId: "review", deadline: inTenMin() });
+  check(
+    "an upto authorization is governed on the ceiling it permits, not the price the seller quoted",
+    ceilingCall.body.decision === "requires_approval" && /ceiling of \$0\.5/.test(ceilingCall.body.reason || ""),
+    `${ceilingCall.body.decision}: ${(ceilingCall.body.reason || "").slice(0, 90)}`
+  );
+
+  const held1 = await uptoPost("authorize", { address: uptoWallet, maxUSD: 0.01, quotedUSD: 0.002, toolId: "review", deadline: inTenMin() });
+  const holdsAfter = await fetch(`${BASE}/api/upto/holds/${uptoWallet}`).then((r) => r.json());
+  const ledgerBeforeSettle = await fetch(`${BASE}/api/ledger`).then((r) => r.json());
+  check(
+    "an open authorization holds its full ceiling against the budget before anything has settled",
+    held1.body.decision === "allow" && holdsAfter.heldUSD === 0.01 &&
+      !ledgerBeforeSettle.entries.some((e) => e.address === uptoWallet && e.status === "paid"),
+    `held=${holdsAfter.heldUSD} paidEntries=${ledgerBeforeSettle.entries.filter((e) => e.address === uptoWallet && e.status === "paid").length}`
+  );
+
+  // Five $0.01 ceilings exhaust a $0.05/hour budget with $0 actually spent —
+  // the leak this module exists to close. Ceilings stay under the approval
+  // threshold so what's being measured is the budget, not the approval rule.
+  writeFileSync(`${ROOT}data/policy.json`, JSON.stringify({ ...LOOSE_POLICY, maxPerHourUSD: 0.05 }, null, 2));
+  const squeezeWallet = privateKeyToAccount(generatePrivateKey()).address;
+  let squeezed;
+  let squeezedAfter = 0;
+  for (let i = 0; i < 6; i++) {
+    squeezed = await uptoPost("authorize", { address: squeezeWallet, maxUSD: 0.01, toolId: "review", deadline: inTenMin() });
+    if (squeezed.body.decision !== "allow") break;
+    squeezedAfter++;
+  }
+  const squeezeVerdict = await checkPolicy(squeezeWallet, 0.01, "review", "base-sepolia");
+  writeFileSync(`${ROOT}data/policy.json`, JSON.stringify(LOOSE_POLICY, null, 2));
+  check(
+    "five open ceilings exhaust a $0.05 hourly budget with $0 settled — and an ordinary payment on the same wallet is refused too",
+    squeezedAfter === 5 && squeezed.body.code === "hourly_usd_cap" && /held by open upto authorizations/.test(squeezed.body.reason || "") &&
+      squeezeVerdict.allowed === false && squeezeVerdict.code === "hourly_usd_cap",
+    `${squeezedAfter} allowed then ${squeezed.body.code} / ordinary=${squeezeVerdict.code}`
+  );
+
+  const overSettle = await uptoPost("settle", { id: held1.body.authorization.id, settledUSD: 0.02 });
+  check(
+    "a seller settling above the maximum the buyer authorized is refused at the buyer's own gate",
+    overSettle.status === 409 && overSettle.body.code === "upto_over_settlement",
+    `${overSettle.status} ${overSettle.body.code}`
+  );
+
+  const settled = await uptoPost("settle", { id: held1.body.authorization.id, settledUSD: 0.003 });
+  const holdsAfterSettle = await fetch(`${BASE}/api/upto/holds/${uptoWallet}`).then((r) => r.json());
+  check(
+    "settling releases the unused headroom back to the budget ($0.01 held → $0.003 charged → $0.007 released)",
+    settled.body.settledUSD === 0.003 && settled.body.releasedUSD === 0.007 && holdsAfterSettle.heldUSD === 0,
+    `settled=${settled.body.settledUSD} released=${settled.body.releasedUSD} held=${holdsAfterSettle.heldUSD}`
+  );
+
+  const uptoLedger = await fetch(`${BASE}/api/ledger`).then((r) => r.json());
+  const uptoEntry = uptoLedger.entries.find((e) => e.address === uptoWallet && e.status === "paid");
+  check(
+    "only the amount actually settled enters the spend record — the ceiling is carried as context, never as spend",
+    uptoEntry?.amount === 0.003 && uptoEntry?.maxUSD === 0.01 && uptoEntry?.releasedUSD === 0.007 && uptoEntry?.authorizationId === held1.body.authorization.id,
+    JSON.stringify({ amount: uptoEntry?.amount, maxUSD: uptoEntry?.maxUSD, released: uptoEntry?.releasedUSD })
+  );
+
+  const replay = await uptoPost("settle", { id: held1.body.authorization.id, settledUSD: 0.001 });
+  check(
+    "an authorization settles at most once — a second settlement is refused as a replay, whatever the amount",
+    replay.status === 409 && replay.body.code === "upto_already_settled",
+    `${replay.status} ${replay.body.code}`
+  );
+
+  const noDeadline = await uptoPost("authorize", { address: uptoWallet, maxUSD: 0.01, toolId: "review" });
+  check(
+    "an authorization with no deadline is refused — an unbounded ceiling would hold budget forever",
+    noDeadline.body.code === "upto_window_invalid",
+    noDeadline.body.code
+  );
+
+  const expiring = await uptoPost("authorize", { address: uptoWallet, maxUSD: 0.01, toolId: "review", deadline: new Date(Date.now() + 1200).toISOString() });
+  const heldWhileValid = await fetch(`${BASE}/api/upto/holds/${uptoWallet}`).then((r) => r.json());
+  await sleep(1500);
+  const heldAfterExpiry = await fetch(`${BASE}/api/upto/holds/${uptoWallet}`).then((r) => r.json());
+  const settleExpired = await uptoPost("settle", { id: expiring.body.authorization.id, settledUSD: 0.001 });
+  check(
+    "a ceiling past its deadline releases itself and can no longer settle — the hold expires with the signature",
+    heldWhileValid.heldUSD === 0.01 && heldAfterExpiry.heldUSD === 0 && settleExpired.body.code === "upto_expired",
+    `valid=${heldWhileValid.heldUSD} expired=${heldAfterExpiry.heldUSD} ${settleExpired.body.code}`
+  );
+
   // --- Evidence surfaces + AP2 mandate evaluation + billing sink + OpenAI adapter ---
   // The July-2026 research round: enterprise buyers want normalized,
   // SIEM-ready decision events with the policy version in force; AP2-shaped
@@ -2092,8 +2213,10 @@ try {
   testnetProc = await bootTestnet();
   const tnChains = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "testnet gate asks the facilitator what it settles and brings every supported registry chain live (all 12 via mock, six signature families)",
-    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 12 && tnChains.chains.every((c) => c.settlement === "live"),
+    "testnet gate brings live every registry chain the facilitator settles AND this instance can sign — 13 of 14, with Algorand deliberately left out",
+    tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 13 &&
+      tnChains.chains.filter((c) => c.id !== "algorand-testnet").every((c) => c.settlement === "live") &&
+      !tnChains.liveSettlementChains.includes("algorand-testnet"),
     `live=${tnChains.liveSettlementChains?.join(",")}`
   );
   const tn402 = await fetch("http://localhost:8401/api/agent/translate");
@@ -2101,22 +2224,22 @@ try {
   const decoded402 = tn402Text.includes("eip155") ? tn402Text : Buffer.from(tn402.headers.get("PAYMENT-REQUIRED") || "", "base64").toString("utf8") + " " + tn402Text;
   const advertised = REG_CHAINS.filter((c) => decoded402.includes(c.caip2)).map((c) => c.id);
   check(
-    "a real x402 v2 402 advertises one payment option per live chain — all twelve CAIP-2 networks in one challenge",
-    tn402.status === 402 && advertised.length === 12,
+    "a real x402 v2 402 advertises one payment option per live chain — thirteen CAIP-2 networks in one challenge, and never the chain it cannot sign",
+    tn402.status === 402 && advertised.length === 13 && !advertised.includes("algorand-testnet"),
     `status=${tn402.status} advertised=${advertised.join(",")}`
   );
   testnetProc.proc.kill();
   await sleep(300);
 
   // Adaptive the other way: the facilitator now claims only base-sepolia, so
-  // only base-sepolia may go live — the other eleven report settlement-ready.
+  // only base-sepolia may go live — the other thirteen report settlement-ready.
   mockSupportedCaip2 = [REG_CHAINS.find((c) => c.id === "base-sepolia").caip2];
   testnetProc = await bootTestnet();
   const tnChains2 = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + eleven settlement-ready",
+    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + thirteen settlement-ready",
     tnChains2.liveSettlementChains?.length === 1 && tnChains2.liveSettlementChains[0] === "base-sepolia" &&
-      tnChains2.chains.filter((c) => c.settlement === "ready").length === 11,
+      tnChains2.chains.filter((c) => c.settlement === "ready").length === 13,
     `live=${tnChains2.liveSettlementChains?.join(",")} ready=${tnChains2.chains.filter((c) => c.settlement === "ready").length}`
   );
   testnetProc.proc.kill();

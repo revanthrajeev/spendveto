@@ -9,6 +9,7 @@ data/waitlist.json
 data/tools.json
 data/agents.json
 data/consents.json
+data/upto.json
 data/policy.json.bak
 *.log
 .DS_Store
