@@ -32,13 +32,13 @@ What that means for a hackathon: the strongest tracks are the ones asking for *g
 
 The Hedera track asks for exactly the thing this repo does and most projects cannot do: an x402-gated service on Hedera with **real paid requests** flowing through it. The chain is already registered, already live on the facilitator, already has its own signature-family branch, and the governance layer in front of it is the differentiator — anyone can take a payment, the demo here is a payment that gets *refused* on policy and one that settles, both on Hedera, both in the ledger, both provable.
 
-### What to do before 13 September
+### Status as of 2026-09-08 — both live-evidence tracks done
 
-1. **Fund a Hedera testnet account** and set `SERVER_PAYOUT_ADDRESS_HEDERA` in `.env.local`. Registry note on `hedera-testnet` is explicit that account-id addressing needs a real registered account — an ephemeral keypair cannot settle.
-2. **Run `SPENDVETO_MODE=testnet`** and confirm `hedera-testnet` appears in `liveSettlementChains` on `/api/chains`.
-3. **Record the two-payment demo**: one governed payment that settles on Hedera, one that the policy refuses before it settles, both visible in the ledger with their policy hash. `npm run demo -- --native` records the film; `launch/DEMO_SCRIPT.md` has the script.
-4. **Configure World ID** (`WORLD_APP_ID`) and record one approval carrying a verified proof, if entering that track too.
-5. **Write the submission** against what is actually true on the day — no claim that isn't an assertion in `npm run verify`, the same rule as everywhere else in this repo.
+1. ~~**Fund a Hedera testnet account**~~ **Done.** Two distinct testnet accounts (payer `0.0.10410031`, payout `0.0.10410033`), USDC token `0.0.429274` associated and funded via Circle's faucet.
+2. ~~**Run `SPENDVETO_MODE=testnet`**~~ **Done.** `hedera-testnet` reports `settlement: "live"` on `/api/chains`.
+3. ~~**Record the two-payment demo**~~ **Done, and it's a stronger demo than planned.** Rather than two isolated calls, the Hedera settlement and the World ID approval are **one coherent flow**: an approval-gated payment paused on `requireApprovalAboveUSD`, refused when approved without a World ID proof (`world_id_proof_malformed`, 403), approved with a real device-scanned proof (real Cloud Verify API round trip, 200), which then unblocked the paused client and settled **$0.01 on Hedera testnet**, on-chain — tx `0.0.9185802-1788804271-756194533` (`SUCCESS`, viewable on HashScan). A separate pure-policy refusal (over `maxPerCallUSD`, never reaching the facilitator) is also recorded for the Hedera-only half of the story if the two need to be shown independently.
+4. ~~**Configure World ID**~~ **Done — and it required more than config.** The app auto-provisioned into **World ID 4.0** (RP-based protocol, not the old v2 `app_id` API this repo's code was originally written against). `server/worldid.js` was rewritten against `@worldcoin/idkit-server`; a real signed `rp_context` handshake, a version-pinned CDN-loaded `idkit-core` widget (`launch/worldid-demo.html`), and a real QR-code device scan all round-tripped successfully. This also surfaced and fixed a genuine dormant bug (env vars read at ES-module top-level, before `dotenv.config()` had run) and a test-isolation gap in `scripts/verify.mjs`. See `CHANGELOG.md` v0.22.1.
+5. **Write the submission** against what is actually true on the day — no claim that isn't an assertion in `npm run verify`, the same rule as everywhere else in this repo. The Hedera and World form fields drafted earlier in this process are now backed by real transaction/verification evidence, not just working code.
 
 ### What not to claim
 

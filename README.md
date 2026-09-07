@@ -102,7 +102,7 @@ Every simulate-mode settlement comes back **ECDSA-signed by the server** (`settl
 
 ## World ID: proof-of-personhood on approvals
 
-Human-in-the-loop approval (above) trusts that whoever clicks Approve is an actual, distinct human — a dashboard session alone can't prove that. Set `requireWorldIdForApproval: true` in `data/policy.json` and every **approval** (never a deny — a deny never authorizes spend) must carry a real, independently-verified [World ID](https://worldcoin.org/world-id) proof: `POST /api/approvals/:id/decide` with `{ decision: "approved", worldIdProof: {...} }`. Without `WORLD_APP_ID` set, it refuses honestly (`world_id_not_configured`) rather than accepting an unverified click.
+Human-in-the-loop approval (above) trusts that whoever clicks Approve is an actual, distinct human — a dashboard session alone can't prove that. Set `requireWorldIdForApproval: true` in `data/policy.json` and every **approval** (never a deny — a deny never authorizes spend) must carry a real, independently-verified [World ID](https://worldcoin.org/world-id) 4.0 proof: `POST /api/approvals/:id/decide` with `{ decision: "approved", worldIdProof: {...} }`. World ID 4.0's RP-based protocol requires a signed handshake before the client widget can even open a proof request — `GET /api/worldid/rp-context` provides it, generated server-side with `WORLD_RP_ID`/`WORLD_RP_SIGNING_KEY` via `@worldcoin/idkit-server`. Without those set, it refuses honestly (`world_id_not_configured`) rather than accepting an unverified click.
 
 ## Kill switch + runaway detection
 

@@ -20,7 +20,7 @@ import { verifyMessage } from "viem";
 import { runTool } from "./agent.js";
 import { getLedger, getBalances, appendLedgerEntry, creditSimBalance, verifyLedgerChain } from "./ledger.js";
 import { createApproval, getApproval, decideApproval, listApprovals } from "./approvals.js";
-import { worldIdConfigured, verifyWorldIdProof } from "./worldid.js";
+import { worldIdConfigured, verifyWorldIdProof, rpContextFor, WORLD_ACTION } from "./worldid.js";
 import { listDelegations, createDelegation, revokeDelegation } from "./delegations.js";
 import { listFreezes, findActiveFreeze, createFreeze, unfreeze } from "./freezes.js";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -801,6 +801,16 @@ app.get("/api/approvals/:id/decide", (req, res) => {
   const record = decideApproval(req.params.id, decision, readPolicyRequiredApprovals());
   if (!record) return res.status(409).send("not pending (already decided, or unknown id)");
   res.send(`<body style="font-family:system-ui;background:#0b0f0c;color:#eef3ed;display:grid;place-items:center;height:100vh"><div style="text-align:center"><h2>${decision === "approved" ? "✅ Approved" : "⛔ Denied"}</h2><p style="color:#93a094">${record.resource} · $${record.price} — recorded. You can close this tab.</p></div></body>`);
+});
+
+// The signed handshake IDKit needs before it will even open a proof
+// request — proves this request really came from this server (control #33's
+// World ID gate). Read-only, no side effects; safe to call from an
+// unauthenticated demo page since it reveals nothing but a short-lived nonce.
+app.get("/api/worldid/rp-context", (req, res) => {
+  const context = rpContextFor(req.query.action || WORLD_ACTION());
+  if (!context) return res.status(503).json({ error: "world_id_not_configured", reason: "WORLD_RP_ID / WORLD_RP_SIGNING_KEY not set" });
+  res.json(context);
 });
 
 app.post("/api/approvals/:id/decide", requireAuth("approver"), async (req, res) => {

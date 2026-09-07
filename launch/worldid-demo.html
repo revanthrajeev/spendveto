@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SpendVeto — World ID proof demo</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0b0f0c; color: #eef3ed; max-width: 640px; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; }
+  h1 { font-size: 1.3rem; }
+  #qr { margin: 1.5rem 0; }
+  #qr img { max-width: 260px; border-radius: 8px; background: #fff; padding: 12px; }
+  #status { color: #93a094; }
+  pre { background: #12160f; padding: 1rem; border-radius: 8px; overflow: auto; font-size: 0.82rem; white-space: pre-wrap; word-break: break-all; }
+  button { background: #46d68c; color: #06110a; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  a.link { color: #46d68c; }
+</style>
+</head>
+<body>
+<h1>SpendVeto × World ID — real proof, not a stub</h1>
+<p id="status">Requesting a signed rp_context from the local SpendVeto server…</p>
+<button id="start" style="display:none">Start verification</button>
+<div id="qr"></div>
+<p id="linkwrap" style="display:none">Or open directly on your phone: <a id="deeplink" class="link" href="#" target="_blank">open in World App</a></p>
+<pre id="result" style="display:none"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/@worldcoin/idkit-core@4.2.4/dist/idkit.global.js"></script>
+<script>
+async function main() {
+  const statusEl = document.getElementById("status");
+  const startBtn = document.getElementById("start");
+  try {
+    const rpContext = await fetch("http://localhost:8402/api/worldid/rp-context?action=spendveto-approval").then((r) => {
+      if (!r.ok) throw new Error(`server returned ${r.status} — is npm run server up in testnet mode with WORLD_RP_ID/WORLD_RP_SIGNING_KEY set?`);
+      return r.json();
+    });
+    statusEl.textContent = "rp_context received. Click Start, then scan the QR with World App.";
+    startBtn.style.display = "inline-block";
+    startBtn.onclick = () => runRequest(rpContext);
+  } catch (err) {
+    statusEl.textContent = "Error: " + err.message;
+  }
+}
+
+async function runRequest(rpContext) {
+  const statusEl = document.getElementById("status");
+  const qrEl = document.getElementById("qr");
+  const linkwrap = document.getElementById("linkwrap");
+  const deeplink = document.getElementById("deeplink");
+  const resultEl = document.getElementById("result");
+  document.getElementById("start").style.display = "none";
+  statusEl.textContent = "Checking IDKit loaded…";
+
+  try {
+    console.log("window.IDKit:", typeof window.IDKit, window.IDKit ? Object.keys(window.IDKit) : null);
+    if (!window.IDKit) throw new Error("window.IDKit is undefined — the CDN script failed to load or hasn't finished loading yet");
+    if (typeof IDKit.deviceLegacy !== "function") throw new Error(`IDKit.deviceLegacy is not a function (available: ${Object.keys(IDKit).join(", ")})`);
+
+    statusEl.textContent = "Opening a World ID 4.0 device-level proof request…";
+    const request = await IDKit.request({
+      app_id: "app_c641ef4bb7d8c77848585fe727684b80",
+      action: "spendveto-approval",
+      rp_context: rpContext,
+      allow_legacy_proofs: true,
+    }).preset(IDKit.deviceLegacy({ signal: "spendveto-demo" }));
+
+    console.log("request object:", request);
+    const qrUrl = request.connectorURI || request.qrUrl || request.uri;
+    if (qrUrl) {
+      qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}" alt="scan with World App" />`;
+      deeplink.href = qrUrl;
+      linkwrap.style.display = "block";
+    } else {
+      statusEl.textContent = "Request object has no connectorURI/qrUrl/uri field — see console for its actual shape.";
+      console.log("Full request keys:", Object.keys(request));
+      return;
+    }
+    statusEl.textContent = "Waiting for you to scan and approve in World App…";
+
+    const completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 120000 });
+    if (!completion.success) {
+      statusEl.textContent = "Verification failed: " + (completion.error || "unknown error");
+      return;
+    }
+    statusEl.textContent = "Proof received. This is the exact object to POST to /api/approvals/:id/decide as worldIdProof:";
+    resultEl.style.display = "block";
+    resultEl.textContent = JSON.stringify(completion.result, null, 2);
+    window.__spendvetoProof = completion.result;
+  } catch (err) {
+    console.error("IDKit flow error:", err);
+    statusEl.textContent = "Error: " + (err && err.message ? err.message : String(err)) + " — full details in the browser console (Cmd+Option+J).";
+  }
+}
+
+main();
+</script>
+</body>
+</html>

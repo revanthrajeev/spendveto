@@ -137,7 +137,17 @@ const alertServer = createServer((req, res) => {
 alertServer.listen(8499);
 writeFileSync(`${ROOT}data/policy.json`, JSON.stringify(LOOSE_POLICY, null, 2));
 
-const server = spawn("node", ["server/index.js"], { cwd: ROOT, env: { ...process.env, SPENDVETO_MODE: "simulate" }, stdio: ["ignore", "pipe", "pipe"] });
+// World ID credentials are explicitly blanked (not just "not passed") so the
+// "refused when unconfigured" assertion below is deterministic no matter what
+// a maintainer happens to have in their own .env.local — dotenv.config()
+// inside the spawned server skips keys already present in its env, even
+// empty ones, so a bare `delete` here would leak the parent shell's real
+// value straight through while an explicit "" does not.
+const server = spawn("node", ["server/index.js"], {
+  cwd: ROOT,
+  env: { ...process.env, SPENDVETO_MODE: "simulate", WORLD_APP_ID: "", WORLD_RP_ID: "", WORLD_RP_SIGNING_KEY: "" },
+  stdio: ["ignore", "pipe", "pipe"],
+});
 let serverOutput = "";
 server.stdout.on("data", (d) => (serverOutput += d));
 server.stderr.on("data", (d) => (serverOutput += d));
@@ -1837,9 +1847,10 @@ try {
 
   // --- World ID gate on human approvals (control #33): a policy can require
   // proof-of-personhood on every APPROVAL (never on a deny — a deny never
-  // authorizes spend). Without WORLD_APP_ID configured in this environment,
-  // the gate must refuse honestly rather than silently accepting an
-  // unverified click as "a human approved this."
+  // authorizes spend). Without WORLD_RP_ID / WORLD_RP_SIGNING_KEY configured
+  // in this environment (explicitly blanked above, regardless of what the
+  // maintainer's own .env.local has), the gate must refuse honestly rather
+  // than silently accepting an unverified click as "a human approved this."
   await fetch(`${BASE}/api/policy`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
