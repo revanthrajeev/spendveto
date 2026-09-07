@@ -782,7 +782,7 @@
     <span><b>$3–5T</b> agentic commerce by 2030 — McKinsey</span>
     <span><b>0</b> dollars move without a policy decision</span>
     <span><b>MCP</b> · governance the model can't opt out of</span>
-    <span><b>Multi-chain</b> · 14 chains governed, seven signature families · chain-scoped signatures · per-chain balances · Base Sepolia + XRPL live on-chain</span>
+    <span><b>Multi-chain</b> · 14 chains governed, seven signature families · chain-scoped signatures · per-chain balances · five testnets live on-chain</span>
   </div>
 </div>
 
@@ -1032,6 +1032,8 @@
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3l3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10z" fill="#7D00FF"/></svg><span>Stellar</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M9 6v20M23 6v20M9 14h14M9 18h14" stroke="#8259EF" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Hedera</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M6 6l20 20M26 6L6 26" stroke="#00AAE4" stroke-width="3.2" stroke-linecap="round"/></svg><span>XRPL</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#1652F0"/><path d="M10 21l6-12 6 12h-4l-2-4-2 4h-4z" fill="#fff"/></svg><span>Arc</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M8 24l5-14 3 8-3 6H8z" fill="#000"/><path d="M17 10h3l5 14h-3.5l-1-3h-4l1-3h2l-2.5-8z" fill="#000"/></svg><span>Algorand</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#0052FF"/></svg><span>Base</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3L6 17l10 6 10-6L16 3z" fill="#C0C7C2"/><path d="M16 25l-10-8 10 15 10-15-10 8z" fill="#8B948C"/></svg><span>Ethereum</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><defs><linearGradient id="solg2" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/></linearGradient></defs><path d="M6 22l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M6 14l3-3h17l-3 3H6z" fill="url(#solg2)"/><path d="M26 18l-3-3H6l3 3h17z" fill="url(#solg2)"/></svg><span>Solana</span></span>
@@ -1043,6 +1045,8 @@
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M16 3l3 10 10 3-10 3-3 10-3-10-10-3 10-3 3-10z" fill="#7D00FF"/></svg><span>Stellar</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M9 6v20M23 6v20M9 14h14M9 18h14" stroke="#8259EF" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><span>Hedera</span></span>
         <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M6 6l20 20M26 6L6 26" stroke="#00AAE4" stroke-width="3.2" stroke-linecap="round"/></svg><span>XRPL</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#1652F0"/><path d="M10 21l6-12 6 12h-4l-2-4-2 4h-4z" fill="#fff"/></svg><span>Arc</span></span>
+        <span class="logo-item"><svg viewBox="0 0 32 32"><path d="M8 24l5-14 3 8-3 6H8z" fill="#000"/><path d="M17 10h3l5 14h-3.5l-1-3h-4l1-3h2l-2.5-8z" fill="#000"/></svg><span>Algorand</span></span>
       </div>
     </div>
     <div class="chainband reveal">
@@ -1052,6 +1056,8 @@
       <span class="chain-chip live"><i>●</i> Stellar Testnet <b>LIVE</b></span>
       <span class="chain-chip live"><i>●</i> Hedera Testnet <b>LIVE</b></span>
       <span class="chain-chip">XRPL <b>READY (mainnet, opt-in)</b></span>
+      <span class="chain-chip">Arc Testnet <b>READY</b></span>
+      <span class="chain-chip">Algorand Testnet <b>READY (governed, not signable)</b></span>
       <span class="chain-chip">Base <b>READY</b></span>
       <span class="chain-chip">Ethereum <b>READY</b></span>
       <span class="chain-chip">Polygon <b>READY</b></span>
@@ -1059,7 +1065,7 @@
       <span class="chain-chip">Optimism <b>READY</b></span>
       <span class="chain-chip">Avalanche <b>READY</b></span>
     </div>
-    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live today on five testnets across six signature schemes: Base Sepolia (secp256k1), Solana devnet (ed25519), Aptos testnet (Move), Stellar testnet, and Hedera testnet (account-id addressing). <b>XRPL mainnet</b> is fully wired but <b>disabled by default</b> — real money, in RLUSD rather than USDC — an operator has to explicitly opt in to enable it, entirely at their own risk; we don't run or control anyone's deployment. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical stablecoin addresses all wired (tested against a mock facilitator advertising all fourteen). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes, at that operator's own discretion.</p>
+    <p class="reveal" style="color: var(--dim); max-width: 58ch; line-height: 1.7; font-size: 0.95rem;">The chain rides <em>inside</em> every signed authorization — a payment signed for Polygon cannot settle anywhere else — and every wallet keeps a separate balance per chain. Policies and delegated grants pin which chains an agent may settle on. On-chain settlement is live today on five testnets across five signature schemes: Base Sepolia (secp256k1), Solana devnet (ed25519), Aptos testnet (Move), Stellar testnet, and Hedera testnet (account-id addressing). <b>XRPL mainnet</b> is fully wired but <b>disabled by default</b> — real money, in RLUSD rather than USDC — an operator has to explicitly opt in to enable it, entirely at their own risk; we don't run or control anyone's deployment. <b>Arc testnet</b> is registry-wired (Circle's native-USDC L1) and settlement-ready, awaiting a facilitator that names it. <b>Algorand testnet</b> is governed here — policy, allowlists, per-chain balances all apply — but not signable, since no client signature package for it is published yet; the registry says so per chain. The remaining EVM chains are <em>settlement-ready</em>: the gate asks its configured facilitator what it can settle at boot and brings every supported chain live automatically — multi-chain 402s, per-chain scheme registration, canonical stablecoin addresses all wired (tested against a mock facilitator advertising all fourteen). Pointing at a CDP facilitator with an API key and a funded wallet flips its EVM mainnets on with zero code changes, at that operator's own discretion.</p>
   </div>
 </section>
 
