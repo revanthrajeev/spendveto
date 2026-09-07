@@ -18,7 +18,7 @@ export const CHAINS = [
   // and a funded wallet exists. No code changes required; simulate mode
   // settles every one of these locally today.
   { id: "base", caip2: "eip155:8453", name: "Base", chainIdHex: "0x2105", status: "ready", usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", rpc: "https://mainnet.base.org", note: "mainnet settlement — facilitator key + funded wallet flips it live" },
-  { id: "ethereum", caip2: "eip155:1", name: "Ethereum", chainIdHex: "0x1", status: "ready", usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", rpc: "https://eth.llamarpc.com", note: "" },
+  { id: "ethereum", caip2: "eip155:1", name: "Ethereum", chainIdHex: "0x1", status: "ready", usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", rpc: "https://ethereum-rpc.publicnode.com", note: "" },
   { id: "polygon", caip2: "eip155:137", name: "Polygon", chainIdHex: "0x89", status: "ready", usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", rpc: "https://polygon-rpc.com", note: "" },
   { id: "arbitrum", caip2: "eip155:42161", name: "Arbitrum", chainIdHex: "0xa4b1", status: "ready", usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", rpc: "https://arb1.arbitrum.io/rpc", note: "" },
   { id: "optimism", caip2: "eip155:10", name: "Optimism", chainIdHex: "0xa", status: "ready", usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", rpc: "https://mainnet.optimism.io", note: "" },

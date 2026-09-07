@@ -1743,6 +1743,50 @@ try {
   const peRes2 = await fetch(`${BASE}/api/agent/vendor-tool`, { headers: { "X-SIM-PAYMENT": `${payeePayer.address}:${peChallenge2.nonce}:${peSig2}` } });
   check("once the payee is on the allowlist, the same payment settles", peRes2.ok, `status=${peRes2.status}`);
 
+  // --- ENS names in the payee allowlist (client/ens.js) ---
+  // An allowlist a human can audit at a glance ("vitalik.eth") rather than
+  // compare hex strings against ("0xd8dA..."). The network boundary is
+  // swapped for a deterministic fake (see client/ens.js's own comment on
+  // why) so this stays as hermetic as every other assertion here — the
+  // resolution, caching, and fail-closed logic under test is all real.
+  const { __setEnsResolverForTesting } = await import("../client/ens.js");
+  const ensGoodName = "spendveto-verify-good.eth";
+  const ensBadName = "spendveto-verify-unregistered.eth";
+  const ensResolvedAddress = privateKeyToAccount(generatePrivateKey()).address;
+  let ensResolveCalls = 0;
+  __setEnsResolverForTesting(async (name) => {
+    ensResolveCalls++;
+    if (name === ensGoodName.toLowerCase()) return ensResolvedAddress;
+    return null; // unregistered, or any other name this fake doesn't know
+  });
+
+  writeFileSync(`${ROOT}data/policy.json`, JSON.stringify({ ...LOOSE_POLICY, allowedPayees: [ensGoodName] }, null, 2));
+  const ensPayer = privateKeyToAccount(generatePrivateKey());
+  const ensVerdictGood = await checkPolicy(ensPayer.address, 0.01, "review", "base-sepolia", null, ensResolvedAddress);
+  const ensVerdictWrong = await checkPolicy(ensPayer.address, 0.01, "review", "base-sepolia", null, privateKeyToAccount(generatePrivateKey()).address);
+  check(
+    "a .eth name in the payee allowlist resolves and gates spend exactly like a raw address",
+    ensVerdictGood.allowed === true && ensVerdictWrong.allowed === false && ensVerdictWrong.code === "payee_not_allowed",
+    `resolved-payee=${ensVerdictGood.allowed} other-payee=${ensVerdictWrong.allowed}/${ensVerdictWrong.code}`
+  );
+
+  const callsBeforeCacheCheck = ensResolveCalls;
+  await checkPolicy(ensPayer.address, 0.01, "review", "base-sepolia", null, ensResolvedAddress);
+  check(
+    "a resolved .eth name is cached — checkPolicy runs on every call, so an uncached RPC round trip on this hot path is not acceptable",
+    ensResolveCalls === callsBeforeCacheCheck,
+    `resolver invoked ${ensResolveCalls - callsBeforeCacheCheck} more time(s) on a cache hit`
+  );
+
+  writeFileSync(`${ROOT}data/policy.json`, JSON.stringify({ ...LOOSE_POLICY, allowedPayees: [ensBadName] }, null, 2));
+  const ensVerdictUnresolvable = await checkPolicy(ensPayer.address, 0.01, "review", "base-sepolia", null, privateKeyToAccount(generatePrivateKey()).address);
+  check(
+    "a .eth name that fails to resolve is dropped from the allowlist, not treated as a wildcard match",
+    ensVerdictUnresolvable.allowed === false && ensVerdictUnresolvable.code === "payee_not_allowed",
+    `${ensVerdictUnresolvable.allowed} ${ensVerdictUnresolvable.code}`
+  );
+  writeFileSync(`${ROOT}data/policy.json`, JSON.stringify(LOOSE_POLICY, null, 2));
+
   // Delegated payee scope: a grant may pin which recipients a sub-agent pays,
   // and it cascades like tool/chain scope. A child scoped to goodVendor is
   // blocked when it reaches for the tool that pays badVendor.

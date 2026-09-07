@@ -2,6 +2,13 @@
 
 Every feature listed here is exercised by the end-to-end suite (`npm run verify`) — the suite grew from 33 assertions at the first public cut to **114** at v0.7.0. If a claim isn't an assertion, it doesn't ship.
 
+## 0.23.0 — 2026-09-08
+
+- **ENS names in payee allowlists** (`client/ens.js`) — `allowedPayees` (global policy and per-delegation payee scope) now accepts `.eth` names alongside raw addresses, resolved against real Ethereum mainnet before the payee comparison in `checkPolicy` runs. The point: an allowlist a human can actually audit at a glance is `vitalik.eth`, not `0xd8dA6BF2...`. Resolutions cache (10 min on success, 1 min on failure — a name added moments after registration shouldn't sit "unresolvable" for the full 10) so the hot path (`checkPolicy` runs on every single governed call) never pays an RPC round trip on a cache hit. A name that fails to resolve is **dropped** from the effective allowlist, never treated as a wildcard — same fail-closed posture as everything else in this codebase.
+- Fixed a real, unrelated bug found while wiring this up: the registry's `ethereum` chain RPC (`eth.llamarpc.com`) was returning `525 SSL handshake failed`. Swapped for `ethereum-rpc.publicnode.com`.
+- Test design note: every other assertion in `npm run verify` is local and hermetic — even the x402 facilitator is a mock HTTP server, never a live third party — so a clean clone's result never depends on outside infrastructure staying up. A live Ethereum mainnet RPC call in the automated suite would have been the first exception, and a real one (rate limits, an RPC outage failing an assertion this repo did nothing to deserve). So `client/ens.js` exposes `__setEnsResolverForTesting` — production code never calls it, only `scripts/verify.mjs` does — swapping the network boundary for a deterministic fake while exercising the real resolution/caching/fail-closed logic around it.
+- Verify: 298 (+3; 301 with `../prediction-copilot` alongside).
+
 ## 0.22.2 — 2026-09-08
 
 - **Added `GET /openapi.json`** (`server/openapi.js`): a standard OpenAPI 3.0 document of the x402-priced catalog, generated from the same tool list (`allTools()` — the static `TOOLS` array plus anything registered dynamically via `POST /api/catalog/tools`) that `server/discovery.js`'s Bazaar-shaped resource list reads from. Two schemas, one source of truth, so they can't independently drift from what a call actually costs or where it lives.

@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { PORT } from "../shared-config.js";
+import { resolvePayeeList } from "./ens.js";
 
 const POLICY_PATH = fileURLToPath(new URL("../data/policy.json", import.meta.url));
 
@@ -88,7 +89,12 @@ export async function checkPolicy(address, proposedPriceUSD, toolId, chain, cate
   // first-party catalog tools with no payTo are governed by tool scope instead.
   const normPayee = payee ? String(payee).toLowerCase() : null;
   if (normPayee && Array.isArray(policy.allowedPayees) && policy.allowedPayees.length > 0) {
-    const allowed = policy.allowedPayees.map((p) => String(p).toLowerCase());
+    // Entries may be raw addresses or .eth names — an allowlist a human can
+    // actually audit ("vitalik.eth", not "0xd8dA..."). resolvePayeeList
+    // expands names to addresses (cached; see client/ens.js) and drops any
+    // that fail to resolve, so an unresolvable name can never accidentally
+    // match everything.
+    const allowed = await resolvePayeeList(policy.allowedPayees);
     if (!allowed.includes(normPayee)) {
       return deny("payee_not_allowed", `payee ${payee} is not in this policy's allowed payees`,
         "do not retry against this address; a human must add it to allowedPayees after verifying the recipient", { policy });
@@ -222,7 +228,8 @@ export async function checkPolicy(address, proposedPriceUSD, toolId, chain, cate
     // Payee scope: a grant may pin WHICH recipients the child may pay ("this
     // sub-agent only pays these vendors"), and every ancestor's payee scope
     // binds the whole subtree — the delegated form of the payee allowlist.
-    if (normPayee && hopGrant.allowedPayees && !hopGrant.allowedPayees.map((p) => String(p).toLowerCase()).includes(normPayee)) {
+    // Same .eth resolution as the global allowlist above (client/ens.js).
+    if (normPayee && hopGrant.allowedPayees && !(await resolvePayeeList(hopGrant.allowedPayees)).includes(normPayee)) {
       const level = depth === 0 ? "this wallet's delegated payee scope" : `the payee scope granted to ancestor "${who}"`;
       return deny("payee_scope", `payee ${payee} is outside ${level} (allowed: ${hopGrant.allowedPayees.join(", ")})`,
         "pay an allowed recipient, or ask the grantor to add this address to the payee scope", { policy, delegation });
