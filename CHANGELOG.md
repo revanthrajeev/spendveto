@@ -2,6 +2,13 @@
 
 Every feature listed here is exercised by the end-to-end suite (`npm run verify`) — the suite grew from 33 assertions at the first public cut to **114** at v0.7.0. If a claim isn't an assertion, it doesn't ship.
 
+## 0.22.2 — 2026-09-08
+
+- **Added `GET /openapi.json`** (`server/openapi.js`): a standard OpenAPI 3.0 document of the x402-priced catalog, generated from the same tool list (`allTools()` — the static `TOOLS` array plus anything registered dynamically via `POST /api/catalog/tools`) that `server/discovery.js`'s Bazaar-shaped resource list reads from. Two schemas, one source of truth, so they can't independently drift from what a call actually costs or where it lives.
+- **Fixed a real `req.protocol` bug**: without `app.set("trust proxy", true)`, Express reports `http` even when the actual client connection was `https` — behind any reverse proxy (a CDN, a load balancer, a tunnel), every self-referential URL this server generates (the Bazaar resource list, the new OpenAPI document) would advertise a scheme a real client might not be able to reach. Set globally, not just for the new endpoint.
+- Context: built while attempting to register a Bazantic gateway for ETHOnline 2026 (their platform wants an OpenAPI spec + a publicly-reachable endpoint). Registration itself hit a wall unrelated to this repo — `@bazantic/cli`'s login flow fails on their side, reproduced across multiple fresh sessions and an incognito window — so that integration was dropped, but the OpenAPI endpoint and the proxy fix are correct and useful independent of it.
+- Verify: 292 (+1; 295 with `../prediction-copilot` alongside).
+
 ## 0.22.1 — 2026-09-08
 
 - **Migrated World ID gating to World ID 4.0.** The old integration called the retired v2 `app_id`-keyed Verify API; World's Developer Portal has moved to an RP-based v4 protocol (`/api/v4/verify/:rpId`) that requires the backend to hand the client widget a signed `rp_context` (nonce + timestamps + signature) before it will even open a proof request — proving the request came from this server, not something impersonating it. `server/worldid.js` rewritten against `@worldcoin/idkit-server`'s `signRequest()`; new `GET /api/worldid/rp-context` endpoint for the widget to call.

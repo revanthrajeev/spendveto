@@ -1368,6 +1368,18 @@ try {
   check("every published listing is flagged as sitting behind the gate, so a buyer knows the price is a floor", bazaar.resources.every((r) => r.metadata?.["x-spendveto"]?.governed === true), `${bazaar.resources.length} listings`);
   check("a Bazaar type filter SpendVeto can't serve returns nothing rather than mislabeling HTTP tools", (await fetch(`${BASE}/api/discovery/resources?type=mcp`).then((r) => r.json())).resources.length === 0);
 
+  // OpenAPI is a second, standard shape for the same catalog — for platforms
+  // that register a gateway from an OpenAPI document rather than a
+  // Bazaar-shaped resource list. Generated from the same TOOLS array as the
+  // Bazaar listing above, so the two can't independently drift from what a
+  // call actually costs or where it actually lives.
+  const openapi = await fetch(`${BASE}/openapi.json`).then((r) => r.json());
+  check(
+    "the catalog also publishes as a standard OpenAPI document, generated from the same TOOLS array as the Bazaar listing",
+    openapi.openapi === "3.0.3" && Object.keys(openapi.paths).length === bazaar.resources.length && openapi.paths["/api/agent/review"]?.get?.operationId === "review",
+    `${Object.keys(openapi.paths).length} paths vs ${bazaar.resources.length} Bazaar resources`
+  );
+
   // The consume side: an agent that can discover any payable endpoint at runtime
   // must not be handed ones it could never be allowed to pay for.
   // Priced relative to whatever policy is live at this point in the run — earlier

@@ -8,7 +8,7 @@
 
 ## The honest position
 
-SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fourteen chains across seven signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 291 end-to-end assertions from a clean clone.
+SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fourteen chains across seven signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 292 end-to-end assertions from a clean clone.
 
 What that means for a hackathon: the strongest tracks are the ones asking for *governed agent payments on a specific chain*, and the weakest are the ones asking for a new app in a domain this repo has no business claiming.
 
@@ -24,7 +24,8 @@ What that means for a hackathon: the strongest tracks are the ones asking for *g
 | **Chainlink — Chainlink-Powered Upgrade** | $500 | Weak-medium | Everything here is denominated in USD against stablecoins, so a price feed has a real job only where a non-USD asset enters | Don't force it. A feed used to convert a chain's native token for gas accounting would be honest; a feed bolted on to claim the track would not |
 | **The Graph — AI Tooling Continuity** | $5,000 | Weak | The ledger is local JSON by design (self-hosted, your infra, your region) | A subgraph over on-chain settlements would be real, but only once mainnet settlement exists — indexing five testnets proves nothing |
 | **Privy — Best B2B Financial Product** | $2,500 | Weak | Spend controls for business wallets is the product | It would mean adopting Privy's wallet infrastructure, which cuts against the self-hosted, no-custody position. Wrong trade for a $2,500 track |
-| **Bazantic / 1inch / Uniswap** | — | Not a fit | — | These are DeFi-position and API-gateway tracks. Nothing here belongs in them |
+| **Bazantic** | $3,000 | Attempted, dropped | `server/discovery.js` already publishes the catalog in x402 Bazaar's schema — Bazantic's own requirement is "register a gateway + write a Recipe," which is closer to packaging than new work | Registration itself is blocked: `@bazantic/cli`'s `baz login` device-code flow fails on their platform's side ("Something went wrong signing you in") — reproduced across a fresh code, a fresh session, and an incognito window, so this isn't local browser interference. Dropped rather than risk the submission on a third-party outage this close to the deadline. The reusable byproduct — `GET /openapi.json`, generating a standard OpenAPI document from the live catalog — shipped anyway since it's correct independent of Bazantic |
+| **1inch / Uniswap** | — | Not a fit | — | These are DeFi-position and API-gateway tracks. Nothing here belongs in them |
 
 ## Recommended submission
 

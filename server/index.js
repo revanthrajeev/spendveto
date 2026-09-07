@@ -38,6 +38,7 @@ import { normalizeReceipt } from "./receipts.js";
 import { checkCartAgainstIntent, reconcileHumanNotPresent } from "./ap2.js";
 import { toBazaarResources, governCatalog } from "./discovery.js";
 import { checkSessionAgainstToken } from "./acp.js";
+import { catalogOpenApiSpec } from "./openapi.js";
 import { authorize as uptoAuthorize, settleAuthorization, voidAuthorization, getAuthorizations, openHoldUSD, uptoSummary } from "./upto.js";
 import { bindAuthorization, verifyBinding, getBinding, requestDigest } from "./integrity.js";
 import { buildEvidencePack, checkEvidencePack } from "./disputes.js";
@@ -46,6 +47,13 @@ import { decisionSpans, toOtlpPayload, exportSpans } from "./otel.js";
 dotenv.config({ path: fileURLToPath(new URL("../.env.local", import.meta.url)), quiet: true });
 
 const app = express();
+// Behind any reverse proxy (a tunnel for testing, a real deploy behind a CDN
+// or load balancer) the socket Express sees is plain HTTP even when the
+// actual client connection was HTTPS — without this, req.protocol always
+// reports "http", which leaks into every self-referential URL this server
+// generates (discovery.js's Bazaar resource list, openapi.js's servers[].url)
+// and would advertise a scheme a real client can't necessarily reach.
+app.set("trust proxy", true);
 app.use(express.json());
 // Local-tool CORS: lets the marketing site (:8403) show live governance stats.
 app.use((req, res, next) => {
@@ -496,6 +504,15 @@ app.post("/api/ap2/mandate-chain", async (req, res) => {
 
 // Bazaar (x402 v2 discovery), publish side: SpendVeto's governed catalog in the
 // schema a Bazaar-aware buyer already speaks.
+// OpenAPI description of the catalog above — a standard machine-readable
+// shape for platforms (Bazantic's gateway registration, API directories,
+// codegen tools) that expect OpenAPI rather than the Bazaar-shaped resource
+// list discovery.js publishes. Generated from the same TOOLS array, so it
+// can't drift from what a call actually costs or where it actually lives.
+app.get("/openapi.json", (req, res) => {
+  res.json(catalogOpenApiSpec({ baseUrl: `${req.protocol}://${req.get("host")}`, tools: allTools() }));
+});
+
 app.get("/api/discovery/resources", (req, res) => {
   const type = req.query.type;
   if (type && type !== "http") return res.json({ resources: [] });
