@@ -97,6 +97,7 @@ export const FALLBACK_CHAINS = [
   { id: "stellar-testnet", name: "Stellar Testnet", status: "live" },
   { id: "hedera-testnet", name: "Hedera Testnet", status: "live" },
   { id: "algorand-testnet", name: "Algorand Testnet", status: "ready" },
+  { id: "cardano-preprod", name: "Cardano Preprod", status: "ready" },
   // "ready", matching the registry: XRPL settlement is real mainnet and is
   // disabled unless an operator explicitly opts in (see shared-config.js).
   { id: "xrpl", name: "XRPL", status: "ready" },

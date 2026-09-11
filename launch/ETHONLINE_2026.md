@@ -8,7 +8,7 @@
 
 ## The honest position
 
-SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fourteen chains across seven signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 298 end-to-end assertions from a clean clone.
+SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fifteen chains across eight signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 299 end-to-end assertions from a clean clone.
 
 What that means for a hackathon: the strongest tracks are the ones asking for *governed agent payments on a specific chain*, and the weakest are the ones asking for a new app in a domain this repo has no business claiming.
 
@@ -43,7 +43,7 @@ The Hedera track asks for exactly the thing this repo does and most projects can
 
 ### What not to claim
 
-- Not "live on 14 chains" — five settle live by default. The other nine are registry-wired, and `/api/chains` says so per chain.
+- Not "live on 15 chains" — five settle live by default. The other ten are registry-wired, and `/api/chains` says so per chain.
 - Not "Arc integration live" — Arc is governed and settlement-ready, not settling.
 - Not "Algorand support" in any sense that implies signing. The facilitator settles Algorand; this instance cannot, because no client scheme package is published, and the registry note says exactly that.
 - Not "audited" or "production-ready". No external security audit, no SOC 2, no paying customers. That's in `CONTROLS.md` and it stays there.

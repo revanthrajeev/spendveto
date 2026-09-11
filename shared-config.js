@@ -57,6 +57,20 @@ export const CHAINS = [
   // USDC on Algorand is an ASA, addressed by integer asset id, not a contract.
   { id: "algorand-testnet", caip2: "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe", name: "Algorand Testnet", family: "algorand", status: "ready", usdc: "10458941", rpc: "https://testnet-api.algonode.cloud", note: "the public facilitator settles this network and sponsors the fee, but no @x402/algorand client scheme package is published yet — governed here, not signable here" },
   { id: "xrpl", caip2: "xrpl:1", name: "XRPL", family: "xrpl", status: "ready", usdc: "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De", stablecoin: "RLUSD", rpc: "https://s1.ripple.com:51234", note: "x402 v2 wiring is real, but mainnet settlement is DISABLED by default — simulate mode (the default) never touches it, and testnet mode requires an operator to explicitly set SERVER_PAYOUT_ADDRESS_XRPL to enable it. This is real mainnet, real money, RLUSD not USDC (XRPL has no canonical USDC deployment) — an operator who enables it does so entirely at their own risk; we do not run, control, or monitor anyone's deployment" },
+  // Cardano is the newest network the x402 spec itself added — merged into
+  // the x402 Foundation's TypeScript packages 2026-09-09, checked directly
+  // against their repo. Registered honestly, one step earlier than Algorand:
+  // Algorand at least has a facilitator that settles it; as of this registry
+  // entry neither the public facilitator's /supported nor npm carries
+  // anything for Cardano (no published @x402/cardano package). So this
+  // instance can govern a Cardano payment — chain allowlists, delegated
+  // scope, per-chain ledger — and cannot sign or settle one anywhere yet.
+  // "cardano:preprod" is the spec's own network id, not a registered CAIP-2
+  // namespace (the spec says so itself); stablecoin is USDM, a native
+  // Cardano token identified as policyId.assetNameHex, not a contract
+  // address — Cardano has no canonical USDC deployment, the same shape as
+  // XRPL/RLUSD above.
+  { id: "cardano-preprod", caip2: "cardano:preprod", name: "Cardano Preprod", family: "cardano", status: "ready", usdc: "e675b46e4d2242c991a8932a99db3044e80515ae14b4c4ccf6b3f4c9.0014df10745553444d", stablecoin: "USDM", rpc: "https://preprod.koios.rest/api/v1", note: "x402 added Cardano support 2026-09-09, but no @x402/cardano client scheme package is published on npm yet, and the public facilitator doesn't list a cardano network either — governed here, not signable or settleable here" },
 ];
 
 export const DEFAULT_CHAIN = "base-sepolia";

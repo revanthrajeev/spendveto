@@ -638,16 +638,16 @@ try {
   // --- Chains + waitlist: the hosted-platform funnel ---
   const { chains } = await fetch(`${BASE}/api/chains`).then((r) => r.json());
   check(
-    "chain registry lists 14 chains across seven signature families, Base Sepolia live",
-    chains.length === 14 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
+    "chain registry lists 15 chains across eight signature families, Base Sepolia live",
+    chains.length === 15 && chains.find((c) => c.id === "base-sepolia")?.status === "live",
     chains.map((c) => c.id).join(", ")
   );
   check(
     "every chain carries its CAIP-2 id for the x402 v2 stack, across every registered signature family",
-    chains.every((c) => /^(eip155:\d+|solana:|aptos:|stellar:|hedera:|algorand:|xrpl:)/.test(c.caip2 || "")) &&
+    chains.every((c) => /^(eip155:\d+|solana:|aptos:|stellar:|hedera:|algorand:|xrpl:|cardano:)/.test(c.caip2 || "")) &&
       chains.find((c) => c.id === "base-sepolia")?.caip2 === "eip155:84532" &&
       chains.find((c) => c.id === "solana-devnet")?.family === "svm" &&
-      new Set(chains.map((c) => c.family || "evm")).size === 7,
+      new Set(chains.map((c) => c.family || "evm")).size === 8,
     chains.map((c) => c.caip2).join(" ")
   );
   const usdcShapeByFamily = {
@@ -660,6 +660,9 @@ try {
     // contract address, the same way Hedera addresses by account id.
     algorand: /^\d+$/,
     xrpl: /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/,
+    // Cardano's USDM unit is policyId.assetNameHex (28-byte policy id, variable
+    // asset-name hex) — not a contract address either.
+    cardano: /^[0-9a-f]{56}\.[0-9a-f]+$/i,
   };
   check(
     "every registered chain carries its canonical stablecoin address (shaped per its signature family) and an RPC",
@@ -705,6 +708,17 @@ try {
     algo?.family === "algorand" && algo?.status === "ready" && /no @x402\/algorand client scheme package/.test(algo?.note || "") &&
       registryChains.filter((c) => c.family === "algorand").length === 1,
     `${algo?.caip2} settlement=${algo?.settlement}`
+  );
+  // Same honesty rule, one step earlier: Cardano isn't even in the public
+  // facilitator's /supported yet, on top of having no published npm package —
+  // added here the same week the x402 spec itself added Cardano (2026-09-09).
+  const cardano = chains.find((c) => c.id === "cardano-preprod");
+  check(
+    "Cardano is declared as governed-but-not-settleable — neither the facilitator nor npm has anything for it yet",
+    cardano?.family === "cardano" && cardano?.status === "ready" && cardano?.stablecoin === "USDM" &&
+      /no @x402\/cardano client scheme package/.test(cardano?.note || "") &&
+      registryChains.filter((c) => c.family === "cardano").length === 1,
+    `${cardano?.caip2} settlement=${cardano?.settlement}`
   );
 
   const wlPost = await fetch(`${BASE}/api/waitlist`, {
@@ -2227,8 +2241,8 @@ try {
   // settle and brings every matching registry chain live: per-chain scheme
   // registration and one accepts entry per chain in every 402. The chain set
   // is the facilitator's truth, not config bravado — proven both ways with a
-  // mock facilitator: advertising all seven registry chains brings all seven
-  // live; advertising one brings exactly one.
+  // mock facilitator: advertising every registry chain brings every signable
+  // one live; advertising one brings exactly one.
   const { CHAINS: REG_CHAINS } = await import("../shared-config.js");
   let mockSupportedCaip2 = REG_CHAINS.map((c) => c.caip2);
   mockFacil = createServer((req, res) => {
@@ -2280,10 +2294,10 @@ try {
   testnetProc = await bootTestnet();
   const tnChains = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "testnet gate brings live every registry chain the facilitator settles AND this instance can sign — 13 of 14, with Algorand deliberately left out",
+    "testnet gate brings live every registry chain the facilitator settles AND this instance can sign — 13 of 15, with Algorand and Cardano deliberately left out",
     tnChains.mode === "testnet" && tnChains.liveSettlementChains?.length === 13 &&
-      tnChains.chains.filter((c) => c.id !== "algorand-testnet").every((c) => c.settlement === "live") &&
-      !tnChains.liveSettlementChains.includes("algorand-testnet"),
+      tnChains.chains.filter((c) => c.id !== "algorand-testnet" && c.id !== "cardano-preprod").every((c) => c.settlement === "live") &&
+      !tnChains.liveSettlementChains.includes("algorand-testnet") && !tnChains.liveSettlementChains.includes("cardano-preprod"),
     `live=${tnChains.liveSettlementChains?.join(",")}`
   );
   const tn402 = await fetch("http://localhost:8401/api/agent/translate");
@@ -2291,22 +2305,22 @@ try {
   const decoded402 = tn402Text.includes("eip155") ? tn402Text : Buffer.from(tn402.headers.get("PAYMENT-REQUIRED") || "", "base64").toString("utf8") + " " + tn402Text;
   const advertised = REG_CHAINS.filter((c) => decoded402.includes(c.caip2)).map((c) => c.id);
   check(
-    "a real x402 v2 402 advertises one payment option per live chain — thirteen CAIP-2 networks in one challenge, and never the chain it cannot sign",
-    tn402.status === 402 && advertised.length === 13 && !advertised.includes("algorand-testnet"),
+    "a real x402 v2 402 advertises one payment option per live chain — thirteen CAIP-2 networks in one challenge, and never a chain it cannot sign",
+    tn402.status === 402 && advertised.length === 13 && !advertised.includes("algorand-testnet") && !advertised.includes("cardano-preprod"),
     `status=${tn402.status} advertised=${advertised.join(",")}`
   );
   testnetProc.proc.kill();
   await sleep(300);
 
   // Adaptive the other way: the facilitator now claims only base-sepolia, so
-  // only base-sepolia may go live — the other thirteen report settlement-ready.
+  // only base-sepolia may go live — the other fourteen report settlement-ready.
   mockSupportedCaip2 = [REG_CHAINS.find((c) => c.id === "base-sepolia").caip2];
   testnetProc = await bootTestnet();
   const tnChains2 = await fetch("http://localhost:8401/api/chains").then((r) => r.json());
   check(
-    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + thirteen settlement-ready",
+    "the live set is the facilitator's truth: a facilitator supporting one chain yields exactly one live + fourteen settlement-ready",
     tnChains2.liveSettlementChains?.length === 1 && tnChains2.liveSettlementChains[0] === "base-sepolia" &&
-      tnChains2.chains.filter((c) => c.settlement === "ready").length === 13,
+      tnChains2.chains.filter((c) => c.settlement === "ready").length === 14,
     `live=${tnChains2.liveSettlementChains?.join(",")} ready=${tnChains2.chains.filter((c) => c.settlement === "ready").length}`
   );
   testnetProc.proc.kill();

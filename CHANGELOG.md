@@ -2,6 +2,12 @@
 
 Every feature listed here is exercised by the end-to-end suite (`npm run verify`) — the suite grew from 33 assertions at the first public cut to **114** at v0.7.0. If a claim isn't an assertion, it doesn't ship.
 
+## 0.23.1 — 2026-09-11
+
+- **Cardano** (`cardano:preprod`) — registered the same day the x402 Foundation's own spec merged Cardano support (2026-09-09, checked directly against `x402-foundation/x402`), and registered **one step more honestly than Algorand**: Algorand at least has a facilitator that settles it — as of this entry, neither the public facilitator's `/supported` nor npm carries anything for Cardano at all (no published `@x402/cardano` package). So this instance can govern a Cardano payment — chain allowlists, delegated chain scope, per-chain ledger — and cannot sign *or settle* one anywhere yet. `schemeFor` throws for it rather than falling through to the EVM scheme, same defense as Algorand. Stablecoin is USDM (a native Cardano token, `policyId.assetNameHex`), not USDC — Cardano has no canonical USDC deployment, the same shape as XRPL/RLUSD.
+- Registry now 15 chains across eight signature families.
+- Verify: 299 (+1; 302 with `../prediction-copilot` alongside).
+
 ## 0.23.0 — 2026-09-08
 
 - **ENS names in payee allowlists** (`client/ens.js`) — `allowedPayees` (global policy and per-delegation payee scope) now accepts `.eth` names alongside raw addresses, resolved against real Ethereum mainnet before the payee comparison in `checkPolicy` runs. The point: an allowlist a human can actually audit at a glance is `vitalik.eth`, not `0xd8dA6BF2...`. Resolutions cache (10 min on success, 1 min on failure — a name added moments after registration shouldn't sit "unresolvable" for the full 10) so the hot path (`checkPolicy` runs on every single governed call) never pays an RPC round trip on a cache hit. A name that fails to resolve is **dropped** from the effective allowlist, never treated as a wildcard — same fail-closed posture as everything else in this codebase.

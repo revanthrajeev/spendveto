@@ -4,7 +4,7 @@
 
 [**Live site + playground**](https://spendveto.com) · [**Docs**](https://spendveto.com/docs.html) · Apache-2.0 · x402 + MCP native
 
-**Every claim in this README is executed before it ships.** `npm run verify` runs **298 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
+**Every claim in this README is executed before it ships.** `npm run verify` runs **299 end-to-end assertions** from a clean clone — real secp256k1 keypairs, real ECDSA verification, a real MCP stdio JSON-RPC session, and a synthetic runaway agent frozen mid-burst. If a claim isn't a test, it doesn't ship; features that can't work locally yet are declared slots that refuse honestly, never stubs that pretend.
 
 What *isn't* true yet is stated just as plainly: no external security audit, no customers. Settlement is testnet and simulate only, by default, for every chain. XRPL mainnet settlement (real money, RLUSD) is fully wired but **disabled unless an operator explicitly opts in** — that's their decision and their risk; we don't run, monitor, or control anyone's deployment. Funding positioning and market numbers live in [`PITCH.md`](./PITCH.md).
 
@@ -32,9 +32,9 @@ npm run call -- summarize      # $0.02 — above the approval line: go approve/d
 npm run call -- translate      # $0.005
 ```
 
-`npm run verify` runs the whole thing headlessly — **298 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
+`npm run verify` runs the whole thing headlessly — **299 end-to-end assertions**: catalog, forged-signature rejection, hard policy blocks, all three approval outcomes (approved / denied / timed-out-fails-closed), delegation caps including the n-level cascade, tool + chain scoping, multichain settlement (chain-scoped signatures, per-chain balances, chain allowlists), runaway-burst auto-freeze, the manual kill switch, signed-receipt verification, CSV export, per-tool/per-wallet/per-chain analytics, webhook alerts actually arriving at a live receiver, structured self-correcting denials, side-effect-free dry runs, TTL grant expiry, one-click approval links, the stats endpoint, AP2 mandate-chain drift detection, human-not-present authority, governed Bazaar discovery, ACP shared-payment-token scope, request-integrity binding (including a payload swapped after authorization), signed dispute evidence packs and their tamper detection, OpenTelemetry span export under an inbound traceparent, and a real MCP stdio JSON-RPC round trip.
 
-> **On the number:** a fresh clone runs **298** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 298 anyone can reproduce.
+> **On the number:** a fresh clone runs **299** assertions. Three more exercise a real cross-project integration against [Basis](https://github.com/revanthrajeev/basis) and run only when `../prediction-copilot` is checked out beside this repo — the suite prints `(skipped: cross-project Basis integration test …)` when it isn't. Every published number is the 299 anyone can reproduce.
 
 **Marketing site**: `npm run site` serves the deploy-ready landing page (Three.js hero, animated product walkthrough) at http://localhost:8403 — `site/` is fully static and self-contained, drop it on Vercel/Netlify as-is. Includes an **interactive playground** (`site/playground.html`) that runs the real policy-decision logic client-side — set a budget, fire agent spend, watch it pass/pause/block — and a **use-cases** page grounded in real 2026 agent-spend scenarios.
 
@@ -255,7 +255,7 @@ curl -sX POST localhost:8402/api/upto/settle -H 'Content-Type: application/json'
 
 ## Multi-chain: chain-aware governance, not a logo strip
 
-Fourteen chains are registered in `shared-config.js` across seven signature families (each with its canonical stablecoin address and an RPC), surfaced at `/api/chains`. The chain is a **governed dimension of every payment**, end to end:
+Fifteen chains are registered in `shared-config.js` across eight signature families (each with its canonical stablecoin address and an RPC), surfaced at `/api/chains`. The chain is a **governed dimension of every payment**, end to end:
 
 - **Chain-scoped signatures** — the chain rides inside the signed payment message, so an authorization created for Polygon can never settle against another chain's balance (tested: a polygon-signed authorization is rejected on arbitrum).
 - **Per-chain balances** — every `(wallet, chain)` pair has its own simulated USDC balance; paying on Polygon debits Polygon only.
@@ -300,7 +300,7 @@ Nothing is faked to look real — simulate mode verifies genuine signatures and 
 ## Files
 
 ```
-shared-config.js         tool catalog (id/path/price), 14-chain registry across seven signature families (USDC/RLUSD contracts, RPCs), mode, port
+shared-config.js         tool catalog (id/path/price), 15-chain registry across eight signature families (USDC/RLUSD/USDM contracts, RPCs), mode, port
 server/
   index.js                Express app: catalog, ledger, stats, analytics, CSV export, policy, approvals, delegations, freezes APIs
   simulate.js              per-tool 402 gate factory: real signature verify, replay protection, freeze refusal, signed receipts
@@ -336,7 +336,7 @@ scripts/
   gen-wallets.mjs           one-time testnet wallet generation
   policy.mjs                list/apply policy packs
   site.mjs                  serves the marketing site on :8403
-  verify.mjs                298 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
+  verify.mjs                299 end-to-end assertions incl. MCP stdio round trip + multichain + auto-freeze
 data/
   policy.json               editable spend rules incl. anomaly burst threshold + alertWebhookUrl
   policy-packs/             importable governance presets (cautious/standard/production)

@@ -125,14 +125,17 @@ if (MODE === "testnet") {
         return new ExactHederaScheme();
       case "xrpl":
         return new ExactXrplScheme();
-      // A registered family with no published client scheme package (algorand
-      // today) must never fall through to the EVM scheme: signing an Algorand
-      // payment with a secp256k1 EVM signature would produce a signature the
-      // facilitator rejects at best, and at worst one that means something
-      // else. payToFor has no entry for it either, so this is unreachable
-      // unless someone adds one — which is exactly when it should throw.
+      // A registered family with no published client scheme package (algorand,
+      // cardano today) must never fall through to the EVM scheme: signing a
+      // non-EVM payment with a secp256k1 EVM signature would produce a
+      // signature the facilitator rejects at best, and at worst one that
+      // means something else. payToFor has no entry for either, so this is
+      // unreachable unless someone adds one — which is exactly when it should
+      // throw.
       case "algorand":
         throw new Error(`no x402 client scheme package published for family "${c.family}" (${c.id}) — the facilitator settles it, this instance cannot sign it`);
+      case "cardano":
+        throw new Error(`no x402 client scheme package published for family "${c.family}" (${c.id}) — neither the facilitator nor this instance can settle it yet`);
       default:
         return new ExactEvmScheme();
     }
