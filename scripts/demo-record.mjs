@@ -150,7 +150,7 @@ async function tour1min(page, mark = () => {}) {
     ledger: "Every attempt is hash-chained and tamper-evident.",
     chains: "Chain-aware, not just multi-chain.",
     trust: "Counterparty reputation, earned from governed history.",
-    report: "267 end-to-end assertions. If a claim isn't a test, it doesn't ship.",
+    report: "298 end-to-end assertions. If a claim isn't a test, it doesn't ship.",
   };
   for (const tab of ["overview", "approvals", "budgets", "ledger", "chains", "analytics", "trust", "policy", "agents", "report"]) {
     await page.click(`[data-nav="${tab}"]`);
