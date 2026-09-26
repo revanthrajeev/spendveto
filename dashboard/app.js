@@ -120,10 +120,12 @@ function renderChains() {
     const liveB = b.status === "live" || b.settlement === "live";
     return (liveA ? 0 : 1) - (liveB ? 0 : 1);
   });
+  const families = new Set(S.chains.map((c) => c.family || "evm")).size;
+  $("ch-count").textContent = `${S.chains.length} registered chains across ${families} signature families`;
   $("ch-grid").innerHTML = sortedChains.map((c) => {
     const a = byChain[c.id];
     const live = c.status === "live" || c.settlement === "live";
-    return `<div class="chain-card"><h3>${esc(c.name)} <span class="tag ${live ? "green" : ""}">${live ? "LIVE" : "READY"}</span></h3><div class="usdc">USDC ${esc(c.usdc)}</div><div class="note">${esc(c.note || (live ? "" : "fully governed today (simulate settles locally); goes live when the configured facilitator supports it"))}</div>${a ? `<div class="note">paid ${a.paidCount} (${money(a.paidUSD)})${a.blockedCount ? ` · blocked ${a.blockedCount}` : ""}</div>` : ""}</div>`;
+    return `<div class="chain-card"><h3>${esc(c.name)} <span class="tag ${live ? "green" : ""}">${live ? "LIVE" : "READY"}</span></h3><div class="usdc">${esc(c.stablecoin || "USDC")} ${esc(c.usdc)}</div><div class="note">${esc(c.note || (live ? "" : "fully governed today (simulate settles locally); goes live when the configured facilitator supports it"))}</div>${a ? `<div class="note">paid ${a.paidCount} (${money(a.paidUSD)})${a.blockedCount ? ` · blocked ${a.blockedCount}` : ""}</div>` : ""}</div>`;
   }).join("");
   $("ch-rails").innerHTML = (S.rails || []).map((r) =>
     `<div class="kv"><span class="k">${esc(r.name)} <span class="hint">${esc(r.note || "")}</span></span><span class="v"><span class="tag ${r.status === "live" ? "green" : ""}">${r.status === "live" ? "LIVE" : "SLOT"}</span></span></div>`).join("");
