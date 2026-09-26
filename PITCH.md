@@ -120,9 +120,9 @@ Why the standard-setter scenario is earnable rather than fantasy: governance lay
 
 ## Honest gaps (and the plan)
 
-- Solo founder, prototype-grade storage (JSON files) → hosted Postgres backend is the first funded milestone.
+- Prototype-grade storage (JSON files) → hosted Postgres backend is the first funded milestone.
 - The enforcement proxy (agents POST intents, keys never leave custody) **ships and is verified today as self-host** → the funded milestone is the hosted, multi-tenant version of it: orgs, SSO, per-team custody, SLAs — the product businesses pay for.
-- x402 v1 packages (deprecated-but-functional) → migrate to v2 `@x402/*`.
+- No external security audit yet → a third-party review and the SOC 2 path are funded milestones. (The x402 v2 migration listed here earlier is done.)
 - Simulate-mode-first adoption story → mainnet Base support once design partners want real settlement.
 - No production users yet → that's what the 30–60 day plan above is for; applications go in with usage, not promises.
 

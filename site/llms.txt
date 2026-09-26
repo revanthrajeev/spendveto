@@ -41,7 +41,7 @@ Every claim on this site is executed before it is published: 299 end-to-end asse
 
 - No external security audit yet. This is pre-audit software — treat it accordingly, including the one chain (XRPL) settling real money today.
 - No hosted multi-tenant platform yet; self-host is the only deployment today.
-- Solo-founder stage: no customers and no revenue yet.
+- Pre-revenue stage: no customers and no revenue yet.
 - SpendVeto is not a payment rail, not a wallet, and does not custody funds in its default mode. It is the decision in between.
 
 ## Pages
