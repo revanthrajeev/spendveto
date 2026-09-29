@@ -61,16 +61,17 @@ export const CHAINS = [
   // the x402 Foundation's TypeScript packages 2026-09-09, checked directly
   // against their repo. Registered honestly, one step earlier than Algorand:
   // Algorand at least has a facilitator that settles it; as of this registry
-  // entry neither the public facilitator's /supported nor npm carries
-  // anything for Cardano (no published @x402/cardano package). So this
-  // instance can govern a Cardano payment — chain allowlists, delegated
-  // scope, per-chain ledger — and cannot sign or settle one anywhere yet.
+  // entry neither the public facilitator's /supported nor npm carried
+  // anything for Cardano. @x402/cardano has since been published (2.27.0,
+  // re-checked 2026-09-29), but the public facilitator still doesn't list a
+  // cardano network, so there is nowhere to settle one — and the scheme
+  // isn't wired here (no payToFor entry, schemeFor throws). Governed only.
   // "cardano:preprod" is the spec's own network id, not a registered CAIP-2
   // namespace (the spec says so itself); stablecoin is USDM, a native
   // Cardano token identified as policyId.assetNameHex, not a contract
   // address — Cardano has no canonical USDC deployment, the same shape as
   // XRPL/RLUSD above.
-  { id: "cardano-preprod", caip2: "cardano:preprod", name: "Cardano Preprod", family: "cardano", status: "ready", usdc: "e675b46e4d2242c991a8932a99db3044e80515ae14b4c4ccf6b3f4c9.0014df10745553444d", stablecoin: "USDM", rpc: "https://preprod.koios.rest/api/v1", note: "x402 added Cardano support 2026-09-09, but no @x402/cardano client scheme package is published on npm yet, and the public facilitator doesn't list a cardano network either — governed here, not signable or settleable here" },
+  { id: "cardano-preprod", caip2: "cardano:preprod", name: "Cardano Preprod", family: "cardano", status: "ready", usdc: "e675b46e4d2242c991a8932a99db3044e80515ae14b4c4ccf6b3f4c9.0014df10745553444d", stablecoin: "USDM", rpc: "https://preprod.koios.rest/api/v1", note: "x402 added Cardano support 2026-09-09 and @x402/cardano is now on npm (2.27.0), but the public facilitator doesn't list a cardano network yet and this instance doesn't wire the scheme — governed here, not settleable here" },
 ];
 
 export const DEFAULT_CHAIN = "base-sepolia";

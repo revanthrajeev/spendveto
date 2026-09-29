@@ -2,6 +2,14 @@
 
 Every feature listed here is exercised by the end-to-end suite (`npm run verify`) — the suite grew from 33 assertions at the first public cut to **114** at v0.7.0. If a claim isn't an assertion, it doesn't ship.
 
+## 0.23.2 — 2026-09-29
+
+- **Upstream re-scan** of `x402-foundation/x402` (56 commits since 2026-09-11) and the live facilitator's `/supported`. Two findings touched this repo:
+- **Path-bypass regression guard.** x402 fixed its TypeScript route matcher (#3542) — a paid route could be reached unpaid when the web framework dispatched an encoded path the matcher never saw (`/api%2Fpremium` → `/api/premium`). Probed SpendVeto's live testnet gate with encoded, re-cased, trailing-slash, double-slash and dot-segment spellings: every one returned 402 or 404, none 200 — not exposed. A new assertion pins that, sending raw paths (not `fetch`, which normalizes dot segments away) so a future dependency bump can't silently open it.
+- **Cardano note corrected.** `@x402/cardano` is now on npm (2.27.0), so the registry's "no package published" note had become false. The public facilitator still doesn't list a cardano network, so Cardano stays governed-but-not-settleable; the note and its assertion now say exactly that.
+- Also checked, no change needed: upstream made `0x3600…0000` the default Arc USDC — the address this registry already carries. Noted for later: Arc mainnet (`eip155:5042`), Monad testnet, Casper and Bitcoin Lightning specs, SVM batch-settlement.
+- Verify: 300 (+1; 303 with `../prediction-copilot` alongside).
+
 ## 0.23.1 — 2026-09-11
 
 - **Cardano** (`cardano:preprod`) — registered the same day the x402 Foundation's own spec merged Cardano support (2026-09-09, checked directly against `x402-foundation/x402`), and registered **one step more honestly than Algorand**: Algorand at least has a facilitator that settles it — as of this entry, neither the public facilitator's `/supported` nor npm carries anything for Cardano at all (no published `@x402/cardano` package). So this instance can govern a Cardano payment — chain allowlists, delegated chain scope, per-chain ledger — and cannot sign *or settle* one anywhere yet. `schemeFor` throws for it rather than falling through to the EVM scheme, same defense as Algorand. Stablecoin is USDM (a native Cardano token, `policyId.assetNameHex`), not USDC — Cardano has no canonical USDC deployment, the same shape as XRPL/RLUSD.

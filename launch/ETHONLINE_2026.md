@@ -8,7 +8,7 @@
 
 ## The honest position
 
-SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fifteen chains across eight signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 299 end-to-end assertions from a clean clone.
+SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fifteen chains across eight signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 300 end-to-end assertions from a clean clone.
 
 What that means for a hackathon: the strongest tracks are the ones asking for *governed agent payments on a specific chain*, and the weakest are the ones asking for a new app in a domain this repo has no business claiming.
 

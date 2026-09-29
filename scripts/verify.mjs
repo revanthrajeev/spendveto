@@ -6,7 +6,7 @@
 // + the manual kill switch, the stats endpoint, and the MCP server over real
 // stdio JSON-RPC — no mocking.
 import { spawn } from "node:child_process";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { verifyMessage } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -714,9 +714,9 @@ try {
   // added here the same week the x402 spec itself added Cardano (2026-09-09).
   const cardano = chains.find((c) => c.id === "cardano-preprod");
   check(
-    "Cardano is declared as governed-but-not-settleable — neither the facilitator nor npm has anything for it yet",
+    "Cardano is declared as governed-but-not-settleable — the facilitator doesn't list it, so nothing here can settle it",
     cardano?.family === "cardano" && cardano?.status === "ready" && cardano?.stablecoin === "USDM" &&
-      /no @x402\/cardano client scheme package/.test(cardano?.note || "") &&
+      /public facilitator doesn't list a cardano network/.test(cardano?.note || "") &&
       registryChains.filter((c) => c.family === "cardano").length === 1,
     `${cardano?.caip2} settlement=${cardano?.settlement}`
   );
@@ -2308,6 +2308,25 @@ try {
     "a real x402 v2 402 advertises one payment option per live chain — thirteen CAIP-2 networks in one challenge, and never a chain it cannot sign",
     tn402.status === 402 && advertised.length === 13 && !advertised.includes("algorand-testnet") && !advertised.includes("cardano-preprod"),
     `status=${tn402.status} advertised=${advertised.join(",")}`
+  );
+  // x402 upstream (#3542, Sep 2026) fixed paid routes being reachable unpaid
+  // when the framework dispatches an encoded path the route matcher never
+  // saw. Pin that no spelling of a paid route serves content without paying.
+  const bypassPaths = ["/api/agent/%74ranslate", "/api/%61gent/translate", "/api/agent%2Ftranslate", "/API/AGENT/TRANSLATE",
+    "/api/agent/Translate", "/api/agent/translate/", "//api/agent/translate", "/api/agent/./translate", "/api/x/../agent/translate"];
+  const bypassCodes = [];
+  for (const p of bypassPaths) {
+    const r = await new Promise((resolve) => {
+      const req = httpRequest({ host: "localhost", port: 8401, path: p, method: "GET" }, (res) => { res.resume(); resolve(res.statusCode); });
+      req.on("error", () => resolve(0));
+      req.end();
+    });
+    bypassCodes.push(r);
+  }
+  check(
+    "no encoded, re-cased or dot-segment spelling of a paid route is served unpaid by the live x402 gate",
+    bypassCodes.every((c) => c === 402 || c === 404),
+    bypassPaths.map((p, i) => `${p}=${bypassCodes[i]}`).join(" ")
   );
   testnetProc.proc.kill();
   await sleep(300);
