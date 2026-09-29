@@ -41,6 +41,10 @@ The Hedera track asks for exactly the thing this repo does and most projects can
 4. ~~**Configure World ID**~~ **Done — and it required more than config.** The app auto-provisioned into **World ID 4.0** (RP-based protocol, not the old v2 `app_id` API this repo's code was originally written against). `server/worldid.js` was rewritten against `@worldcoin/idkit-server`; a real signed `rp_context` handshake, a version-pinned CDN-loaded `idkit-core` widget (`launch/worldid-demo.html`), and a real QR-code device scan all round-tripped successfully. This also surfaced and fixed a genuine dormant bug (env vars read at ES-module top-level, before `dotenv.config()` had run) and a test-isolation gap in `scripts/verify.mjs`. See `CHANGELOG.md` v0.22.1.
 5. **Write the submission** against what is actually true on the day — no claim that isn't an assertion in `npm run verify`, the same rule as everywhere else in this repo. The Hedera and World form fields drafted earlier in this process are now backed by real transaction/verification evidence, not just working code.
 
+### Status as of 2026-09-29 — submitted
+
+Submitted under the **Continuity Track** with Hedera, World and ENS as partner prizes; now in Round 1 judging. Submission video is a live recording trimmed from 9:32 to 3:55 (no speed-up), keeping the Hedera refuse+settle, World ID scan and ENS resolve+gate proofs. Since submission: v0.23.2 (path-respelling regression pinned, Cardano note corrected), 300 assertions, and 10 SUCCESS USDC settlements into payout `0.0.10410033` on Hedera testnet (query the mirror node — `npm run verify` resets the local ledger).
+
 ### What not to claim
 
 - Not "live on 15 chains" — five settle live by default. The other ten are registry-wired, and `/api/chains` says so per chain.
