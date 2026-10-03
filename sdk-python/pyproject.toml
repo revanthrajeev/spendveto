@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spendveto"
+version = "0.1.0"
+description = "Dependency-free Python client for the SpendVeto agent spend-governance proxy"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Revanth Rajeev" }]
+
+[project.urls]
+Homepage = "https://github.com/revanthrajeev/spendveto"
+
+[tool.setuptools]
+packages = ["spendveto"]

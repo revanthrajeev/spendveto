@@ -24,6 +24,7 @@ export const RAILS = [
   x402Live,
   roadmapRail("google-ap2", "Google AP2", "mandate-based agent payments — adapter slot"),
   roadmapRail("openai-acp", "OpenAI ACP", "agentic checkout — adapter slot"),
+  roadmapRail("npci-upi-agent", "NPCI UPI (Unified Agent Protocol / UPI Circle)", "India — governed today via /api/upi/evaluate; settlement is a slot: NPCI's agent protocol is not live and needs RBI approval. SpendVeto decides, it never initiates UPI"),
   roadmapRail("stripe-mpp", "Stripe Machine Payments", "fiat machine payments — adapter slot"),
   safeAllowance,
 ];

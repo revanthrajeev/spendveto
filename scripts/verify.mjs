@@ -16,6 +16,7 @@ import { RAILS, getRail } from "../rails/index.js";
 import { createHmac } from "node:crypto";
 import { checkPolicy } from "../client/policy.js";
 import { SpendVeto, SpendVetoDenialError } from "../sdk/index.js";
+import { evaluateUpiMandate } from "../server/upi.js";
 import { createSpendVetoTools, createSpendVetoTool } from "../integrations/langchain.js";
 import { createSpendVetoFunctionTools } from "../integrations/openai-agents.js";
 import { createSpendVetoPlugin } from "../integrations/eliza.js";
@@ -535,6 +536,30 @@ try {
     sdkDenialCaught instanceof SpendVetoDenialError && sdkDenialCaught.code === "delegation_cap" && !!sdkDenialCaught.suggestion,
     sdkDenialCaught?.message
   );
+
+  // --- Python SDK (sdk-python/): same surface as the npm SDK, zero dependencies. Exercised for real by a
+  // python3 subprocess against the live proxy; skipped (like the Basis test) when python3 is absent. ---
+  {
+    const py = await new Promise((resolve) => {
+      const child = spawn("python3", [fileURLToPath(new URL("../sdk-python/tests/e2e.py", import.meta.url))], {
+        env: { ...process.env, SV_PROXY: PROXY, SV_SERVER: BASE },
+      });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (d) => (stdout += d));
+      child.stderr.on("data", (d) => (stderr += d));
+      child.on("error", (error) => resolve({ error }));
+      child.on("close", () => resolve({ stdout, stderr }));
+    });
+    if (py.error) {
+      console.log("  (skipped: Python SDK test — python3 not found)");
+    } else {
+      let r = {};
+      try { r = JSON.parse(py.stdout.trim().split("\n").pop()); } catch {}
+      check("Python SDK .catalog() returns the live tool catalog", r.catalog === true, py.stderr?.slice(-200));
+      check("Python SDK .dry_run() previews with zero side effects", r.dry === true && r.health === true);
+      check("Python SDK raises SpendVetoDenialError with code + suggestion + stage on a refusal", r.denial === true);
+    }
+  }
 
   // --- LangChain integration adapter: dependency-free, duck-typed tool objects ---
   const lcTools = await createSpendVetoTools({ proxyUrl: PROXY, serverUrl: BASE, child: "sdk test" });
@@ -1474,6 +1499,69 @@ try {
   const acpIdMix = await acp(SPT, { ...cleanSession, id: "cs_mix", tokenId: "spt_other" });
   check("ACP: a session claiming a different token than the one presented is refused (spt_session_mismatch)", acpIdMix.decision === "deny" && acpIdMix.code === "spt_session_mismatch", acpIdMix.code);
 
+  // --- UPI mandate governance (India): RBI e-mandate framework rules, deterministic, INR end to end. SpendVeto
+  // decides; a "requires_approval" is always a HUMAN completing the customer's authentication; nothing is initiated
+  // on UPI and no NPCI/RBI approval is claimed. ---
+  const UPI_AGENT = "0x2222222222222222222222222222222222222222";
+  const upi = (mandate) =>
+    fetch(`${BASE}/api/upi/evaluate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agent: UPI_AGENT, mandate }) }).then((r) => r.json());
+  const thirtyHAgo = new Date(Date.now() - 30 * 3600e3).toISOString();
+  const nflx = { id: "m_ok", payeeVpa: "netflix@okhdfc", category: "entertainment", amountINR: 499, notifiedAt: thirtyHAgo };
+
+  const upiOk = await upi(nflx);
+  check("UPI: a notified recurring debit under the Rs 15,000 AFA-free limit is allowed", upiOk.decision === "allow" && upiOk.currency === "INR", `${upiOk.decision}/${upiOk.currency}`);
+  const upiSigOk = await verifyMessage({ address: upiOk.signer, message: upiOk.message, signature: upiOk.signature });
+  check("UPI: the verdict is ECDSA-signed over rupees and verifies independently", upiSigOk && upiOk.message.includes(":499:") && upiOk.message.startsWith("spendveto-upi-decision:"), upiOk.message);
+  check("UPI: the payee VPA is masked in the response and never echoed raw (DPDP Act data minimisation)", upiOk.mandate.payee === "ne***@okhdfc" && !JSON.stringify(upiOk).includes("netflix@okhdfc"), upiOk.mandate.payee);
+
+  const upiFirst = await upi({ ...nflx, id: "m_first", firstDebit: true });
+  check("UPI: the first debit of a mandate always needs a HUMAN's additional factor authentication (afa_first_debit)", upiFirst.decision === "requires_approval" && upiFirst.code === "afa_first_debit" && upiFirst.afa?.by === "human", `${upiFirst.code}/${upiFirst.afa?.by}`);
+  const upiBig = await upi({ ...nflx, id: "m_big", amountINR: 20000 });
+  check("UPI: a recurring debit above Rs 15,000 needs human authentication (afa_above_limit)", upiBig.decision === "requires_approval" && upiBig.code === "afa_above_limit", upiBig.code);
+  const upiIns = await upi({ id: "m_ins", payeeVpa: "lic@okicici", category: "insurance", amountINR: 50000, notifiedAt: thirtyHAgo });
+  check("UPI: insurance, mutual-fund and card-bill debits get the Rs 1,00,000 AFA-free limit — Rs 50,000 insurance is allowed", upiIns.decision === "allow", upiIns.decision);
+  const upiInsBig = await upi({ id: "m_insb", payeeVpa: "lic@okicici", category: "insurance", amountINR: 150000, notifiedAt: thirtyHAgo });
+  check("UPI: even a special category needs human authentication above Rs 1,00,000", upiInsBig.decision === "requires_approval" && upiInsBig.code === "afa_above_limit", upiInsBig.code);
+  const upiNoNotice = await upi({ ...nflx, id: "m_nn", notifiedAt: undefined });
+  check("UPI: a recurring debit with no pre-debit notification is refused (predebit_notice_missing)", upiNoNotice.decision === "deny" && upiNoNotice.code === "predebit_notice_missing", upiNoNotice.code);
+  const upiLate = await upi({ ...nflx, id: "m_late", notifiedAt: new Date(Date.now() - 3600e3).toISOString() });
+  check("UPI: a customer notified under 24 hours before the debit is refused (predebit_notice_late)", upiLate.decision === "deny" && upiLate.code === "predebit_notice_late", upiLate.code);
+  const upiFastag = await upi({ id: "m_ft", payeeVpa: "fastag@icici", category: "fastag", amountINR: 500 });
+  check("UPI: FASTag top-ups are exempt from the 24-hour pre-debit notice, as the framework carves out", upiFastag.decision === "allow", upiFastag.decision);
+  const upiRevoked = await upi({ ...nflx, id: "m_rev", revoked: true });
+  check("UPI: a mandate the customer withdrew can never be debited (mandate_revoked)", upiRevoked.decision === "deny" && upiRevoked.code === "mandate_revoked", upiRevoked.code);
+  const upiExp = await upi({ ...nflx, id: "m_exp", expiresAt: "2020-01-01T00:00:00Z" });
+  check("UPI: an expired mandate carries no authority (mandate_expired)", upiExp.decision === "deny" && upiExp.code === "mandate_expired", upiExp.code);
+  const upiOne = await upi({ id: "m_one", payeeVpa: "shop@okaxis", amountINR: 120, recurring: false });
+  check("UPI: a one-time agent-initiated payment always needs the customer's own authentication (afa_one_time) — an agent cannot approve its own debit", upiOne.decision === "requires_approval" && upiOne.code === "afa_one_time" && upiOne.afa?.by === "human", upiOne.code);
+  const upiPaise = await upi({ ...nflx, id: "m_p", amountINR: 10.555 });
+  const upiBadVpa = await upi({ ...nflx, id: "m_v", payeeVpa: "not-a-vpa" });
+  check("UPI: malformed input is refused before any policy runs (amount_invalid for sub-paise, payee_vpa_invalid)", upiPaise.code === "amount_invalid" && upiBadVpa.code === "payee_vpa_invalid", `${upiPaise.code}/${upiBadVpa.code}`);
+  check("UPI: every verdict states what it is not — no UPI initiation, no PSP status, no NPCI/RBI approval claimed", /does not initiate/.test(upiOk.disclaimer) && /no NPCI or RBI approval/.test(upiOk.disclaimer) && upiOk.regulatoryBasis.length === 2, upiOk.disclaimer?.slice(0, 60));
+
+  const UPI_POL = { maxPerTxnINR: 1000, maxPerDayINR: 1500, allowedPayeeVpas: ["netflix@okhdfc"], allowedCategories: ["entertainment"] };
+  const NOW = Date.now();
+  const u = (m, spent = 0) => evaluateUpiMandate({ ...nflx, ...m }, { policy: UPI_POL, spentTodayINR: spent, now: NOW });
+  check(
+    "UPI: operator policy — payee allowlist, category scope, per-debit cap and a daily cap each refuse with their own code",
+    u({ payeeVpa: "other@okhdfc" }).code === "payee_not_allowed" &&
+      u({ category: "gaming" }).code === "category_not_allowed" &&
+      u({ amountINR: 1200 }).code === "txn_cap" &&
+      u({ amountINR: 600 }, 1000).code === "day_cap" &&
+      u({ amountINR: 400 }, 1000).decision === "allow",
+    "payee/category/txn/day"
+  );
+  check(
+    "UPI: the in-browser playground runs the SAME evaluator the server uses — site/assets/upi.js is byte-identical to server/upi.js",
+    readFileSync(fileURLToPath(new URL("../site/assets/upi.js", import.meta.url)), "utf8") === readFileSync(fileURLToPath(new URL("../server/upi.js", import.meta.url)), "utf8"),
+    "no drift between the demo and the product"
+  );
+  check(
+    "UPI: the evaluator is pure — the same mandate and clock give the same verdict every time",
+    JSON.stringify(u({})) === JSON.stringify(u({})),
+    "deterministic"
+  );
+
   // --- Request integrity: is this the spend I allowed? ---
   // Every other control answers "is this spend allowed?". Between the decision
   // and the execution a compromised agent can swap the payload — same payer,
@@ -1561,8 +1649,8 @@ try {
   // --- Rails: one pay() contract, every rail behind it ---
   const { rails } = await fetch(`${BASE}/api/rails`).then((r) => r.json());
   check(
-    "rail registry: two live x402 rails + four declared adapter slots",
-    rails.length === 6 && rails.filter((r) => r.status === "live").length === 2 && rails.filter((r) => r.status === "roadmap").length === 4,
+    "rail registry: two live x402 rails + five declared adapter slots",
+    rails.length === 7 && rails.filter((r) => r.status === "live").length === 2 && rails.filter((r) => r.status === "roadmap").length === 5,
     rails.map((r) => `${r.id}:${r.status}`).join(" ")
   );
   check("every rail implements the same contract (id, name, status, pay)", RAILS.every((r) => r.id && r.name && r.status && typeof r.pay === "function"));
@@ -1588,7 +1676,7 @@ try {
     sampleHash
   );
   const railHealth = await fetch(`${PROXY}/proxy/health`).then((r) => r.json());
-  check("proxy advertises its rails alongside custody + catalog", railHealth.rails?.length === 6 && railHealth.rails.every((r) => r.pay === undefined), railHealth.rails?.map((r) => r.id).join(", "));
+  check("proxy advertises its rails alongside custody + catalog", railHealth.rails?.length === 7 && railHealth.rails.every((r) => r.pay === undefined), railHealth.rails?.map((r) => r.id).join(", "));
 
   // --- Stats: blocked-spend dollars, the governance headline number ---
   const stats = await fetch(`${BASE}/api/stats`).then((r) => r.json());

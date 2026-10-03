@@ -97,9 +97,9 @@
     <div class="shell">
       <p class="counter reveal"><b>DECK · 2026-07</b> Pre-seed / accelerator</p>
       <h1 class="reveal">Your agents can spend.<br /><span class="g">SpendVeto decides.</span></h1>
-      <p class="sub reveal"><strong>The spend-governance layer for AI agents.</strong> Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it. Open source, x402 + MCP native, working today — every claim in this deck is executed by a 300-assertion verification suite before it's published.</p>
+      <p class="sub reveal"><strong>The spend-governance layer for AI agents.</strong> Payment rails move an agent's money; SpendVeto decides whether it should be allowed to move it. Open source, x402 + MCP native, working today — every claim in this deck is executed by a 321-assertion verification suite before it's published.</p>
     </div>
-    <span class="slide-num mono">01 / 11</span>
+    <span class="slide-num mono">01 / 12</span>
   </section>
 
   <section class="slide" id="s2">
@@ -112,7 +112,7 @@
         <p class="row reveal"><span>Almost nobody answers the question every team asks first: <b>"how do I stop it from overspending?"</b></span></p>
       </div>
     </div>
-    <span class="slide-num mono">02 / 11</span>
+    <span class="slide-num mono">02 / 12</span>
   </section>
 
   <section class="slide" id="s3">
@@ -125,7 +125,7 @@
         <p class="row reveal"><span>The open position is empty: <b>open-source, self-hostable, rail-neutral, MCP-native</b> buyer-side governance. The GitLab-vs-a-bank position — SpendVeto works <b>with</b> any rail and any custodian, competing with none.</span></p>
       </div>
     </div>
-    <span class="slide-num mono">03 / 11</span>
+    <span class="slide-num mono">03 / 12</span>
   </section>
 
   <section class="slide" id="s4">
@@ -146,9 +146,9 @@
         <div class="tile reveal"><b>Multichain governance</b><span>chain-scoped signatures, per-chain balances, chain allowlists across 15 registered chains, eight signature families</span></div>
         <div class="tile reveal"><b>Self-correcting denials + dry runs</b><span>every block returns a machine code + fix the agent can act on; dry-run any intent with zero side effects; time-boxed budgets that self-expire</span></div>
       </div>
-      <p class="foot-note reveal">Real x402 on Base Sepolia + zero-setup simulate mode with real ECDSA and replay protection. 300 end-to-end assertions: <span class="mono">npm run verify</span>.</p>
+      <p class="foot-note reveal">Real x402 on Base Sepolia + zero-setup simulate mode with real ECDSA and replay protection. 321 end-to-end assertions: <span class="mono">npm run verify</span>.</p>
     </div>
-    <span class="slide-num mono">04 / 11</span>
+    <span class="slide-num mono">04 / 12</span>
   </section>
 
   <section class="slide" id="s5">
@@ -158,7 +158,7 @@
       <p class="quote reveal">"Stripe moves money. SpendVeto decides whether the agent should be allowed to move it."</p>
       <p class="sub reveal">Rail-agnostic by design: x402 today; Google AP2, Stripe MPP, and Mastercard adapters on the roadmap — the policy layer shouldn't care which rail settles.</p>
     </div>
-    <span class="slide-num mono">05 / 11</span>
+    <span class="slide-num mono">05 / 12</span>
   </section>
 
   <section class="slide" id="s6">
@@ -180,7 +180,7 @@
       </div>
       <p class="foot-note reveal">The gap: open-source, developer-first, buyer-side governance in the stack agents already use (MCP). Skyfire's $9.5M seed — Coinbase Ventures + a16z CSX — prices this space at exactly our stage.</p>
     </div>
-    <span class="slide-num mono">06 / 11</span>
+    <span class="slide-num mono">06 / 12</span>
   </section>
 
   <section class="slide" id="s7">
@@ -194,12 +194,25 @@
       </div>
       <p class="foot-note reveal">Monetizes like usage-billing infra (Lago, Metronome, Orb): open-source core, hosted platform for money. Spend-management software (human spenders) is $26B → $56B by 2032 — agents are the next cohort.</p>
     </div>
-    <span class="slide-num mono">07 / 11</span>
+    <span class="slide-num mono">07 / 12</span>
+  </section>
+
+  <section class="slide" id="s7b">
+    <div class="shell">
+      <p class="counter reveal"><b>08</b> Where adoption starts</p>
+      <h2 class="reveal">Two wedges that don't need anyone to believe in crypto first.</h2>
+      <div class="rows">
+        <p class="row reveal"><span><b>AI spend control — a buyer exists today.</b> Every team running agents has an LLM bill an agent loop can blow up. <span class="mono">npm run quickstart:ai</span> gives an agent a hard dollar budget and shows the next call refused <i>before</i> the model is called. JavaScript and Python clients.</span></p>
+        <p class="row reveal"><span><b>India · UPI — regulation shaped like our product.</b> RBI's 2026 e-mandate framework fixes the thresholds (human authentication on the first debit and above ₹15,000; ₹1,00,000 for insurance, mutual funds, card bills; 24-hour pre-debit notice). NPCI's own line: <i>"AI may recommend, but authentication and final settlement must follow deterministic auditable rules."</i> That is a policy engine. <span class="mono">/api/upi/evaluate</span> encodes it; the agent can never approve itself.</span></p>
+        <p class="row reveal"><span><b>Honest limits:</b> the UPI adapter is an evaluator — it does not initiate or settle UPI, is not a PSP, and claims no NPCI/RBI approval; NPCI's agent protocol is not live and needs RBI sign-off. We are the rule layer that sits in front of whatever rail is cleared.</span></p>
+      </div>
+    </div>
+    <span class="slide-num mono">08 / 12</span>
   </section>
 
   <section class="slide" id="s8">
     <div class="shell">
-      <p class="counter reveal"><b>08</b> Fit — why these funds, right now</p>
+      <p class="counter reveal"><b>09</b> Fit — why these funds, right now</p>
       <h2 class="reveal">Two RFS items in one repo.</h2>
       <div class="rows">
         <p class="row reveal"><span><b>Y Combinator</b> — the 2026 RFS explicitly asks for agent infrastructure naming MCPs, and stablecoin infrastructure. YC now funds S26 in <b>$500K USDC</b>.</span></p>
@@ -207,25 +220,25 @@
         <p class="row reveal"><span><b>Alliance DAO</b> — crypto×AI accelerator, $500K, rolling applications, decisions in 2 weeks. Next cohort starts <b>Sept 7, 2026</b>.</span></p>
       </div>
     </div>
-    <span class="slide-num mono">08 / 11</span>
+    <span class="slide-num mono">09 / 12</span>
   </section>
 
   <section class="slide" id="s9">
     <div class="shell">
-      <p class="counter reveal"><b>09</b> Traction plan — before applications go in</p>
+      <p class="counter reveal"><b>10</b> Traction plan — before applications go in</p>
       <h2 class="reveal">Ship in public. Walk in with usage, not promises.</h2>
       <div class="rows">
         <p class="row reveal"><span><b>Launch:</b> GitHub OSS → Show HN, awesome-x402, MCP registries, x402 Discord. Site, deck, demo script, and listing blurbs are already built.</span></p>
-        <p class="row reveal"><span><b>5 design partners</b> running agent fleets in simulate mode — governance value lands before real money moves.</span></p>
+        <p class="row reveal"><span><b>5 design partners</b> running agent fleets in simulate mode — governance value lands before real money moves. <b>Today: none yet</b> — this slide is the plan, not a claim.</span></p>
         <p class="row reveal"><span><b>The metric nobody else can show:</b> blocked-spend dollars — already a first-class stat — plus one testimonial from a team whose runaway agent got auto-frozen mid-loop.</span></p>
       </div>
     </div>
-    <span class="slide-num mono">09 / 11</span>
+    <span class="slide-num mono">10 / 12</span>
   </section>
 
   <section class="slide" id="s10">
     <div class="shell">
-      <p class="counter reveal"><b>10</b> Honest gaps — and what funding fixes</p>
+      <p class="counter reveal"><b>11</b> Honest gaps — and what funding fixes</p>
       <h2 class="reveal">Prototype-grade where it should be. Real where it must be.</h2>
       <div class="rows">
         <p class="row reveal"><span>JSON-file storage → <b>hosted Postgres backend</b> is the first funded milestone.</span></p>
@@ -234,12 +247,12 @@
         <p class="row reveal"><span>No production users yet → that's what the 30–60 day plan is for.</span></p>
       </div>
     </div>
-    <span class="slide-num mono">10 / 11</span>
+    <span class="slide-num mono">11 / 12</span>
   </section>
 
   <section class="slide" id="s11">
     <div class="shell">
-      <p class="counter reveal"><b>11</b> The ask</p>
+      <p class="counter reveal"><b>12</b> The ask</p>
       <h2 class="reveal" style="font-size:clamp(2.2rem,5.5vw,4.2rem)">$500K to go from<br /><span class="g">verified prototype</span> to hosted product.</h2>
       <p class="sub reveal">Multi-rail adapters (AP2, Stripe MPP), richer anomaly models and real-time alerting, SOC 2 path, and the hosted governance dashboard that is the business.</p>
       <div class="rows" style="margin-top:2rem">
@@ -247,7 +260,7 @@
         <p class="row reveal"><span>All sources for every number: <a href="https://github.com/revanthrajeev/spendveto/blob/main/PITCH.md" target="_blank" rel="noopener">PITCH.md in the repo</a> — McKinsey, Bain, Morgan Stanley, Forbes/BCG, Fortune BI, Coinbase disclosures.</span></p>
       </div>
     </div>
-    <span class="slide-num mono">11 / 11</span>
+    <span class="slide-num mono">12 / 12</span>
   </section>
 
 </div>
@@ -256,7 +269,7 @@
 
 <footer>
   <span class="wordmark">SPENDVETO<span class="tick">_</span></span>
-  <span>Every product claim in this deck is covered by <span class="mono">npm run verify</span> — 300 end-to-end assertions.</span>
+  <span>Every product claim in this deck is covered by <span class="mono">npm run verify</span> — 321 end-to-end assertions.</span>
   <div class="links"><a href="https://github.com/revanthrajeev/spendveto" target="_blank" rel="noopener">GitHub</a><a href="./use-cases.html">Use cases</a><a href="./playground.html">Playground</a><a href="./index.html">Home</a><a href="./docs.html">Docs</a><a href="./about.html">About</a><a href="./security.html">Security</a><a href="./contact.html">Contact</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
 </footer>
 

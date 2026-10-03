@@ -20,7 +20,7 @@ Every newly-paid tool makes the **buyer side** — the agent doing the spending 
 
 ## Product (working today, not a plan)
 
-Open-source (Apache-2.0) Node.js stack, every claim below covered by a 300-assertion end-to-end verification suite:
+Open-source (Apache-2.0) Node.js stack, every claim below covered by a 321-assertion end-to-end verification suite:
 
 1. **Payment rails** — real x402 (HTTP 402 + USDC) gating a catalog of priced tools; runs against the live Base Sepolia facilitator, plus a zero-setup simulate mode with real ECDSA signing and replay protection.
 2. **Policy engine** — the agent's own rules, enforced *before* payment: per-call cap, hourly budget, call-rate limit, checked against live spend history.
@@ -51,6 +51,7 @@ Open-source (Apache-2.0) Node.js stack, every claim below covered by a 300-asser
 27. **ENS-resolved payee allowlists, World ID 4.0, an OpenAPI catalog (v0.23)** — `allowedPayees` (global policy and per-delegation payee scope) now accepts `.eth` names alongside raw addresses (`client/ens.js`), resolved against real Ethereum mainnet, cached, and dropped from the effective allowlist rather than treated as a wildcard if resolution fails: an allowlist a human can actually audit at a glance. Separately, World's Developer Portal moved to **World ID 4.0** (RP-based, `/api/v4/verify/:rpId`) mid-integration — `server/worldid.js` was migrated to match, including the signed `rp_context` handshake the new protocol requires before a proof request can even open. And `GET /openapi.json` publishes the x402 catalog in standard OpenAPI shape alongside the existing Bazaar listing, generated from the same source so the two can't drift. Tested: 4 assertions (3 ENS + 1 OpenAPI); World ID's existing 3 assertions (testing the unconfigured-refusal path) stayed green throughout the protocol migration.
 28. **A 15-chain registry: Cardano registered honestly, one step earlier than Algorand (v0.23.1)** — the x402 Foundation's own spec merged Cardano support on 2026-09-09; this repo registered it the same week. Unlike every other "governed-but-not-signable" honesty case here, Cardano isn't in the public facilitator's `/supported` yet — `@x402/cardano` did reach npm (2.27.0) after registration, but with no facilitator listing a cardano network this instance still governs a Cardano payment (chain allowlists, delegated scope, per-chain ledger) and cannot settle one anywhere. Stablecoin is USDM, a native Cardano token (`policyId.assetNameHex`), not USDC. `schemeFor` throws for it rather than falling through to the EVM scheme — the same structural defense Algorand already had. Tested: 1 assertion.
 29. **Paid routes can't be reached unpaid by respelling the path (v0.23.2)** — upstream x402 fixed a route-matching gap (#3542) where an encoded, re-cased or dot-segment spelling of a paid path could slip past the payment middleware. SpendVeto's live gate was probed with 12 raw-path variants (`/api/agent/%74ranslate`, `/API/AGENT/TRANSLATE`, `/api/agent/./translate`, …): every one returned 402 or 404, none was served unpaid. Pinned so a dependency bump can't reopen it. Tested: 1 assertion.
+30. **UPI mandate governance for India, an AI-spend quickstart, a Python SDK (v0.24.0)** — `POST /api/upi/evaluate` decides allow / requires_approval / deny for an agent's UPI mandate debit using the **RBI Digital Payments E-mandate Framework, 2026** rules (AFA on the first debit; AFA above ₹15,000 per recurring debit, ₹1,00,000 for insurance / mutual funds / card bills; ≥24 h pre-debit notice with FASTag/NCMC exempt; the customer's right to withdraw a mandate), in INR end to end with the verdict ECDSA-signed over rupees and the payee VPA masked in every decision. It is an **evaluator**: it never initiates or settles UPI, is not a PSP, claims no NPCI/RBI approval, and "requires approval" always means a **human** completes the customer's authentication — an agent cannot approve its own debit (NPCI's stated principle: AI recommends, deterministic auditable rules authenticate and settle). The UPI settlement rail is a declared slot that refuses honestly (NPCI's Unified Agent Protocol is not live and needs RBI approval). `npm run quickstart:ai` gives a fresh agent a hard LLM budget and shows the next call refused *before* the model is called; `sdk-python/` is the stdlib-only Python twin of the npm SDK.
 
 ## Positioning
 
@@ -81,6 +82,15 @@ The gap: **open-source, developer-first, buyer-side governance that plugs into t
 ## Market (TAM → SAM → SOM)
 
 **TAM — the spend that needs governing.** McKinsey: **$3–5T** global agentic-commerce spend by 2030 (Bain: $300–500B US alone; Morgan Stanley: $190–385B US). The rails are already at scale: stablecoins moved **$4.5T in Q1 2026 alone** (~Visa scale). Every one of those agent dollars needs a spend decision before it moves. The proven monetizable analog: business spend-management software (built for *human* spenders) is **$26B today → $56B by 2032** — agents are the next, faster-growing cohort of spenders, currently unserved.
+
+## Where adoption starts (the two wedges)
+
+Investors ask for adoptability before they ask for TAM, and we have no production users yet — so the plan is two wedges that need no belief in crypto:
+
+1. **AI spend control (a buyer exists today).** Every team running agents has an LLM/API bill that an agent loop can blow up. `npm run quickstart:ai` is the 60-second proof: an agent gets a hard dollar budget, spends until it's gone, and the next call is refused before it reaches the model, with a machine-readable reason. JavaScript and Python clients; the same pipeline (budgets, approvals, kill switch, hash-chained audit) as the x402 rail. This is the adjacent market that does not depend on x402 adoption: LLM spend is already enormous and already unmanaged per-agent.
+2. **India · UPI (regulation shaped like our product).** The RBI e-mandate framework (21 Apr 2026) fixes exactly the thresholds a rule layer needs, and NPCI's chairman framed agent payments as *"decision making and execution must remain separate … AI may recommend, but authentication and final settlement must follow deterministic auditable rules"* (GFF, Sept 2026). NPCI's Unified Agent Protocol is in development and needs RBI approval — so there is no incumbent rule layer yet, and an open, auditable, deterministic evaluator is the shape the regulator is asking for. Honest limits: evaluator only, no UPI initiation, no PSP/PA licence, no NPCI/RBI approval claimed, thresholds to be re-verified by the operator against the RBI text.
+
+**Leading indicators we will report, as counts, not adjectives:** design partners running the quickstart in their own agent, agents governed, dollars of agent spend blocked in *their* environments, npm/PyPI installs, GitHub stars. Today all of these are zero or unmeasured; the simulate-mode demo data on the Console is not usage and must never be presented as such.
 
 ## The path to $1B+ revenue (scenario math on cited figures — mechanism, not projection)
 
@@ -126,6 +136,7 @@ Why the standard-setter scenario is earnable rather than fantasy: governance lay
 - No external security audit yet → a third-party review and the SOC 2 path are funded milestones. (The x402 v2 migration listed here earlier is done.)
 - Simulate-mode-first adoption story → mainnet Base support once design partners want real settlement.
 - No production users yet → that's what the 30–60 day plan above is for; applications go in with usage, not promises.
+- UPI is an evaluator, not a rail: no initiation or settlement, no PSP/PA status, no NPCI/RBI approval, and NPCI's agent protocol is not live. The per-day cap tally is in-memory (process lifetime) and thresholds are the RBI framework's published defaults — an operator re-verifies them before production use. Payee VPAs are masked in decisions; durable, residency-controlled storage is part of the hosted milestone.
 
 ## The ask
 

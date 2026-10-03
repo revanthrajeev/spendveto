@@ -13,7 +13,7 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { MODE, PORT, TOOLS, CHAINS, FACILITATOR_URL, findChain, DEFAULT_CHAIN } from "../shared-config.js";
 import { randomUUID } from "node:crypto";
 import { writeFileSync } from "node:fs";
-import { createSimulateGate, receiptMessage, signDecision, consentMessage } from "./simulate.js";
+import { createSimulateGate, receiptMessage, signDecision, signUpiDecision, consentMessage } from "./simulate.js";
 import { decisionEvents, toJSONL } from "./events.js";
 import { checkPolicy, policyHash } from "../client/policy.js";
 import { verifyMessage } from "viem";
@@ -38,6 +38,7 @@ import { normalizeReceipt } from "./receipts.js";
 import { checkCartAgainstIntent, reconcileHumanNotPresent } from "./ap2.js";
 import { toBazaarResources, governCatalog } from "./discovery.js";
 import { checkSessionAgainstToken } from "./acp.js";
+import { evaluateUpiMandate, maskVpa, UPI_REGULATORY_BASIS, UPI_DISCLAIMER } from "./upi.js";
 import { catalogOpenApiSpec } from "./openapi.js";
 import { authorize as uptoAuthorize, settleAuthorization, voidAuthorization, getAuthorizations, openHoldUSD, uptoSummary } from "./upto.js";
 import { bindAuthorization, verifyBinding, getBinding, requestDigest } from "./integrity.js";
@@ -1041,6 +1042,43 @@ app.post("/api/acp/checkout", async (req, res) => {
     currency: drift.currency,
     itemCount: drift.itemCount,
     ...(binding ? { binding: { id: binding.id, digest: binding.digest, expiresAt: binding.expiresAt } } : {}),
+    ts,
+    ...signed,
+  });
+});
+
+// UPI mandate governance (India). Decides allow / requires_approval / deny for a UPI mandate debit with the RBI
+// e-mandate framework's rules, deterministically, and signs the verdict in INR. It never initiates or settles
+// anything on UPI, and "requires_approval" always means a human completes the customer's authentication (server/upi.js).
+const upiSpentToday = new Map(); // agent -> { day, total } — process-lifetime tally of allow verdicts this evaluator issued
+app.post("/api/upi/evaluate", async (req, res) => {
+  const { agent, mandate } = req.body || {};
+  if (!/^0x[0-9a-fA-F]{40}$/.test(agent || "")) return res.status(400).json({ error: "agent must be a 0x-prefixed 20-byte address" });
+
+  let upiPolicy = {};
+  try {
+    upiPolicy = JSON.parse(readFileSync(POLICY_FILE, "utf8")).upi || {};
+  } catch {}
+  const day = new Date().toISOString().slice(0, 10);
+  const tally = upiSpentToday.get(agent);
+  const spentTodayINR = tally && tally.day === day ? tally.total : 0;
+
+  const ts = new Date().toISOString();
+  const v = evaluateUpiMandate(mandate, { policy: upiPolicy, spentTodayINR });
+  if (v.decision === "allow") upiSpentToday.set(agent, { day, total: Math.round((spentTodayINR + Number(mandate.amountINR)) * 100) / 100 });
+
+  const payeeMasked = maskVpa(mandate?.payeeVpa);
+  const signed = await signUpiDecision({ id: mandate?.id, agent, amountINR: Number(mandate?.amountINR) || 0, payeeMasked, verdict: v.decision, code: v.code, ts });
+  res.json({
+    decision: v.decision,
+    reason: v.reason,
+    ...(v.code ? { code: v.code } : {}),
+    ...(v.suggestion ? { suggestion: v.suggestion } : {}),
+    ...(v.afa ? { afa: v.afa } : {}),
+    currency: "INR",
+    mandate: { id: mandate?.id ?? null, amountINR: Number(mandate?.amountINR) || null, payee: payeeMasked, category: mandate?.category ?? null },
+    regulatoryBasis: UPI_REGULATORY_BASIS,
+    disclaimer: UPI_DISCLAIMER,
     ts,
     ...signed,
   });

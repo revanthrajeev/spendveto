@@ -38,6 +38,17 @@ export async function signDecision(fields) {
   return { message, signature, signer: receiptSigner.address };
 }
 
+// Same key, INR-denominated: a UPI verdict is signed over rupees, never a converted dollar figure (server/upi.js).
+export function upiDecisionMessage({ id, agent, amountINR, payeeMasked, verdict, code, ts }) {
+  return `spendveto-upi-decision:${id || "-"}:${agent}:${amountINR}:${payeeMasked || "-"}:${verdict}:${code || "-"}:${ts}`;
+}
+
+export async function signUpiDecision(fields) {
+  const message = upiDecisionMessage(fields);
+  const signature = await receiptSigner.signMessage({ message });
+  return { message, signature, signer: receiptSigner.address };
+}
+
 // Same key, third kind of portable evidence: a signed consent record for a
 // delegation grant or revoke (server/consents.js) — Visa Trusted Agent
 // Protocol's "signed consent record, independently verifiable" pattern.

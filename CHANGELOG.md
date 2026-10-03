@@ -2,6 +2,16 @@
 
 Every feature listed here is exercised by the end-to-end suite (`npm run verify`) — the suite grew from 33 assertions at the first public cut to **114** at v0.7.0. If a claim isn't an assertion, it doesn't ship.
 
+## 0.24.0 — 2026-10-02
+
+Adoption release: the pieces a new team needs to try SpendVeto in minutes, plus an India wedge.
+
+- **`npm run quickstart:ai`** (`scripts/quickstart-ai.mjs`) — boots the server and proxy, gives a fresh agent a hard LLM budget, spends until it's gone, and shows the next call refused *before* the model is called, with the hash-chain verified at the end. Works with no API key (simulated completions; governance and metering are real).
+- **Python SDK** (`sdk-python/`) — stdlib-only twin of `spendveto-sdk`: `pay`, `dry_run`, `chat`, `register_agent`, and `SpendVetoDenialError` with `code` / `suggestion` / `stage`. Not on PyPI yet (`pip install ./sdk-python`). The denial path is tested against a local mock proxy, because a live blocked call would shift the suite's exact ledger counts.
+- **UPI mandate governance** (`server/upi.js`, `POST /api/upi/evaluate`) — RBI Digital Payments E-mandate Framework 2026 rules, deterministic and INR end to end: human authentication on the first debit, above ₹15,000 per recurring debit (₹1,00,000 for insurance / mutual funds / card bills), ≥24 h pre-debit notice (FASTag/NCMC exempt), mandate withdrawal and expiry, plus operator caps and allowlists via `policy.upi`. The verdict is ECDSA-signed over rupees; the payee VPA is masked. **Evaluator only** — no UPI initiation or settlement, no PSP status, no NPCI/RBI approval claimed; "requires approval" is always a human completing the customer's authentication. A declared `npci-upi-agent` rail slot refuses honestly (NPCI's agent protocol is not live). Rail registry is now 7 (2 live, 5 slots).
+- **Site**: `/upi.html` (interactive playground running the real evaluator in the browser — `site/assets/upi.js` is asserted byte-identical to `server/upi.js`) and `/ai-spend.html` (the quickstart); a new "Where adoption starts" slide in the deck.
+- Verify: 321 (+18: 3 Python SDK, 15 UPI incl. the site/server evaluator parity check; rail assertions updated 6 → 7; 324 with `../prediction-copilot` alongside).
+
 ## 0.23.2 — 2026-09-29
 
 - **Upstream re-scan** of `x402-foundation/x402` (56 commits since 2026-09-11) and the live facilitator's `/supported`. Two findings touched this repo:

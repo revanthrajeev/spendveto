@@ -8,7 +8,7 @@
 
 ## The honest position
 
-SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fifteen chains across eight signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 300 end-to-end assertions from a clean clone.
+SpendVeto is the buyer-side spend-governance layer for agents paying over x402: policy caps, human approvals, nested delegated budgets, a kill switch, and a tamper-evident ledger, all enforced **before** anything settles. Fifteen chains across eight signature families are registered; five settle live on-chain today through the public x402 facilitator. `npm run verify` runs 321 end-to-end assertions from a clean clone.
 
 What that means for a hackathon: the strongest tracks are the ones asking for *governed agent payments on a specific chain*, and the weakest are the ones asking for a new app in a domain this repo has no business claiming.
 
@@ -43,7 +43,7 @@ The Hedera track asks for exactly the thing this repo does and most projects can
 
 ### Status as of 2026-09-29 — submitted
 
-Submitted under the **Continuity Track** with Hedera, World and ENS as partner prizes; now in Round 1 judging. Submission video is a live recording trimmed from 9:32 to 3:55 (no speed-up), keeping the Hedera refuse+settle, World ID scan and ENS resolve+gate proofs. Since submission: v0.23.2 (path-respelling regression pinned, Cardano note corrected), 300 assertions, and 10 SUCCESS USDC settlements into payout `0.0.10410033` on Hedera testnet (query the mirror node — `npm run verify` resets the local ledger).
+Submitted under the **Continuity Track** with Hedera, World and ENS as partner prizes; now in Round 1 judging. Submission video is a live recording trimmed from 9:32 to 3:55 (no speed-up), keeping the Hedera refuse+settle, World ID scan and ENS resolve+gate proofs. Since submission: v0.23.2 (path-respelling regression pinned, Cardano note corrected), 321 assertions, and 10 SUCCESS USDC settlements into payout `0.0.10410033` on Hedera testnet (query the mirror node — `npm run verify` resets the local ledger).
 
 ### What not to claim
 
